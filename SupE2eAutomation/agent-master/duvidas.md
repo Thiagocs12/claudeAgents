@@ -208,7 +208,7 @@ volta de `fila-merge/pausados/` para `fila-merge/pendentes/` — retome o proces
 no próximo ciclo.
 
 ## 20260914125955-atualizar-claude-md-fluxo-integracao (retomada 2, 2026-09-15)
-Status: pendente
+Status: respondida
 Pergunta: Segui a autorização recebida ("pode liberar, para ser executada") e retomei o aviso.
 Merge de teste local limpo de novo (`git merge --no-edit origin/feature/atualizar-claude-md-fluxo-integracao`
 contra `reviewAgents` em `9f38a75`, sem conflito, resultado `e1d0437`); `.env.example`/`package.json`/

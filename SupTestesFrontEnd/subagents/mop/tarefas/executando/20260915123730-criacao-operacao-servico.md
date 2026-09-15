@@ -58,3 +58,30 @@ trabalho do subAgent, isto aqui é o roteiro funcional a seguir):
 - `docs/documentacao.md` deste módulo — login/navegação já mapeados pelo `SupE2eAutomation` no
   Beyond BackOffice (Monitor Diário), útil pro passo 13-14. Os passos 1-12 (Beyond Banking) são
   território totalmente novo, sem mapeamento prévio.
+
+## Execução
+
+Retomada em 2026-09-15 (novo ciclo): a tarefa duplicada em `tarefas/aguardando-resposta/` (versão
+antiga, que explorava "Nova Operação" dentro do Beyond BackOffice — app errado) foi descartada por
+decisão do Thiago (ver `duvidas.md`). Reiniciando do zero seguindo o roteiro de 14 passos desta
+versão, app correto: Beyond Banking (`beyondbanking-hml.grupomultiplica.com.br`).
+
+- Tentei acessar `https://beyondbanking-hml.grupomultiplica.com.br/` → redirecionou para um
+  Keycloak com realm próprio (`beyondbanking-hml`, distinto do realm usado pelo Beyond BackOffice),
+  com tela de login customizada (visual "Beyond", campos "Login/E-mail" e "Senha", botão "ENTRAR")
+  — mas os seletores padrão do Keycloak (`#username`, `#password`, `#kc-login`) continuam
+  funcionando por baixo do tema customizado, então o mesmo fluxo de login via `cy.origin()` já
+  usado para o Beyond BackOffice funcionou aqui também, sem precisar de tratamento diferente.
+- Tentei tirar um screenshot (`cy.screenshot()`) logo após o `cy.visit()` inicial, antes do
+  redirect pro Keycloak assentar → o runner do Cypress quebrou com
+  `TypeError: Cannot destructure property 'duration' of 'props' as it is undefined` (erro interno
+  do `cypress_runner.js`, não da aplicação testada — reproduzido de forma consistente em 2
+   tentativas). Retirando esse `cy.screenshot()` específico (mantendo os outros) o teste passou
+  normal — parece ser um bug do runner do Cypress 15.20.1 ao tirar screenshot muito cedo numa tela
+  com fundo animado (gradiente/pontos em movimento) logo após a navegação. Registrado em
+  `docs/documentacao.md` como armadilha a evitar.
+- Após login, a Home do Beyond Banking mostra 3 cards: "Beyond Comex — Operações Exportação",
+  "Beyond Operação Interno — Operações Brasil", "Beyond Portal — Portal Fornecedores". Nenhum
+  card chamado exatamente "Beyond Operação" (passo 4 do roteiro) — o mais próximo é "Beyond
+  Operação Interno". Vou seguir por ele como a interpretação mais provável do passo 4 e continuar a
+  exploração; se não for o caminho certo, volto e registro aqui.

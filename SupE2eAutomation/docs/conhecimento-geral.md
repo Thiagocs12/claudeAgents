@@ -73,6 +73,40 @@ ciclos).
   (3º módulo, criado em 2026-09-15 — POC do fluxo comercial Prospect → esteira → pleito). Próximo
   módulo novo = `contaB`.
 
+## Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15)
+
+Cada agente (subAgent, Agent Master, Status Watcher) tem uma conta "de casa" fixa (ver
+atribuições acima) — mas agora, além disso, todo `run-cycle.ps1` deste Supervisor tenta usar a
+conta alternativa **só no ciclo atual** quando a conta de casa está saturada, para não desperdiçar
+capacidade ociosa da outra conta.
+
+- **Como funciona:** logo após um ciclo que efetivamente chama `claude -p`, o script grava a
+  última utilização conhecida da conta usada (janela `five_hour` do `rate_limit_info` que vem no
+  stream NDJSON) em `%USERPROFILE%\.claude-accounts\<conta>\ultima-utilizacao.json` (funções
+  `Set-UtilizacaoConta`/`Get-UtilizacaoConta` em cada `run-cycle.ps1`). Esse arquivo é um estado
+  **por conta**, compartilhado entre qualquer agente/Supervisor que use aquela conta (pool
+  `contaA`/`contaB` é cross-Supervisor — ver `CONHECIMENTO-SUPERVISORES.md`).
+- **Antes de chamar `claude -p`** (depois da pré-checagem normal da seção 3.4, que decide SE vale a
+  pena rodar o ciclo), o script lê a última utilização conhecida da sua conta de casa. Se for
+  `>= 0.99` (99%) na janela `five_hour` **e** o `resetsAt` gravado ainda não tiver passado (dado
+  ainda válido, a janela não resetou), tenta a conta alternativa: se ela não estiver também
+  `>= 0.99`, usa a alternativa **só neste ciclo**; se as duas estiverem saturadas, segue com a
+  conta de casa mesmo assim (não há alternativa melhor). Registra a decisão em `run-log.txt` com
+  a tag `[alternancia]`.
+- **Não persiste a troca**: no próximo ciclo, o agente sempre tenta a conta de casa primeiro de
+  novo — a troca é só um fallback pontual, não uma reatribuição permanente. Decisão explícita do
+  Thiago (2026-09-15): manter o modelo de conta fixa como padrão, a alternância é só para não
+  desperdiçar ciclos quando a conta de casa está momentaneamente no limite.
+- **Limitação conhecida**: não existe forma de consultar a utilização de uma conta sem já ter
+  feito uma chamada `claude -p` nela — o valor usado na decisão é sempre o último conhecido (de
+  até ~5-30min atrás, dependendo da cadência do agente que gravou por último), não uma leitura em
+  tempo real. Na prática isso é uma aproximação boa o suficiente dado que os ciclos são frequentes.
+- Aplicado nos 5 `run-cycle.ps1` deste Supervisor (`geral`, `mop`, `POC`, `agent-master`,
+  `status-watcher`) em 2026-09-15. Os outros Supervisores (`SupAutomacaoUteis`,
+  `SupTestesFrontEnd`) ainda não adotaram esse padrão — registrado também em
+  `CONHECIMENTO-SUPERVISORES.md` para eles copiarem se quiserem, mas não foi aplicado nos
+  `run-cycle.ps1` deles por este Supervisor.
+
 ## `.env` / variáveis de ambiente — quem cuida do quê
 
 - O Agent Master mantém `agent-master/repo/.env` atualizado automaticamente: a cada merge, compara

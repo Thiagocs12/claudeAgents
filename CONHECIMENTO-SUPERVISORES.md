@@ -309,6 +309,40 @@ Thiago — não vale confiar em memória de uma sessão anterior. Ver o parágra
 do `CLAUDE.md` de cada Supervisor (idêntico nos dois). Um Supervisor novo deve nascer já com esse
 parágrafo.
 
+## Alternância de conta por rate-limit — pool `contaA`/`contaB` (2026-09-15, `SupE2eAutomation`)
+
+Como `contaA`/`contaB` são um pool **compartilhado entre os três Supervisores**, o Thiago pediu
+pra aproveitar melhor a capacidade ociosa: além da conta "de casa" fixa de cada agente (rotação de
+criação, ver seção acima), agora cada `run-cycle.ps1` do `SupE2eAutomation` tenta a conta
+alternativa **só no ciclo atual** quando a de casa está saturada (`>= 99%` na janela `five_hour`),
+em vez de insistir nela e arriscar um ciclo perdido.
+
+- **Estado compartilhado por conta** (não por agente/Supervisor): cada `run-cycle.ps1` que chama
+  `claude -p` grava a última utilização conhecida da conta que usou em
+  `%USERPROFILE%\.claude-accounts\<conta>\ultima-utilizacao.json` (`five_hour_utilization` +
+  `resetsAt` do `rate_limit_info` que vem no stream NDJSON). Como o caminho é por conta, não por
+  Supervisor, esse arquivo fica automaticamente compartilhado entre os três — mesmo sem os outros
+  dois adotarem a lógica de troca, o dado que `SupE2eAutomation` grava já é visível pra eles (e
+  vice-versa, se algum ciclo deles também gravar).
+- **Decisão de troca**: antes de chamar `claude -p` (depois da pré-checagem normal da seção 3.4 de
+  cada Supervisor), o script lê a última utilização conhecida da conta de casa; se `>= 0.99` e o
+  `resetsAt` ainda não passou, tenta a alternativa; se ela não estiver também saturada, usa-a só
+  neste ciclo (log `[alternancia]` em `run-log.txt`); se ambas estiverem saturadas, segue com a de
+  casa mesmo assim. **Não persiste a troca** — todo ciclo novo tenta a conta de casa primeiro de
+  novo (decisão explícita do Thiago: manter o modelo de conta fixa como padrão, a troca é só
+  fallback pontual, não uma realocação permanente).
+- **Limitação conhecida**: não dá pra consultar a utilização de uma conta sem já ter feito uma
+  chamada nela — a decisão sempre usa o último valor conhecido (pode ter alguns minutos, dependendo
+  de quando qualquer agente usou aquela conta por último), nunca uma leitura em tempo real. Como os
+  ciclos são frequentes (5-15min na maioria dos agentes), essa aproximação é boa o suficiente na
+  prática.
+- **Aplicado até agora só no `SupE2eAutomation`** (seus 5 `run-cycle.ps1`: `geral`, `mop`, `POC`,
+  `agent-master`, `status-watcher`). `SupAutomacaoUteis` e `SupTestesFrontEnd` ainda não adotaram —
+  fica registrado aqui pra eles copiarem o padrão se quiserem (ver
+  `SupE2eAutomation/docs/conhecimento-geral.md` pro detalhe completo e o código de referência em
+  qualquer `run-cycle.ps1` daquele Supervisor), mas nenhum arquivo deles foi alterado por este
+  Supervisor.
+
 ## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
 
 - O cache de binário do Cypress é **global por usuário do Windows**

@@ -37,3 +37,31 @@ HML nos dois sistemas. Credenciais em `.env` desta pasta (copiado do `.env` do
 do Beyond BackOffice/API/Keycloak já usadas pelo outro Supervisor — **não necessariamente cobre o
 Beyond Banking**, que é sistema novo pra qualquer um dos dois Supervisores; se faltar alguma URL
 de ambiente/config, registrar como aprendizado aqui assim que descoberta.
+
+URL do Beyond Banking (HML) adicionada ao `.env` local como `HML_BEYOND_BANKING_URL` (não
+versionado, `.env` está no `.gitignore`).
+
+## Login no Beyond Banking (mapeado em 2026-09-15)
+
+`https://beyondbanking-hml.grupomultiplica.com.br/` redireciona para um Keycloak com **realm
+próprio** (`beyondbanking-hml`, diferente do realm usado pelo Beyond BackOffice) e uma tela de
+login com tema customizado "Beyond" (rótulos "Login/E-mail" / "Senha", botão "ENTRAR"). Apesar do
+visual diferente, os seletores padrão do Keycloak continuam funcionando por baixo do tema:
+`#username`, `#password`, `#kc-login`. O mesmo fluxo `cy.origin()` já usado para o Beyond
+BackOffice funciona aqui sem alteração, usando o mesmo usuário/senha `master` do `.env`.
+
+Após login, a Home mostra 3 cards: "Beyond Comex — Operações Exportação", "Beyond Operação
+Interno — Operações Brasil", "Beyond Portal — Portal Fornecedores". Não há um card com o texto
+exato "Beyond Operação" citado no roteiro de negócio — "Beyond Operação Interno" é a
+interpretação mais provável (a confirmar durante a exploração).
+
+## Armadilha: `cy.screenshot()` logo após `cy.visit()` quebra o runner (Cypress 15.20.1)
+
+Tirar um `cy.screenshot()` muito cedo após um `cy.visit()`/redirect, numa tela com fundo animado
+(ex.: gradiente/pontos em movimento da tela de login do Beyond Banking), derruba o teste inteiro
+com `TypeError: Cannot destructure property 'duration' of 'props' as it is undefined` dentro do
+próprio `cypress_runner.js` — não é um erro da aplicação testada. Reproduzido de forma consistente
+em 2 tentativas seguidas; removendo esse screenshot específico (mantendo os demais, em telas sem
+animação ou depois dela assentar) o teste passou normalmente. Se precisar de screenshot logo após
+um `cy.visit()`, prefira aguardar a tela assentar (`cy.wait()` maior, ou aguardar um elemento
+específico visível) antes de tirar o screenshot, ou evitar o screenshot nesse ponto específico.

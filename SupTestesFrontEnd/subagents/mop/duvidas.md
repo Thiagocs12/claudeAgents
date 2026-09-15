@@ -1,5 +1,5 @@
 ## 20260915123730-criacao-operacao-servico
-Status: pendente
+Status: respondida
 Pergunta: Encontrei dois arquivos de tarefa com o mesmo id `20260915123730-criacao-operacao-servico`
 e conteúdo bem diferente: um em `tarefas/executando/` (versão mais aberta do objetivo — "criar uma
 operação de serviço no Beyond Banking e confirmar avanço de etapa", sem roteiro fixo — já com
@@ -18,4 +18,9 @@ zero seguindo o roteiro novo de 14 passos da versão em `pendentes/` (cedente "k
 via "Beyond Operação" → "Criar Operação")? Ou a versão em `pendentes/` era pra ser uma tarefa nova
 separada (nesse caso, qual id ela deveria ter, já que está duplicando o id da que já está em
 andamento)?
-Resposta:
+Resposta: Manter somente a versão refinada (roteiro de 14 passos, cedente "kenerson", entrada via
+"Beyond Operação" → "Criar Operação"). Descartar a narrativa/exploração da versão antiga (caminho
+"Nova Operação" dentro do Beyond BackOffice, sem cedente/roteiro fixo) — o arquivo antigo em
+`tarefas/aguardando-resposta/` foi removido pelo Supervisor. A versão refinada já em
+`tarefas/pendentes/` é a única tarefa válida com este id; o subAgent deve começar do zero seguindo
+o roteiro dela.

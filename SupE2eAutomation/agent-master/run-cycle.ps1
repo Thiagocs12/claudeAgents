@@ -4,8 +4,53 @@
 $ErrorActionPreference = "Continue"
 Set-Location -Path $PSScriptRoot
 
-# Conta do Claude Code fixa do Agent Master (não entra no revezio dos subAgents).
-$env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaB"
+# Conta do Claude Code "de casa" do Agent Master (não entra no revezamento de módulos novos, mas
+# participa da alternância por rate-limit abaixo, igual aos subAgents).
+#
+# --- Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15) ---
+# Cada conta grava sua última utilização conhecida (janela five_hour) em
+# %USERPROFILE%\.claude-accounts\<conta>\ultima-utilizacao.json a cada ciclo que a usa, de
+# qualquer agente/Supervisor (pool compartilhado contaA/contaB). Antes de começar, se a conta "de
+# casa" deste agente estiver >=99% nessa janela (e o reset ainda não passou), tenta a conta
+# alternativa. Não persiste a troca: no próximo ciclo, tenta a conta de casa de novo primeiro. Ver
+# docs/conhecimento-geral.md / CONHECIMENTO-SUPERVISORES.md.
+function Get-UtilizacaoConta {
+    param([string]$Conta)
+    $caminho = "$env:USERPROFILE\.claude-accounts\$Conta\ultima-utilizacao.json"
+    if (-not (Test-Path $caminho)) { return $null }
+    try {
+        $dado = Get-Content $caminho -Raw | ConvertFrom-Json
+        if ($dado.resetsAt -and ([DateTimeOffset]::FromUnixTimeSeconds($dado.resetsAt).UtcDateTime -lt (Get-Date).ToUniversalTime())) {
+            return $null
+        }
+        return [double]$dado.five_hour_utilization
+    } catch { return $null }
+}
+
+function Set-UtilizacaoConta {
+    param([string]$Conta, [double]$Utilizacao, [long]$ResetsAt)
+    $pasta = "$env:USERPROFILE\.claude-accounts\$Conta"
+    if (-not (Test-Path $pasta)) { New-Item -ItemType Directory -Force -Path $pasta | Out-Null }
+    @{ five_hour_utilization = $Utilizacao; resetsAt = $ResetsAt; atualizado_em = (Get-Date).ToUniversalTime().ToString("o") } |
+        ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
+}
+
+$contaDeCasa = "contaB"
+$contaAlternativa = "contaA"
+$contaEfetiva = $contaDeCasa
+$utilDeCasa = Get-UtilizacaoConta -Conta $contaDeCasa
+if ($null -ne $utilDeCasa -and $utilDeCasa -ge 0.99) {
+    $utilAlternativa = Get-UtilizacaoConta -Conta $contaAlternativa
+    if ($null -eq $utilAlternativa -or $utilAlternativa -lt 0.99) {
+        $contaEfetiva = $contaAlternativa
+        "$(Get-Date -Format 'HH:mm:ss') | [alternancia] $contaDeCasa em $([math]::Round($utilDeCasa*100,1))% (five_hour) - usando $contaAlternativa neste ciclo" |
+            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    } else {
+        "$(Get-Date -Format 'HH:mm:ss') | [alternancia] $contaDeCasa e $contaAlternativa ambas >=99% (five_hour) - seguindo com $contaDeCasa mesmo assim" |
+            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    }
+}
+$env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\$contaEfetiva"
 
 # Token do GitHub CLI (gh) para abrir/consultar PRs — lido de arquivo local (não versionado, nunca
 # embutido neste script), acesso total aos repositórios, sem expiração.
@@ -85,6 +130,8 @@ operacional:
 7. Nunca responda sua própria dúvida.
 '@
 
+$script:ultimoRateLimit = $null
+
 $prompt | claude -p --permission-mode bypassPermissions --output-format stream-json --verbose 2>&1 |
     ForEach-Object {
         $linha = $_.ToString()
@@ -119,8 +166,19 @@ $prompt | claude -p --permission-mode bypassPermissions --output-format stream-j
                     }
                 }
                 "result" { $texto = "[ciclo encerrado] $($evt.subtype) duracao=$($evt.duration_ms)ms custo=`$$($evt.total_cost_usd)" }
+                "rate_limit_event" {
+                    $fh = $evt.rate_limit_info.unifiedWindows.five_hour
+                    if ($fh) {
+                        $script:ultimoRateLimit = @{ utilization = $fh.utilization; resetsAt = $fh.resetsAt }
+                        $texto = "[rate-limit] conta=$contaEfetiva five_hour=$([math]::Round($fh.utilization*100,1))%"
+                    }
+                }
             }
         } catch {}
         if (-not $texto) { $texto = $linha }
         "$ts | $texto" | Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     }
+
+if ($script:ultimoRateLimit) {
+    Set-UtilizacaoConta -Conta $contaEfetiva -Utilizacao $script:ultimoRateLimit.utilization -ResetsAt $script:ultimoRateLimit.resetsAt
+}
