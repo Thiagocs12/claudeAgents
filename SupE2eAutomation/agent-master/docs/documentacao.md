@@ -92,8 +92,18 @@ daquele teste/tela, não instabilidade genérica do HML (ver também `../docs/co
   flakiness genérica de ambiente (ver `../docs/conhecimento-geral.md` para o registro completo).
   Merge local desfeito de novo, aviso mantido em `fila-merge/pendentes/`. **Nova dúvida bloqueante
   pendente** (`duvidas.md`, `20260914125955-atualizar-claude-md-fluxo-integracao (retomada 2)`,
-  `Status: pendente`) perguntando como proceder — ainda sem resposta do Thiago no momento desta
-  compactação.
+  `Status: pendente`) perguntando como proceder.
+- **2026-09-15 (encerramento):** Thiago decidiu abandonar esta tentativa de merge de vez ("reverta
+  tudo, a `reviewAgents` já funciona, não tem por que mergear nada") — confirmou também que o único
+  PR que segue sendo mantido é o contínuo `reviewAgents → main` (automático, sem ação extra). Aviso
+  movido de `fila-merge/pendentes/` para `fila-merge/concluidos/`, marcado explicitamente como
+  **descartado sem merge** (não confundir com os demais itens de `concluidos/`, que foram merges
+  bem-sucedidos). `reviewAgents` permanece sem essa mudança; a branch remota
+  `feature/atualizar-claude-md-fluxo-integracao` continua existindo, sem uso previsto. Efeito
+  colateral: `repo/CLAUDE.md`/`repo/README.md` seguem desatualizados quanto ao fluxo de integração
+  vigente (retomar isso exigiria decisão nova do Thiago). A pergunta de política mais ampla (tolerar
+  falha de `mop-monitor-diario.feature` em merges só-docs) fica sem objeto para este item, mas segue
+  em aberto para casos futuros.
 
 ## Armadilhas operacionais conhecidas
 
@@ -132,3 +142,13 @@ permaneceu `OPEN` o tempo todo, o único aviso em `pendentes/`
 legado (`fila-merge/aguardando-aprovacao/`) permaneceu vazia, e a pasta de teste manual já estava
 sempre em dia. As entradas individuais e idênticas desses ciclos foram removidas nesta compactação
 — nenhuma informação além da contagem de repetição em si foi perdida.
+
+- **2026-09-15 (ciclo após a "retomada 2"):** mais um ciclo de rotina, sem trabalho novo. PR #11
+  segue `OPEN` (reflete `9f38a75`, mesmo commit de `reviewAgents`/`main` locais e remotos, `main`
+  local confirmado em dia com `origin/main`). Legado vazio. O único aviso em `pendentes/`
+  (`20260914125955-atualizar-claude-md-fluxo-integracao`) segue com a dúvida "retomada 2" (terceiro
+  sintoma do `mop-monitor-diario.feature`, botão `Mui-disabled`) com `Status: pendente` em
+  `duvidas.md` — não reprocessado neste ciclo (aguardando resposta do Thiago, mesmo protocolo de
+  não insistir sem instrução nova). `C:\multiplica\cypress-e2e` já estava no mesmo commit
+  (`9f38a75`) e mesmo `.env` do Agent Master, working tree limpo — nenhuma sincronização/vídeo novo
+  necessário (nenhum teste rodou neste ciclo).

@@ -235,4 +235,25 @@ este aviso até você voltar com instrução nova (mesmo padrão já usado antes
 `fila-merge/pausados/`), ou (c) outra direção? Não vou decidir sozinho a política de tolerar falha
 de `mop-monitor-diario.feature` em merges só-docs — essa pergunta de política segue em aberto desde
 a dúvida original.
-Resposta:
+Resposta: Thiago decidiu abandonar esta tentativa de merge de vez ("reverta tudo, a `reviewAgents`
+já funciona, não tem por que mergear nada"). Não tente mais mergear
+`feature/atualizar-claude-md-fluxo-integracao` — nem agora, nem em ciclo futuro. `reviewAgents`
+permanece como está, sem essa mudança. Ele confirmou em seguida que o único PR que deve continuar
+sendo mantido é o contínuo `reviewAgents → main` (PR #11 atual) — isso já é automático pela regra
+normal (seção 3.3 item 2), nenhuma ação extra necessária além do que o Agent Master já faz todo
+ciclo.
+
+Ação esperada: não é necessário desfazer mais nada no `repo/` (o merge local já tinha sido desfeito
+— `git reset --hard origin/reviewAgents` — na própria tentativa que gerou esta dúvida). A branch
+remota `feature/atualizar-claude-md-fluxo-integracao` pode continuar existindo sem uso; não precisa
+apagá-la. Mova este aviso de `fila-merge/pendentes/` para `fila-merge/concluidos/`, deixando claro
+no arquivo que foi descartado sem merge, por decisão do Thiago (não "mergeado com sucesso").
+Registre em `docs/documentacao.md` o encerramento. A pergunta de política mais ampla (tolerar falha
+de `mop-monitor-diario.feature` em merges só-docs) fica sem objeto para este item específico, mas
+segue em aberto para casos futuros — não presuma uma política geral a partir desta decisão pontual.
+
+Nota do Supervisor: isso deixa `repo/CLAUDE.md`/`repo/README.md` (o repositório de automação em
+si) permanentemente desatualizados quanto ao fluxo de integração vigente — a correção que esta
+branch trazia não vai ser aplicada. Se isso for um problema mais adiante, é uma decisão nova do
+Thiago retomar (ex.: aplicar a correção de doc direto, sem depender de merge de teste bloqueado por
+um teste de tela não relacionado), não algo para o Agent Master reabrir sozinho.

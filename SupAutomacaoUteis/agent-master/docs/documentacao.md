@@ -362,3 +362,43 @@
   digno de nota (merge de teste local deixado a meio caminho por um ciclo anterior, sem commit) já
   é coberto pela regra geral de retomar trabalho em andamento; não é um padrão novo que precise
   virar entrada própria em `../docs/conhecimento-geral.md`.
+
+## 2026-09-15 — Ciclo: merge direto de `keycloakUser/remover-clonados-fixture-lote-e-fixture-vazia-nao-quebra`
+
+- **`GH_TOKEN`**: `gh auth status` confirmou autenticado normalmente (`Thiagocs12`). Sem pendência.
+- **PR único `reviewAgents → master` (PR #6)**: confirmado `OPEN` via `gh pr list`, não recriado —
+  reflete o novo commit automaticamente.
+- **`fila-merge/aguardando-aprovacao/`**: vazio (legado já todo processado).
+- **`fila-merge/pendentes/`**: 1 aviso processado —
+  `20260915111027-remover-clonados-fixture-lote-e-fixture-vazia-nao-quebra.md` (módulo
+  `keycloakUser`, branch `keycloakUser/remover-clonados-fixture-lote-e-fixture-vazia-nao-quebra`:
+  clonagem em lote agora remove do fixture os usuários clonados com sucesso, e fixture vazia deixou
+  de lançar erro).
+  - Merge de teste local contra `reviewAgents`: fast-forward limpo, sem conflito (branch remota só
+    tinha commits novos em cima do topo atual).
+  - `.env.example`: sem variável nova (`git diff` vazio entre antes/depois).
+  - `npm run lint`: 0 erros (mesmos 4 warnings pré-existentes). `npm run test:safety`: 42/42 (bate
+    com o relatado pelo subAgent). `npx cypress run --env tags=@clonarUsuariosEmLote`: todos os
+    specs passaram (6 tests, 1 passing, 5 pending — nenhuma falha), sem screenshots gerados.
+  - Merge finalizado e pushado direto em `reviewAgents` (fast-forward, commit `c9bf535`, sem PR).
+    Aviso movido de `fila-merge/pendentes/` para `fila-merge/concluidos/`.
+  - **Nota/correção de processo**: ao tentar seguir o padrão de "deletar a branch local, manter a
+    remota" dos ciclos anteriores, percebi que este merge não criou uma branch local separada (foi
+    um fast-forward direto de `origin/<branch>` para o `reviewAgents` local) — não havia branch
+    local para deletar. Por engano rodei `git push origin --delete
+    keycloakUser/remover-clonados-fixture-lote-e-fixture-vazia-nao-quebra` (deletando a branch
+    **remota**, inconsistente com o padrão estabelecido de manter a branch remota após o merge).
+    Corrigido no mesmo ciclo: recriei a branch remota apontando pro mesmo commit já mergeado
+    (`git push origin c9bf535:refs/heads/keycloakUser/remover-...`), já que era idêntico ao
+    conteúdo perdido (fast-forward, sem divergência). Nenhum dado perdido, mas registrar aqui para
+    o próximo ciclo não repetir: quando o merge de teste for um fast-forward puro (sem branch local
+    própria criada), **não rodar `git push --delete` na branch remota** — não há branch local
+    equivalente para "limpar", e a branch remota deve ser preservada como nos demais casos.
+- **Sincronização da pasta manual** (`C:\multiplica\cypress-uteis`): encontrada com uma alteração
+  **não commitada** do Thiago em `cypress/fixtures/usuariosParaClonar.json` (dado pessoal de teste,
+  não mexi no conteúdo). Confirmei antes de agir que o commit novo (`a1de77b..c9bf535`) não toca
+  esse arquivo (`git show --stat` vazio para o path) — `git pull origin reviewAgents` fez
+  fast-forward normalmente sem conflito, preservando a modificação local do Thiago intacta.
+  `node_modules` presente, não precisou `npm install`. Nomes de variáveis de `.env` comparados (sem
+  exibir valores) contra `repo/.env` — idênticos, nenhuma cópia necessária.
+- Nenhuma dúvida nova registrada neste ciclo.
