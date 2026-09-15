@@ -68,10 +68,21 @@ visual diferente, os seletores padrão do Keycloak continuam funcionando por bai
 `#username`, `#password`, `#kc-login`. O mesmo fluxo `cy.origin()` já usado para o Beyond
 BackOffice funciona aqui sem alteração, usando o mesmo usuário/senha `master` do `.env`.
 
-Após login, a Home mostra 3 cards: "Beyond Comex — Operações Exportação", "Beyond Operação
+Após login, a aplicação redireciona para `/clients` — tela "Seleção de cliente" ("Automacao, Qual
+cliente deseja acessar?"), dropdown-autocomplete "Selecione aqui" (assíncrono, mostra "Loading..."
+logo após abrir — digitar o termo de busca antes de checar as opções) e botão "Avançar". Buscando
+"kenerson" aparece uma única opção ("07.019.231/0001-96 - KENERSON INDUSTRIA E COMERCIO DE
+PRODUTOS OPTICOS LTDA") — não há escolha explícita de "cadastro master" nessa tela; parece que o
+usuário `automacao` só tem um cadastro associado a esse cedente. Depois de selecionar e clicar
+"Avançar", volta para a Home (`/`) mostrando os mesmos 3 cards, agora com o cedente selecionado
+no topo.
+
+A Home mostra 3 cards: "Beyond Comex — Operações Exportação", "Beyond Operação
 Interno — Operações Brasil", "Beyond Portal — Portal Fornecedores". Não há um card com o texto
 exato "Beyond Operação" citado no roteiro de negócio — "Beyond Operação Interno" é a
-interpretação mais provável (a confirmar durante a exploração).
+interpretação mais provável (a confirmar durante a exploração). Clicar nesse card navega pra um
+subdomínio diferente (`beyondbanking-ope-hml.grupomultiplica.com.br`, origem distinta pro
+Cypress — precisa de `cy.origin()`), tela "Operações" com botão "Criar Operação" visível.
 
 ## Armadilha: `cy.screenshot()` logo após `cy.visit()` quebra o runner (Cypress 15.20.1)
 
@@ -83,3 +94,16 @@ em 2 tentativas seguidas; removendo esse screenshot específico (mantendo os dem
 animação ou depois dela assentar) o teste passou normalmente. Se precisar de screenshot logo após
 um `cy.visit()`, prefira aguardar a tela assentar (`cy.wait()` maior, ou aguardar um elemento
 específico visível) antes de tirar o screenshot, ou evitar o screenshot nesse ponto específico.
+
+## Armadilha: `beyondbanking-hml` fica intermitentemente indisponível (observado 2026-09-15)
+
+Numa mesma sessão de exploração, o host `beyondbanking-hml.grupomultiplica.com.br` respondeu
+normalmente numa rodada e, poucos minutos depois, passou a falhar com `ESOCKETTIMEDOUT` logo no
+`cy.visit()` inicial — confirmado fora do Cypress com `curl` direto (múltiplas tentativas ao longo
+de ~2 min, todas `HTTP_CODE=000`/timeout de conexão), enquanto o Keycloak (`keycloak-new-2...`)
+respondia normalmente no mesmo intervalo — ou seja, não é problema de rede geral, é o host
+`beyondbanking-hml` especificamente. Se um ciclo futuro tomar `ESOCKETTIMEDOUT` no `cy.visit()`
+inicial: (1) confirmar com `curl --max-time 20` direto no host antes de assumir bug de spec; (2)
+se confirmado que o host não responde, isso **não é dúvida bloqueante** (não precisa de decisão do
+Thiago) nem resultado final (objetivo não foi tentado por completo) — deixar a tarefa em
+`executando/` com a narrativa atualizada e deixar o próximo ciclo (5 min depois) tentar de novo.

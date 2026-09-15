@@ -32,3 +32,25 @@ normal do formulário) em `docs/documentacao.md`. Se o comportamento da aplicaç
 futuro (passar a auto-preencher), essa validação deve acusar a mudança em vez de simplesmente
 continuar passando silenciosamente. Depois dessa validação, preencha os 3 campos manualmente com os
 valores acima e prossiga com a submissão/validação normal da tarefa.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: respondida
+Pergunta: Ao retomar a implementação (já com os valores dos 3 campos obrigatórios confirmados —
+Page Object `NovoProspectPage` criado e commitado, commit `c36db44` na branch
+`feature/poc-criar-prospect-cedente-cnpj`), o `cypress run` falhou logo no login com
+`Error: connect ETIMEDOUT 10.101.10.254:443` — timeout tentando conectar em
+`beyond-hml.grupomultiplica.com.br`, que resolve para esse IP **privado**. Confirmei fora do
+Cypress (`curl --max-time 20`, 2 tentativas) que a máquina realmente não consegue alcançar esse
+host agora, enquanto `keycloak-new-2.grupomultiplica.com.br` (IP público) respondeu normalmente.
+Isso é diferente dos sintomas de `cy.origin`/Keycloak já catalogados antes (aqueles ocorriam depois
+de alcançar a aplicação; este falha antes de qualquer coisa, no nível de rede/TCP para o IP
+interno). Preciso confirmar com você: essa máquina depende de alguma VPN/rede específica para
+alcançar `beyond-hml` que talvez tenha caído nesse momento? É algo que eu deveria simplesmente
+aguardar e retentar num próximo ciclo (mesmo tratamento dos outros bloqueios de "instabilidade de
+ambiente" já documentados), ou há uma ação de infraestrutura que só você consegue tomar (reconectar
+VPN, verificar firewall, etc.)?
+Resposta: Confirmado — era a VPN, que caiu e já devia ter reconectado sozinha. Deve estar
+acessível agora. Pode retentar o `cypress run` normalmente. Se o mesmo erro (`connect ETIMEDOUT`
+pro IP `10.101.10.254`) acontecer de novo, trate como nova ocorrência de instabilidade de
+rede/VPN (mesmo protocolo já usado para instabilidade de ambiente: não insistir em várias
+tentativas seguidas, registrar dúvida nova) — não presuma que é definitivo na primeira falha.

@@ -114,3 +114,71 @@ versão, app correto: Beyond Banking (`beyondbanking-hml.grupomultiplica.com.br`
   `/clients`) era uma volta desnecessária só porque a sessão de exploração anterior já tinha um
   cliente pré-selecionado. Reescrevi a spec para focar direto neste fluxo: abrir o dropdown e
   localizar "kenerson". Próximo passo: rodar e ver as opções do dropdown.
+- **Retomada 2026-09-15, noite:** ao iniciar o ciclo, encontrei processos `Cypress.exe`/`node.exe`
+  órfãos desta pasta ainda vivos (rodada anterior parece ter sido interrompida sem esperar o
+  `npx cypress run` terminar — o log da rodada anterior, `cypress-run-29.log`, estava incompleto).
+  Matei os processos manualmente antes de continuar (regra 5 do `AGENTE.md`).
+- Tentei digitar "kenerson" no dropdown de seleção de cliente e escolher a opção → apareceu **só
+  uma opção**: "07.019.231/0001-96 - KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDA". Não
+  existe uma escolha explícita de "cadastro master" nessa tela — parece que o cedente kenerson só
+  tem um cadastro/CNPJ associado ao usuário `automacao`, então o passo 3 do roteiro ("cadastro
+  master") não exige ação adicional aqui; a tela oferece um único caminho.
+- Tentei clicar em "Avançar" após selecionar kenerson → voltou para a Home (`/`, mesmo domínio
+  raiz) mostrando os mesmos 3 cards de antes ("Beyond Comex", "Beyond Operação Interno", "Beyond
+  Portal"), agora com "KENERSON INDUSTRIA E COME..." no topo confirmando o cedente selecionado
+  (screenshot `04-apos-selecionar-kenerson-avancar.png`). Confirma a hipótese anterior: a Home só
+  mostra os cards depois de um cedente selecionado.
+- Escrevi o próximo trecho da spec: clicar no card "Beyond Operação Interno" (interpretação mais
+  provável do passo 4 "Beyond Operação" do roteiro — não existe card com esse texto exato), usar
+  `cy.origin()` pro subdomínio `beyondbanking-ope-hml...` e localizar/clicar em "Criar Operação"
+  (passo 5), mapeando os elementos da tela em cada etapa.
+- Tentei rodar essa versão da spec (2x seguidas) → **falhou logo no primeiro `cy.visit()`** (antes
+  de chegar no trecho novo) com `ESOCKETTIMEDOUT` — o host `beyondbanking-hml.grupomultiplica.com.br`
+  parou de responder. Investiguei fora do Cypress com `curl` direto: 4 tentativas ao longo de
+  ~2 minutos (incluindo com `--retry`/backoff de 15s) deram todas `HTTP_CODE=000` (timeout de
+  conexão, sem resposta alguma), enquanto o Keycloak (`keycloak-new-2...`) respondeu normalmente
+  (403 em <1s) no mesmo intervalo — ou seja, não é problema de rede/DNS geral daqui, é
+  especificamente o host `beyondbanking-hml` que parou de responder.
+- **Importante:** a rodada anterior (run-30, poucos minutos antes) tinha funcionado normalmente até
+  a Home pós-seleção de cedente (screenshot `04-apos-selecionar-kenerson-avancar.png`) — ou seja,
+  o ambiente caiu **entre** essa rodada e as tentativas seguintes, não é um problema permanente
+  nem ligado à spec nova. Não travei em dúvida (não precisa de decisão do Thiago, só de o ambiente
+  voltar) nem é resultado final do teste (objetivo não foi tentado por completo) — deixando a
+  tarefa em `executando/` com a narrativa atualizada para o próximo ciclo (5 min) retomar
+  rodando a spec já escrita (trecho do passo 4-5 ainda não validado) assim que o host responder de
+  novo. Nenhum processo Cypress/node ficou órfão desta vez (rodadas 31 e 32 terminaram sozinhas,
+  falha capturada pelo próprio Cypress).
+- **Novo ciclo (2026-09-15, continuação):** antes de tentar `npx cypress run` de novo, confirmei
+  fora do Cypress se o host já tinha voltado — 3 tentativas de `curl --max-time 20` seguidas
+  (~45s de intervalo total) contra `beyondbanking-hml.grupomultiplica.com.br` deram todas
+  `HTTP_CODE=000` (timeout de conexão), enquanto o Keycloak (`keycloak-new-2...`) respondeu
+  normalmente (403 em <1s) nas mesmas condições — confirma que o host específico ainda está fora
+  do ar, mesma armadilha já documentada em `docs/documentacao.md`. Não rodei `npx cypress run`
+  desta vez (sem sentido gastar o ciclo contra um host confirmadamente down). Verifiquei também se
+  havia processo Cypress/node órfão desta pasta (regra 5 do `AGENTE.md`) — havia um `node.exe`
+  vivo na máquina, mas sua `CommandLine` (`investigar-schema-comite.cjs`) não pertence a este
+  módulo/pasta, então não foi tocado. Isso não é dúvida bloqueante nem resultado final — deixando a
+  tarefa em `executando/` para o próximo ciclo (5 min) tentar de novo, sem alterar a spec já escrita
+  (trecho do passo 4-5 do roteiro, ainda não validado).
+- **Novo ciclo (2026-09-15, continuação):** antes de rodar `npx cypress run`, confirmei de novo fora
+  do Cypress se o host já tinha voltado — 3 tentativas de `curl --max-time 20` seguidas contra
+  `beyondbanking-hml.grupomultiplica.com.br` deram novamente todas `HTTP_CODE=000` (timeout de
+  conexão, ~20s cada). Não rodei `npx cypress run` — sem sentido gastar o ciclo contra um host ainda
+  confirmadamente down. Checagem de processo órfão (regra 5): só encontrado um `node.exe`
+  (`investigar-schema-comite.cjs`), que não pertence a este módulo/pasta — nada para matar. Não é
+  dúvida bloqueante nem resultado final — deixando a tarefa em `executando/` para o próximo ciclo
+  (5 min) tentar de novo, sem alterar a spec já escrita (trecho do passo 4-5 do roteiro, ainda não
+  validado).
+- **Novo ciclo (2026-09-15, continuação):** checagem de processo órfão (regra 5) via
+  `Get-CimInstance Win32_Process` filtrando `CommandLine` por `cypress`+`mop` — nenhum processo
+  encontrado, nada para matar. Confirmei de novo fora do Cypress se o host já tinha voltado:
+  `curl -v --max-time 20` contra `beyondbanking-hml.grupomultiplica.com.br` resolveu o IP
+  (`10.101.10.254`) mas deu `Connection timed out after 20008 milliseconds` (mesma falha das
+  tentativas anteriores — DNS ok, TCP não conecta). Como controle, testei o host do Keycloak
+  (`HML_KEYCLOAK_URL` do `.env`, sem expor valor completo/credencial) — respondeu `403` em 0.06s,
+  confirmando que a rede geral e o Keycloak estão OK, é o host `beyondbanking-hml` especificamente
+  que segue fora do ar (mesma armadilha documentada em `docs/documentacao.md`). Conectividade geral
+  também confirmada OK via `https://www.google.com` (200). Não rodei `npx cypress run` — sem
+  sentido gastar o ciclo contra um host ainda confirmadamente down. Não é dúvida bloqueante nem
+  resultado final — deixando a tarefa em `executando/` para o próximo ciclo (5 min) tentar de novo,
+  sem alterar a spec já escrita (trecho do passo 4-5 do roteiro, ainda não validado).

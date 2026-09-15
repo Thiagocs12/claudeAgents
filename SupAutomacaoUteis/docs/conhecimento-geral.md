@@ -246,3 +246,44 @@ de `repo/`** (raiz do clone, onde `node_modules` já foi instalado), rode com
 tarefa, é só uma ferramenta de investigação pontual) — `git status` antes do commit
 confirma que não sobrou. Vale para qualquer módulo que precisar inspecionar schema real
 de PROD/HML fora de uma spec Cypress.
+
+## SQL Server (PROD e HML) inacessível via rede na máquina — bloqueio de infraestrutura, não de escopo (2026-09-15, módulo `cedente`)
+
+Ao retomar uma tarefa que precisa consultar o schema real (`INFORMATION_SCHEMA`/`sys.*`
+via `dbClient.cjs`), um `node investigar-*.cjs` que normalmente levaria segundos ficou
+mais de 8 minutos sem produzir nenhuma saída. Diagnóstico com um teste de TCP puro
+(`net.createConnection`, sem passar pelo driver `mssql`/autenticação Windows — script
+`.cjs` temporário dentro de `repo/`, removido depois, mesmo padrão da seção anterior)
+contra `PROD_DB_HOST:PROD_DB_PORT` **e** `HOMOLOG_DB_HOST:HOMOLOG_DB_PORT` (lidos de
+`.env`): timeout (~8s) nos dois. Ou seja, quando a consulta trava sem erro nenhum (nem
+timeout do driver, nem erro de autenticação), é sinal de rede/VPN indisponível na
+máquina para o SQL Server (afeta PROD e HML igualmente, não é específico de ambiente
+nem de credencial) — não uma consulta lenta nem um schema inesperado. Isso não é uma
+"dúvida de escopo" (não há decisão de negócio a tomar), mas ainda assim vale registrar
+como dúvida bloqueante em `duvidas.md` (regra 8 do `AGENTE.md`, categoria "qualquer
+coisa envolvendo dados de PROD/HML") pedindo ao Thiago para confirmar VPN/rede — sem
+isso nenhum módulo que dependa de `dbClient.cjs` consegue avançar, e não há como o
+subAgent resolver sozinho. Vale para qualquer módulo (não só `cedente`) que usar SQL
+Server direto: antes de investigar "por que a query não retorna", teste conectividade
+TCP crua primeiro — é mais rápido de diagnosticar do que esperar o timeout do driver
+`mssql`/ODBC (que pode não ter um timeout configurado explicitamente, ver `dbClient.cjs`,
+e travar por bem mais tempo que um teste de socket puro).
+
+## Registrar uma segunda dúvida para uma tarefa que já teve uma dúvida anterior respondida — não duplicar o título `## <id>` (2026-09-15, módulo `cedente`)
+
+Complementa a seção já existente sobre o título de `duvidas.md` ter que ser o id exato
+da tarefa: aquela seção cobre o caso de o título estar **errado**; este é sobre o título
+estar **certo, mas duplicado**. A pré-checagem `Test-DuvidaRespondida` do `run-cycle.ps1`
+faz `[regex]::Split($conteudo, '(?m)^##\s+')` e retorna no **primeiro** bloco cujo
+conteúdo bater com o id — se uma tarefa já teve uma dúvida respondida (bloco antigo com
+`## <id>` / `Status: respondida`) e volta a bloquear por um motivo novo, **não** crie um
+segundo bloco `## <id>` no fim do arquivo: o primeiro bloco (já respondido) sempre vai
+casar primeiro, e a pré-checagem devolve "respondida" mesmo com a pergunta nova ainda
+sem resposta — a tarefa volta pra `pendentes/` cedo demais. Correto: manter **um único**
+bloco `## <id>` por tarefa ao longo de toda a sua vida; o campo `Status:` (sem sufixo,
+exatamente como a pré-checagem espera) sempre reflete a pergunta **atualmente em
+aberto**; perguntas/respostas já resolvidas migram para campos com sufixo numérico
+(`Status-historico-1:`, `Pergunta-1:`, `Resposta-1:`, depois `-2`, etc.) que não batem
+com o regex `^Status:\s*respondida\s*$` da pré-checagem, preservando o histórico sem
+confundir a automação. Vale para todo subAgent — qualquer tarefa grande, de vários
+ciclos, pode acumular mais de uma dúvida ao longo do tempo.

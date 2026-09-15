@@ -1,5 +1,5 @@
 
-◇ injected env (6) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (6) from .env // tip: ⌘ override existing { override: true }
 Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
 
 1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
@@ -30,35 +30,52 @@ Learn more: https://on.cypress.io/cypress-env-migration
     1) acessa o Beyond Banking e mapeia a tela inicial / login
 
 
-  0 passing (1m)
+  0 passing (31s)
   1 failing
 
   1) Exploracao: criacao de operacao de servico no Beyond Banking
        acessa o Beyond Banking e mapeia a tela inicial / login:
-     CypressError: Timed out after waiting `60000ms` for your remote page to load.
+     CypressError: `cy.visit()` failed trying to load:
 
-Your page did not fire its `load` event within `60000ms`.
+https://beyondbanking-hml.grupomultiplica.com.br/
 
-You can try increasing the `pageLoadTimeout` value in `Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress.config.js` to wait longer.
+We attempted to make an http request to this URL but the request failed without a response.
 
-Browsers will not fire the `load` event until all stylesheets and scripts are done downloading.
+We received this error at the network level:
 
-When this `load` event occurs, Cypress will continue running commands.
-      at timedOutWaitingForPageLoad (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:132365:64)
-      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:133363:16)
-      at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
-      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:4159:41)
-      at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
-      at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1492:31)
-      at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
-      at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
-      at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1670:18)
-      at _drainQueueStep (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2380:12)
-      at _drainQueue (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2373:9)
-      at Async._drainQueues (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2389:5)
-      at Async.drainQueues (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2259:14)
+  > Error: ESOCKETTIMEDOUT
+
+Common situations why this would fail:
+  - you don't have internet access
+  - you forgot to run / boot your web server
+  - your web server isn't accessible
+  - you have weird network configuration settings on your computer
+      at <unknown> (http://localhost:56353/__cypress/runner/cypress_runner.js:133346:74)
+      at visitFailedByErr (http://localhost:56353/__cypress/runner/cypress_runner.js:132920:12)
+      at <unknown> (http://localhost:56353/__cypress/runner/cypress_runner.js:133345:11)
+      at tryCatcher (http://localhost:56353/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise._settlePromiseFromHandler (http://localhost:56353/__cypress/runner/cypress_runner.js:1492:31)
+      at Promise._settlePromise (http://localhost:56353/__cypress/runner/cypress_runner.js:1549:18)
+      at Promise._settlePromise0 (http://localhost:56353/__cypress/runner/cypress_runner.js:1594:10)
+      at Promise._settlePromises (http://localhost:56353/__cypress/runner/cypress_runner.js:1670:18)
+      at _drainQueueStep (http://localhost:56353/__cypress/runner/cypress_runner.js:2380:12)
+      at _drainQueue (http://localhost:56353/__cypress/runner/cypress_runner.js:2373:9)
+      at Async._drainQueues (http://localhost:56353/__cypress/runner/cypress_runner.js:2389:5)
+      at Async.drainQueues (http://localhost:56353/__cypress/runner/cypress_runner.js:2259:14)
   From Your Spec Code:
       at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:45:7)
+  
+  From Node.js Internals:
+    Error: ESOCKETTIMEDOUT
+        at ClientRequest.<anonymous> (<embedded>:338:107429)
+        at Object.onceWrapper (node:events:633:28)
+        at ClientRequest.emit (node:events:519:28)
+        at TLSSocket.emitRequestTimeout (node:_http_client:863:9)
+        at Object.onceWrapper (node:events:633:28)
+        at TLSSocket.emit (node:events:519:28)
+        at Socket._onTimeout (node:net:604:8)
+        at listOnTimeout (node:internal/timers:588:17)
+        at process.processTimers (node:internal/timers:523:7)
 
 
 
@@ -73,7 +90,7 @@ When this `load` event occurs, Cypress will continue running commands.
   │ Skipped:      0                                                                                │
   │ Screenshots:  1                                                                                │
   │ Video:        true                                                                             │
-  │ Duration:     1 minute, 5 seconds                                                              │
+  │ Duration:     30 seconds                                                                       │
   │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -82,7 +99,8 @@ When this `load` event occurs, Cypress will continue running commands.
 
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
      riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
-     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed) (1)               
+     .png                                                                                           
 
 
   (Video)
@@ -97,7 +115,7 @@ When this `load` event occurs, Cypress will continue running commands.
 
        Spec                                              Tests  Passing  Failing  Pending  Skipped  
   ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ ✖  criacao-operacao-servico.cy.js           01:05        1        -        1        -        - │
+  │ ✖  criacao-operacao-servico.cy.js           00:30        1        -        1        -        - │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
-    ✖  1 of 1 failed (100%)                     01:05        1        -        1        -        -  
+    ✖  1 of 1 failed (100%)                     00:30        1        -        1        -        -  
 

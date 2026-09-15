@@ -3,11 +3,13 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (dúvida bloqueante
-`mc-rat-rating-indicador-fora-do-padrao-mc-cad`, ver Ciclo 3 abaixo e
-`duvidas.md`), branch `cedente/clonar-cedente-completo-prod-hml` (a partir de
-`reviewAgents`, ainda não pushada — commits locais até o momento: fases `prospect`
-e `poc` mapeadas).
+`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida bloqueante de
+infraestrutura, `conexao-sql-server-prod-hml-inacessivel-20260915`, ver Ciclo 4
+abaixo e `duvidas.md`), branch `cedente/clonar-cedente-completo-prod-hml` (a partir
+de `reviewAgents`, ainda não pushada — commits locais até o momento: fases
+`prospect` e `poc` mapeadas, incluindo a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)`
+como catálogo fora do padrão `MC_CAD_*`, commit `5edaad0`, que já desbloqueou a
+dúvida anterior — ver Ciclo 3).
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -206,4 +208,56 @@ sucesso, regra 7 do `AGENTE.md`): `cypress/utils/mapeamentoCedente.js`
   `mapeamentoCedente.js` (catálogo + `idProposta`), mas **não pode ser inserida em
   HML** até a resposta chegar (coluna NOT NULL sem resolução). Tarefa movida para
   `tarefas/aguardando-resposta/`.
+
+### Ciclo 4 (2026-09-15) — dúvida anterior respondida e já implementada; nova dúvida (infraestrutura) ao tentar mapear `comitê`
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, checkout do que já
+existia — `git branch -vv` mostrou o HEAD em `5edaad0`, já com a resolução da
+dúvida do Ciclo 3 implementada e commitada localmente, ainda não pushada): nenhum
+código novo escrito neste ciclo.
+
+- Encontrado um script de investigação `investigar-schema-comite.cjs` já
+  preparado em `repo/` (untracked, não commitado — convenção normal, ver
+  `docs/conhecimento-geral.md`), pronto pra levantar colunas/FKs reais das 18
+  tabelas da fase `comitê` contra PROD. Ao rodar (`node investigar-schema-comite.cjs`),
+  o processo ficou sem produzir nenhuma saída por mais de 8 minutos (bem acima do
+  tempo que as investigações reais dos Ciclos 2/3 levaram) — sinal de conexão
+  travada, não consulta lenta.
+- **Diagnóstico** (script `.cjs` temporário descartável, mesmo padrão de
+  investigação pontual, removido antes de terminar o ciclo): um teste de TCP puro
+  (`net.createConnection`, sem passar pelo driver `mssql`/autenticação Windows)
+  contra `PROD_DB_HOST:PROD_DB_PORT` deu timeout em ~8s. Testado também
+  `HOMOLOG_DB_HOST:HOMOLOG_DB_PORT` (mesmo `.env`) — **também** timeout. Ou seja,
+  não é um problema específico de PROD (nem de credencial/driver): a máquina
+  não tinha rota de rede para o SQL Server (nem PROD nem HML) neste momento —
+  bem diferente do que se viu nos Ciclos 2/3, quando a mesma investigação
+  funcionou normalmente.
+- **Isso não é uma dúvida de escopo/negócio** (não é "como classificar uma
+  tabela", é infraestrutura da máquina) — mas como não há decisão nenhuma a
+  tomar sozinho que resolva isso (rede/VPN não é algo que o subAgent controla) e
+  o ciclo não pode prosseguir sem conseguir consultar o schema real, registrado
+  como dúvida bloqueante mesmo assim (`duvidas.md`,
+  `conexao-sql-server-prod-hml-inacessivel-20260915`), pedindo ao Thiago para
+  confirmar VPN/rede — ver seção nova em `../../docs/conhecimento-geral.md`
+  sobre esse tipo de bloqueio.
+- **Cuidado ao registrar uma segunda dúvida para a mesma tarefa** (a primeira já
+  estava `Status: respondida` no arquivo): **não** criar um segundo bloco
+  `## <id>` com o mesmo título — a pré-checagem do `run-cycle.ps1`
+  (`Test-DuvidaRespondida`) faz `[regex]::Split` por `^## ` e retorna no
+  **primeiro** bloco cujo conteúdo comece com o id, então um segundo bloco com o
+  mesmo título nunca seria visto (o primeiro, já respondido, faria a
+  pré-checagem devolver `$true` incorretamente e a tarefa voltaria pra
+  `pendentes/` sem a dúvida nova ter sido respondida de verdade). Consolidado
+  num único bloco: o campo `Status:` (sem sufixo) reflete sempre a pergunta
+  atualmente em aberto; a pergunta/resposta já resolvida vai para
+  `Status-historico-N:`/`Pergunta-N:`/`Resposta-N:` (sufixo numérico), que não
+  batem com o regex `^Status:\s*respondida\s*$` da pré-checagem. Ver também a
+  seção já existente sobre título de dúvida ter que ser o id exato — este é um
+  problema relacionado, mas distinto (não é o título que estava errado, era ter
+  dois blocos com o título certo).
+- Nenhum arquivo de investigação temporário ficou para trás (`test-tcp-temp.cjs`
+  e o `schema-comite-out.json` vazio de uma tentativa anterior interrompida
+  foram removidos); `investigar-schema-comite.cjs` continua em `repo/`
+  (untracked, não é escopo pra commitar), pronto pra ser rodado assim que a
+  rede/VPN for confirmada — não precisa ser reescrito.
 

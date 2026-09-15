@@ -205,6 +205,30 @@ capacidade ociosa da outra conta.
   tabela acima em vez disso (ver módulo `geral`, tarefa
   `20260914130450-resolucao-viewport-e-video-execucao`).
 
+## Conectividade com `beyond-hml.grupomultiplica.com.br` — timeout de rede ao IP interno, distinto dos sintomas de `cy.origin` já catalogados (2026-09-15)
+
+- Módulo `POC`, tarefa `20260915131339-criar-prospect-cedente-cnpj`: `cypress run` falhou logo no
+  primeiro `cy.visit(ambiente.appBaseUrl)` (dentro do setup de `cy.session`, **antes** de qualquer
+  interação com Keycloak) com `Error: connect ETIMEDOUT 10.101.10.254:443`.
+- Confirmado fora do Cypress: `curl --max-time 20 https://beyond-hml.grupomultiplica.com.br/`
+  também deu timeout de conexão (2 tentativas). `nslookup` mostra que `beyond-hml` resolve para um
+  IP **privado** (`10.101.10.254`), enquanto `keycloak-new-2.grupomultiplica.com.br` (que respondeu
+  normalmente, `403` mas conectou) resolve para IPs públicos (Cloudflare). Ou seja: o host da
+  aplicação em si só é alcançável de dentro de alguma rede privada/VPN, e esse acesso estava
+  indisponível no momento do teste, mesmo com internet pública/DNS funcionando normalmente.
+- **Diferente dos sintomas já catalogados** (`cy.origin() failed to create a spec bridge...`,
+  timeout de 60s carregando a página do Keycloak, `ResizeObserver loop...`) — todos esses ocorrem
+  **depois** de alcançar a aplicação/Keycloak. Este é um bloqueio de conectividade **antes** de
+  qualquer interação, ao IP interno da aplicação em si.
+- Nenhuma documentação de nenhum Supervisor menciona a máquina precisar de VPN até agora — mas
+  módulos anteriores (`mop`) já completaram login/navegação nesta mesma máquina com sucesso em
+  outras ocasiões, então isso provavelmente é intermitente (rede/VPN instável), não uma limitação
+  permanente do ambiente de execução. Se qualquer módulo notar `ETIMEDOUT` para um IP privado
+  (`10.101.x.x`) ao tentar alcançar `beyond-hml` (ou qualquer outro host da aplicação), tratar como
+  esse mesmo tipo de bloqueio — não confundir com os sintomas de `cy.origin`/Keycloak já
+  catalogados acima, e registrar dúvida bloqueante em vez de insistir em múltiplas tentativas
+  seguidas.
+
 ## Git — branch nova pode não aparecer sem `fetch`
 
 - Um checkout local (`repo/` do Agent Master ou de um subAgent) pode não listar uma branch remota
