@@ -238,3 +238,36 @@ normal depois de consumida) lançava erro em vez de simplesmente não fazer nada
   motivo de sempre neste módulo: exigiria escolher um usuário real de PROD, decisão que não é da
   automação — a remoção em si está coberta de forma direta e determinística pelo `node:test`.
   Fixture commitada permanece como template vazio (`{}`).
+
+## Correção: parâmetros ausentes da clonagem única deixam de quebrar a execução (2026-09-15)
+
+Tarefa `20260915114846-nao-quebrar-quando-parametros-clonagem-unica-ausentes`, branch
+`keycloakUser/nao-quebrar-parametros-clonagem-unica-ausentes` (aguardando merge do Agent Master na
+`reviewAgents`). Bug relatado pelo Thiago em teste manual: rodar `npx cypress run` sem
+`tags=@keycloakUsuario` (suíte completa) — caso em que `usuarioOrigem`/`novoUsername`/`novaSenha`
+nunca são passados de propósito — lançava um `Error` bloqueante no step do cenário
+`@keycloakUsuario`, interrompendo a execução. Mesmo padrão de design já aplicado à fixture vazia do
+modo em lote (`20260915111027`, ver acima): trocado de `throw` para log + segue.
+
+- Novas funções puras em `clonagemUsuarioKeycloak.js`: `parametrosClonagemUnicaCompletos({
+  usuarioOrigem, novoUsername, novaSenha })` (`true` só com os 3 presentes) e a constante
+  `MENSAGEM_PARAMETROS_CLONAGEM_UNICA_AUSENTES` (mesmo texto orientativo que antes era lançado como
+  erro). Cobertas por `node:test`: nenhum parâmetro, só parte, e os 3 presentes.
+- Step `gerenciamentoDeUsuarios.js` (`When` do cenário `@keycloakUsuario`): troca o `throw` por
+  `cy.logExecucao(MENSAGEM_PARAMETROS_CLONAGEM_UNICA_AUSENTES)` e não chama
+  `cy.clonarUsuarioKeycloak` quando os parâmetros estão incompletos — usa uma flag de módulo
+  (`clonagemUnicaPulada`, mesmo padrão de variável de estado entre steps já usado para
+  `usuarioClonado`/`resultadosLote`) para o `Then` correspondente saber que deve pular a asserção
+  em vez de falhar por `usuarioClonado` continuar `null`.
+- Com os 3 parâmetros informados, comportamento inalterado (reconfirmado no autoteste e2e).
+- `README.md`/`CLAUDE.md` do repo atualizados (seção "Clonagem de Usuário (Keycloak)" do
+  `CLAUDE.md`, bullet do modo único no `README.md`).
+- **Autoteste rodado**: `npm run lint` (0 erros), `npm run test:safety` (45/45, 3 novos). Rodei o
+  cenário `@keycloakUsuario` fim a fim contra o Keycloak real em 3 casos: (1) suíte completa sem
+  `tags` — passou, log confirmado, nenhum erro; (2) só `usuarioOrigem` informado (usuário fictício
+  inexistente em PROD, mesmo padrão de autotestes anteriores deste módulo) — passou, mesmo log,
+  nenhuma tentativa de clonagem parcial; (3) os 3 parâmetros completos com o mesmo usuário
+  fictício — falhou como esperado (`Usuário de origem "..." não encontrado em produção`),
+  confirmando que o modo único com parâmetros completos não mudou. Também revalidei
+  `@clonarUsuariosEmLote` com a fixture vazia (`{}`, estado commitado) — inalterado, log
+  informativo de sempre, fixture permaneceu `{}`.
