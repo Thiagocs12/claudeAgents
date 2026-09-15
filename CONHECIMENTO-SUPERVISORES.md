@@ -21,6 +21,15 @@ haver outro Supervisor/agente escrevendo em paralelo.
   Vínculos/Grupos e Permissões) antes de virar alvo de agentes; branch `reviewAgents` criada a
   partir da `master` especificamente para este fluxo. Primeiro módulo: `keycloakUser` (clonagem de
   usuário Keycloak PROD→HML com novo username/senha).
+- **`SupTestesFrontEnd/`** — "Sup TestesFrontEnd" (criado em 2026-09-15). **Estruturalmente
+  diferente dos outros dois**: não codifica/integra num repositório, faz QA exploratório —
+  refina um objetivo de teste com o Thiago, um subAgent tenta cumprir esse objetivo navegando de
+  verdade na aplicação (Cypress só como ferramenta de execução, código descartável por tarefa, sem
+  suíte persistente), narra cada tentativa passo a passo, grava vídeo, e o resultado fica
+  aguardando aprovação do Thiago antes de qualquer coisa. Só depois de aprovado é que vira uma
+  tarefa nova no `SupE2eAutomation` (hand-off manual, feito pelo Supervisor, nunca automático).
+  Sem `agent-master`, sem `repo/` — ver seção "Padrão estrutural" abaixo pra variação completa.
+  Ainda sem nenhum módulo/subAgent criado (esqueleto apenas: Supervisor + Status Watcher).
 
 ## Pool de contas do Claude Code (`%USERPROFILE%\.claude-accounts\`)
 
@@ -32,6 +41,8 @@ haver outro Supervisor/agente escrevendo em paralelo.
     fixa para o Agent Master, `contaA` fixa para o `StatusWatcher`.
   - `SupAutomacaoUteis`: revezamento de subAgents começando em `contaA` (`keycloakUser` = 1º
     módulo = `contaA`), `contaB` fixa para o Agent Master, `contaB` fixa para o `StatusWatcher`.
+  - `SupTestesFrontEnd` (3º Supervisor, sem Agent Master): revezamento de subAgents começando em
+    `contaA` (ainda sem nenhum módulo criado), `contaB` fixa para o `StatusWatcher`.
 - Um Supervisor novo que precisar de conta própria (ou se a concorrência de rate-limit virar
   problema real) deve criar uma nova (`contaC`, `contaD`, ...) em vez de continuar empilhando em
   `contaA`/`contaB` — isso exige um login interativo do Thiago na máquina na hora de criar.
@@ -41,6 +52,8 @@ haver outro Supervisor/agente escrevendo em paralelo.
   subAgents: 1º Supervisor criado = `contaA`, 2º = `contaB`, e assim por diante.
   - `SupE2eAutomation` (1º Supervisor) → **`contaA`**.
   - `SupAutomacaoUteis` (2º Supervisor) → **`contaB`**.
+  - `SupTestesFrontEnd` (3º Supervisor) → **`contaA`** (rodízio volta ao início; coincide com
+    `SupE2eAutomation`, aceito pelo Thiago em 2026-09-15).
   - Isso é sobre a **sessão interativa do Supervisor em si** (a conversa com o Thiago, tipo esta
     aqui), não sobre os agentes automatizados internos dele — aqueles continuam com suas próprias
     atribuições já documentadas acima (ex.: dentro do `SupE2eAutomation`, o `StatusWatcher` também
@@ -136,6 +149,33 @@ haver outro Supervisor/agente escrevendo em paralelo.
     referência histórica do modelo anterior, aguardando a revisão manual de sempre.
 - Protocolo de dúvidas: cada agente registra em `duvidas.md`; só o Supervisor (repassando o humano
   responsável) marca uma dúvida como respondida — nenhum agente responde a própria dúvida.
+
+### Variação: Supervisor de QA exploratório, sem código persistente (`SupTestesFrontEnd`, 2026-09-15)
+
+Nem todo Supervisor produz/integra código — o `SupTestesFrontEnd` é o primeiro exemplo de um
+padrão estrutural diferente, que deve ser reaplicado (não o padrão com Agent Master) para
+qualquer Supervisor futuro cujo trabalho seja validar/testar em vez de codificar:
+
+- **Sem `agent-master/`, sem `repo/` clonado por módulo.** Automação de browser (aqui, Cypress) é
+  só ferramenta de execução — o código escrito para uma tarefa é descartável, não persiste como
+  suíte. Conhecimento acumulado é só texto (`docs/documentacao.md`), nunca um módulo de código
+  compartilhado entre tarefas.
+- **Relatório é narrativo, passo a passo** ("tentei X → aconteceu Y"), registrado dentro do
+  próprio arquivo de tarefa à medida que a execução acontece (não só um veredito no final) — dá
+  contexto de verdade pra quem for revisar ou automatizar depois.
+- **Toda execução concluída gera vídeo** (Cypress: `video: true`) e vai para
+  `tarefas/aguardando-aprovacao/` — nunca direto para `concluidas/`. Só o Supervisor, numa
+  conversa com o humano responsável, decide aprovar (segue pro passo seguinte) ou reprovar (volta
+  pra refinamento). O subAgent nunca decide isso sozinho, mesmo que o teste tenha "passado".
+- **Hand-off entre Supervisores é possível, mas é uma exceção deliberada e só depois de
+  aprovação humana** — `SupTestesFrontEnd`, quando aprovado, cria uma tarefa nova em
+  `SupE2eAutomation/subagents/<modulo>/tarefas/pendentes/` (mesmo nome de módulo nos dois lados,
+  quando possível) para virar teste automatizado permanente. Regra geral: um Supervisor só pode
+  **criar um arquivo de tarefa novo** na fila de outro Supervisor, nunca editar/mexer em qualquer
+  outra coisa da pasta alheia (`AGENTE.md`, docs, duvidas, etc.), e isso deve ser explicitamente
+  autorizado pelo humano responsável a cada vez — não vira uma automação silenciosa entre
+  Supervisores. Se o módulo de destino não existir do lado do outro Supervisor, quem cria esse
+  módulo é o Supervisor dono dele, nunca o de origem.
 
 ## GitHub CLI (`gh`) — necessário para qualquer Agent Master abrir PR
 
