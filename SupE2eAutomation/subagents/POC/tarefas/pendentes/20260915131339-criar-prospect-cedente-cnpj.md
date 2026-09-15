@@ -1,6 +1,6 @@
 ---
 id: 20260915131339-criar-prospect-cedente-cnpj
-modulo: mop
+modulo: POC
 tipo: automacao-ui
 solicitado_por: Thiago
 data: 2026-09-15
@@ -18,9 +18,7 @@ Beyond Backoffice → Comercial → Prospect → Novo Prospect
 ```
 
 Login com o perfil `master` (reaproveitar `cy.loginComoPerfil('master')`, já implementado pelo
-módulo `geral` — não reimplementar login). Reaproveitar também a navegação até o dashboard
-Comercial já mapeada na tarefa do Monitor Diário (ver `docs/documentacao.md` deste módulo, seção
-"Navegação até a tela Comercial").
+módulo `geral` — não reimplementar login).
 
 No formulário de "Novo Prospect", preencher **apenas o campo de CNPJ** com o valor
 `67.903.430/0001-94`. Segundo o Thiago, o sistema consulta o CNPJ e preenche automaticamente os
@@ -38,7 +36,7 @@ vez de inventar um valor.
 - Autoteste rodado ao final (`cypress run` no spec criado), com vídeo gerado normalmente em
   `cypress/videos/` (o Thiago quer acompanhar essa etapa pelo vídeo).
 - Seguir o padrão de arquitetura já estabelecido no repositório (Page Object da tela de Prospect,
-  Etapa/Esteira conforme o padrão já usado no Monitor Diário, camada fina de Cucumber).
+  Etapa/Esteira conforme o padrão de `mop`, camada fina de Cucumber).
 
 ## Fora de escopo (não implementar nesta tarefa)
 - Qualquer etapa da esteira posterior à criação do Prospect.
@@ -48,5 +46,6 @@ vez de inventar um valor.
 ## Material de apoio
 - CNPJ de teste: `67.903.430/0001-94`.
 - Caminho de navegação: Beyond Backoffice → Comercial → Prospect → Novo Prospect (mesmo dashboard
-  Comercial já mapeado pela tarefa do Monitor Diário — ver seção "Navegação até a tela Comercial"
-  em `docs/documentacao.md` deste módulo).
+  Comercial já mapeado pelo módulo `mop` — ver `../mop/docs/documentacao.md`, seção "Navegação até
+  a tela Comercial", para os aprendizados de navegação até o dashboard Comercial, que devem ser
+  reaproveitados aqui em vez de redescobertos do zero).

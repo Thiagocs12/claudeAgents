@@ -209,3 +209,16 @@ precisar de algo parecido:
   e simplesmente cria um novo PR contínuo (regra 3 do `AGENTE.md`), com o corpo explicando que foi
   recriado por causa do merge anterior. Não precisa perguntar ao Thiago nem esperar decisão dele —
   abrir/manter esse PR já é descrito como automático e independente de aprovação.
+
+## Script Node temporário pra explorar schema SQL fora do Cypress (`INFORMATION_SCHEMA`, `sys.*`) — 2026-09-15, módulo `cedente`
+
+Ao precisar investigar colunas/FKs reais de uma tabela via `dbClient.cjs`
+(`executeQuery`/`prodConfig`/`hmlConfig`) sem passar pelo Cypress (ex.: pra montar um
+mapeamento de entidade antes de escrever o `.feature`), um script `.cjs` solto em `/tmp`
+(ou qualquer pasta fora do repo) **não resolve `require('dotenv')`/`require('mssql/...')`**
+— `node_modules` só existe dentro do clone (`repo/`). Crie o script temporário **dentro
+de `repo/`** (raiz do clone, onde `node_modules` já foi instalado), rode com
+`node nome-do-script.cjs`, e **apague antes de commitar** (nunca faz parte do escopo da
+tarefa, é só uma ferramenta de investigação pontual) — `git status` antes do commit
+confirma que não sobrou. Vale para qualquer módulo que precisar inspecionar schema real
+de PROD/HML fora de uma spec Cypress.

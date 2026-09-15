@@ -1,4 +1,4 @@
-# AGENTE — SubAgent mop
+# AGENTE — SubAgent POC
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
@@ -26,11 +26,10 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    feita no passo 2), deixe um aviso em `agent-master/fila-merge/pendentes/` (branch + id da
    tarefa) — o Agent Master faz merge direto na `reviewAgents` (sem PR por tarefa, ver seção 3.3
    do `CLAUDE.md` do Supervisor) — atualize `docs/documentacao.md` com o que foi
-   implementado/aprendido — e, se o aprendizado
-   valer para qualquer módulo (não só o `mop`), registre também em
-   `../../docs/conhecimento-geral.md` (releia o arquivo imediatamente antes de escrever, para não
-   perder edição concorrente de outro agente) — e mova o arquivo da tarefa de `executando/` para
-   `concluidas/`.
+   implementado/aprendido — e, se o aprendizado valer para qualquer módulo (não só o `POC`),
+   registre também em `../../docs/conhecimento-geral.md` (releia o arquivo imediatamente antes de
+   escrever, para não perder edição concorrente de outro agente) — e mova o arquivo da tarefa de
+   `executando/` para `concluidas/`.
 8. Se travar numa dúvida bloqueante (inclusive dúvida sobre qual padrão do projeto seguir):
    registre em `duvidas.md`, mova a tarefa de `executando/` para `aguardando-resposta/`, e encerre
    o ciclo sem terminar a tarefa.
@@ -44,8 +43,19 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 
 ## Escopo deste módulo
 
-O módulo `mop` cobre as telas e fluxos de submissão/validação de operações do MOP (ex.: Monitor
-Diário, análise de operação). Segue o mesmo padrão de arquitetura documentado no `README.md`/
-`CLAUDE.md` do repositório (Pages/Etapas/Esteiras, Cucumber como camada fina), reaproveitando a
-fundação de login (`LoginPage`, `cy.loginComoPerfil`) já implementada pelo módulo `geral` — não
-reimplemente login, apenas use o comando já existente.
+O módulo `POC` é a prova de conceito do fluxo comercial completo a partir da criação de um
+Prospect: Beyond Backoffice → Comercial → Prospect → Novo Prospect (criação do cedente por CNPJ) →
+esteira → preenchimento de pleito → demais etapas do fluxo, conforme forem sendo refinadas e
+registradas tarefa a tarefa pelo Supervisor junto com o Thiago. Segue o mesmo padrão de
+arquitetura documentado no `README.md`/`CLAUDE.md` do repositório (Pages/Etapas/Esteiras, Cucumber
+como camada fina), reaproveitando a fundação de login (`LoginPage`, `cy.loginComoPerfil`) já
+implementada pelo módulo `geral` — não reimplemente login, apenas use o comando já existente. Para
+a navegação até o dashboard Comercial (Beyond Backoffice → Comercial), reaproveite os aprendizados
+já documentados pelo módulo `mop` (ver `../mop/docs/documentacao.md`, seção "Navegação até a tela
+Comercial") em vez de redescobrir do zero.
+
+**Abordagem deliberadamente incremental (pedido explícito do Thiago, 2026-09-15):** este módulo
+avança por etapas curtas e sequenciais, uma tarefa por vez, cada uma validada com vídeo antes de
+avançar para a próxima. Não tente implementar o fluxo inteiro (Prospect → esteira → pleito → etc.)
+de uma vez só numa única tarefa — implemente exatamente o que a tarefa pede, sem antecipar etapas
+futuras que ainda não foram refinadas com o Thiago.

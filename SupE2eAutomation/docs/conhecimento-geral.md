@@ -69,8 +69,9 @@ ciclos).
 - **Agent Master**: sempre fixo em `contaB`.
 - **SubAgents de módulo**: revezam `contaA`/`contaB` pela ordem de criação (1º módulo = `contaA`,
   2º = `contaB`, 3º = `contaA`, ...). Ver seção 3.0 do `CLAUDE.md` do Supervisor.
-- Atribuições atuais: `geral` = `contaA` (1º módulo), `mop` = `contaB` (2º módulo). Próximo módulo
-  novo = `contaA`.
+- Atribuições atuais: `geral` = `contaA` (1º módulo), `mop` = `contaB` (2º módulo), `POC` = `contaA`
+  (3º módulo, criado em 2026-09-15 — POC do fluxo comercial Prospect → esteira → pleito). Próximo
+  módulo novo = `contaB`.
 
 ## `.env` / variáveis de ambiente — quem cuida do quê
 
