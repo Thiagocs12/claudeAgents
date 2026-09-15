@@ -343,6 +343,42 @@ em vez de insistir nela e arriscar um ciclo perdido.
   qualquer `run-cycle.ps1` daquele Supervisor), mas nenhum arquivo deles foi alterado por este
   Supervisor.
 
+## `git add`/`git commit` no repo raiz (`claudeAgents`) — índice compartilhado entre Supervisores concorrentes (2026-09-15)
+
+- Os três Supervisores (e seus agentes automatizados) commitam no **mesmo repositório git**
+  (`C:\Multiplica\claudeAgents`, remoto `Thiagocs12/claudeAgents`) — não há um `.git` por
+  Supervisor. Isso significa que o índice (staging area) e o `HEAD` são um recurso único e
+  compartilhado: se dois processos (ex.: uma sessão interativa do Supervisor + um ciclo automático
+  de outro Supervisor/agente rodando ao mesmo tempo) fizerem `git add` por perto um do outro, um
+  `git add <arquivos específicos>` de um processo pode acabar sendo commitado junto por um
+  `git commit`/`git add -A` do OUTRO processo, sob a mensagem dele — sem erro, sem conflito
+  aparente, só um commit "levando junto" arquivo que não é dele.
+- **Observado ao vivo (2026-09-15, sessão interativa do `SupAutomacaoUteis`):** a sessão rodou
+  `git add` em 5 arquivos próprios (correção de um bug em `duvidas.md`/`AGENTE.md`/`CLAUDE.md` do
+  módulo `cedente`) e, ao conferir `git status` logo em seguida, viu dezenas de arquivos de
+  `SupE2eAutomation`/`SupTestesFrontEnd` (subAgents automáticos rodando em paralelo) já staged
+  também — não foi essa sessão que os adicionou. Ao tentar `git commit -F <msg> -- <5 arquivos
+  próprios>` (pathspec explícito, que deveria isolar só esses arquivos), o commit não apareceu no
+  histórico com a mensagem esperada: uma Scheduled Task de outro Supervisor rodou `git commit`
+  (provavelmente `git add -A` antes) entre o `git add` e o `git commit` desta sessão, e os 5
+  arquivos acabaram integrados a um commit alheio (`de06e02`/`7cc29a9`) — conteúdo preservado
+  corretamente (nada foi perdido ou corrompido), só a atribuição/mensagem do commit ficou
+  "errada" do ponto de vista de quem esperava ver seu próprio commit.
+- **Não é uma falha grave neste caso** (nenhum dado perdido, working tree nunca foi tocado à
+  força) — mas é uma janela de corrida real que existe sempre que dois processos escrevem no
+  mesmo índice quase ao mesmo tempo, algo bem provável com 3 Supervisores + Agent Masters +
+  Status Watchers rodando em ciclos de 5-15min concorrentes.
+- **Mitigação usada nesse incidente**: em vez de tentar `git add`/`git reset` pra "consertar" o
+  índice compartilhado (arriscando desfazer o staged de outro processo em pleno voo), confirmar
+  via `git diff HEAD -- <arquivos>` que o conteúdo esperado já estava commitado (mesmo que sob
+  outra mensagem) e seguir sem novas tentativas de commit — mexer no índice compartilhado no meio
+  de uma corrida tende a piorar, não corrigir.
+- **Não implementado ainda, considerar se o problema recorrer**: algum mecanismo de lock antes de
+  `git add`/`git commit` no repo raiz (ex.: um arquivo-lock por Supervisor, ou serializar via
+  `Mutex` do Windows no `run-cycle.ps1`) — hoje nenhum Supervisor faz isso, é puramente um
+  workaround manual quando percebido. Registrar aqui qualquer novo incidente (perda real de dado,
+  não só atribuição errada de commit) pra reavaliar a prioridade de resolver isso de verdade.
+
 ## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
 
 - O cache de binário do Cypress é **global por usuário do Windows**
