@@ -113,3 +113,29 @@
   `cypress/videos/` em ambas.
 - Branch `feature/resolucao-viewport-e-video-execucao` (commits `792e06f` + `45fb200`) commitada,
   pushada, e aviso deixado em `agent-master/fila-merge/pendentes/` para merge em `reviewAgents`.
+
+## Descartado (sem merge): reverter handler de ResizeObserver (tarefa 20260915110528-reverter-handler-resizeobserver)
+
+- A tarefa pedia remover, do handler de `uncaught:exception` em `cypress/support/e2e.js`, a
+  checagem específica de `ResizeObserver loop completed with undelivered notifications`
+  (introduzida no commit `a2f2d88`, tarefa `20260914130450-resolucao-viewport-e-video-execucao`),
+  mantendo intacto o tratamento do erro conhecido do widget de menu do Beyond
+  (`Cannot read properties of undefined (reading 'content')`).
+- **A reversão foi implementada e funcionou tecnicamente**: branch
+  `feature/reverter-handler-resizeobserver`, commit `2866b45`, partindo da `reviewAgents`
+  atualizada (`9f38a75`). Autoteste (`mop/mop-monitor-diario.feature`) confirmou que, sem o
+  handler, o `ResizeObserver loop completed with undelivered notifications` volta a derrubar o
+  teste normalmente (0 passing / 1 failing) no cenário "Analisar uma operação que não está em
+  Inclusão OPE", em `https://beyond-hml.grupomultiplica.com.br/mop/monitor` — ou seja, esse erro
+  continua ocorrendo de verdade na tela do Monitor Diário do MOP; só deixou de ser mascarado.
+- **Decisão do Thiago (via `duvidas.md`): descartar a reversão.** O mascaramento introduzido no
+  commit `a2f2d88` permanece valendo — não houve mudança de comportamento. Motivo: remover o
+  handler não corrige a causa raiz (o ResizeObserver na tela do Monitor Diário), só volta a expor
+  uma falha de teste já existente; sem uma correção real da causa pronta, o Thiago preferiu manter
+  o teste passando (erro mascarado) a deixá-lo falhando.
+- Branch `feature/reverter-handler-resizeobserver` (commit `2866b45`) **abandonada localmente, sem
+  push e sem aviso em `agent-master/fila-merge/pendentes/`** — não há nada para mergear. Repo
+  voltou para `reviewAgents`.
+- Se a causa raiz do ResizeObserver no Monitor Diário do MOP for investigada/corrigida de verdade
+  no futuro, deve virar uma tarefa nova (do módulo `mop`, já que é específica dessa tela) — não
+  reaproveitar esta.

@@ -322,3 +322,43 @@
 - Nenhuma dúvida nova registrada neste ciclo. Nenhum aprendizado cross-módulo novo além da nota
   técnica do BOM acima (não achei necessário replicar em `../docs/conhecimento-geral.md` por não
   ter causado o bloqueio real — mantenho só aqui para não reinvestigar à toa num ciclo futuro).
+
+## 2026-09-15 — Ciclo: merge direto de `keycloakUser/normalizar-case-usuario-minusculas` (retomando merge de teste deixado incompleto)
+
+- **Estado inicial de `repo/` neste ciclo**: já estava em `reviewAgents`, mas com um merge de
+  teste **em andamento e incompleto** (`MERGE_HEAD` apontando pra
+  `keycloakUser/normalizar-case-usuario-minusculas`, conflitos já resolvidos e staged, porém sem
+  commit) — sinal de que um ciclo anterior (não capturado neste arquivo) chegou a rodar o merge de
+  teste local e resolver conflitos, mas não terminou a etapa (rodar os testes / finalizar / push)
+  antes do fim do ciclo. Retomado: dei `git commit --no-edit` pra concluir esse merge de teste
+  local (ainda não publicado) e segui o fluxo normal da regra 5 a partir daí.
+- **`fila-merge/pendentes/`**: 1 aviso processado — `20260915100931-normalizar-case-usuario-minusculas.md`
+  (módulo `keycloakUser`, branch `keycloakUser/normalizar-case-usuario-minusculas`: normaliza
+  `username`/`usuarioOrigem` para minúsculas antes de usar no Keycloak, corrigindo falha de
+  `expect` no cenário `@keycloakUsuario` por divergência de case, não de dado real).
+  - Merge de teste local contra `reviewAgents`: conflito (já resolvido pelo ciclo anterior,
+    conforme acima) — só faltou o commit, que concluí agora.
+  - `.env.example`: sem variável nova (`git diff 78ea304 origin/keycloakUser/normalizar-case-usuario-minusculas -- .env.example` vazio).
+  - `npm run lint`: 0 erros (mesmos 4 warnings pré-existentes, arquivos não tocados por esta
+    branch). `npm run test:safety`: 38/38 (bate com o relatado pelo subAgent no aviso).
+  - `npx cypress run --env tags=@keycloakUsuario,usuarioOrigem=usuario-inexistente-teste-autoteste-agente,...`
+    contra o Keycloak real: mesma falha esperada já documentada pelo subAgent ("Usuário de origem
+    ... não encontrado em produção") — guard-rail funcionando, não regressão. Confirmado que só o
+    spec `gerenciamentoDeUsuarios.feature` falha (os demais specs da suíte completa passam/ficam
+    pending normalmente). `cypress/screenshots/` gerado pelo run removido antes do push (artefato
+    local).
+  - Merge finalizado e pushado direto em `reviewAgents` (commit `a1de77b`, sem PR). Aviso movido de
+    `fila-merge/pendentes/` para `fila-merge/concluidos/`. Branch local
+    `keycloakUser/normalizar-case-usuario-minusculas` deletada após o merge (branch remota
+    mantida).
+- **PR único `reviewAgents → master` (PR #6)**: confirmado `OPEN` via `gh pr list` (token válido,
+  sem pendência), não recriado — reflete o novo commit automaticamente.
+- **`fila-merge/aguardando-aprovacao/`**: vazio (legado já todo processado, nada novo).
+- **Sincronização da pasta manual** (`C:\multiplica\cypress-uteis`): working tree limpa, já em
+  `reviewAgents`, `git pull` trouxe o novo commit (`78ea304` → `a1de77b`, fast-forward).
+  `node_modules` presente, não precisou `npm install`. Nomes de variáveis de `.env` comparados
+  (sem exibir valores) contra `repo/.env` — idênticos, nenhuma cópia necessária.
+- Nenhuma dúvida nova registrada neste ciclo. Nenhum aprendizado cross-módulo novo — o único ponto
+  digno de nota (merge de teste local deixado a meio caminho por um ciclo anterior, sem commit) já
+  é coberto pela regra geral de retomar trabalho em andamento; não é um padrão novo que precise
+  virar entrada própria em `../docs/conhecimento-geral.md`.

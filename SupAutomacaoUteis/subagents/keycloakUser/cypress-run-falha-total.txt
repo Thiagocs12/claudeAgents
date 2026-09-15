@@ -1,0 +1,191 @@
+
+(node:28424) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+◇ injected env (25) from .env // tip: ⌘ suppress logs { quiet: true }
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.14.2                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          5 found (gerenciamentoDeEsteiras.feature, gerenciamentoDeGruposPermissoes.feat │
+  │                 ure, gerenciamentoDeProdutos.feature, gerenciamentoDeUsuarios.feature, gerenci │
+  │                 amentoDosVinculos.feature)                                                     │
+  │ Searched:       **/*.feature                                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  gerenciamentoDeEsteiras.feature                                                 (1 of 5)
+
+
+  Sincronização de Dados das Esteiras
+    - Copiar e Sincronizar uma Esteira e suas Dependências
+
+
+  0 passing (47ms)
+  1 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      1                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     gerenciamentoDeEsteiras.feature                                                  │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  gerenciamentoDeGruposPermissoes.feature                                         (2 of 5)
+
+
+  Sincronização de Grupos e Permissões do Keycloak
+    - Copiar e Sincronizar Grupos, Roles e seus Vínculos
+
+
+  0 passing (40ms)
+  1 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      1                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     gerenciamentoDeGruposPermissoes.feature                                          │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  gerenciamentoDeProdutos.feature                                                 (3 of 5)
+
+
+  Sincronização de Dados de Produtos
+    - Copiar e Sincronizar um Produto e suas Dependências
+
+
+  0 passing (38ms)
+  1 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      1                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     gerenciamentoDeProdutos.feature                                                  │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  gerenciamentoDeUsuarios.feature                                                 (4 of 5)
+
+
+  Clonagem de Usuário do Keycloak
+    - Clonar um usuário de Produção para Homologação com novo username e senha
+[clonarUsuariosKeycloakEmLote] 0/1 usuário(s) clonado(s) com sucesso.
+1 com dúvida bloqueante:
+  - "usuario-inexistente-teste-autoteste-agente" -> "usuario-inexistente-teste-autoteste-agente.hml": Usuário de origem "usuario-inexistente-teste-autoteste-agente" não encontrado em produção (realm multiplicacapital).
+    √ Clonar em lote os usuários definidos no fixture de usuários para clonar (2760ms)
+
+
+  1 passing (3s)
+  1 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        2                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      1                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     2 seconds                                                                        │
+  │ Spec Ran:     gerenciamentoDeUsuarios.feature                                                  │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  gerenciamentoDosVinculos.feature                                                (5 of 5)
+
+
+  Sincronização de Vínculos de Esteira entre Produção e Homologação
+    - Sincronizar vínculos de esteira mop e poc
+
+
+  0 passing (53ms)
+  1 pending
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      1                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     0 seconds                                                                        │
+  │ Spec Ran:     gerenciamentoDosVinculos.feature                                                 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  gerenciamentoDeEsteiras.feature           49ms        1        -        -        1        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  gerenciamentoDeGruposPermissoes.fea       44ms        1        -        -        1        - │
+  │    ture                                                                                        │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  gerenciamentoDeProdutos.feature           41ms        1        -        -        1        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  gerenciamentoDeUsuarios.feature          00:02        2        1        -        1        - │
+  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ ✔  gerenciamentoDosVinculos.feature          53ms        1        -        -        1        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✔  All specs passed!                        00:03        6        1        -        5        -  
+

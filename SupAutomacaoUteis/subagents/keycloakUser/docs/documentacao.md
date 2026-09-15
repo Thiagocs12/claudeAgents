@@ -158,3 +158,83 @@ resolve os dois modos de uma vez, em vez de duas branches/correções separadas)
   email, por causa da checagem de usuário de origem/username). Não testei o caminho de sucesso
   (criação real com o email novo) fim a fim, pelo mesmo motivo de sempre: exigiria escolher um
   usuário real de PROD, decisão que não é da automação.
+
+## Correção: normalizar username para minúsculas em toda a clonagem (2026-09-15)
+
+Tarefa `20260915100931-normalizar-case-usuario-minusculas`, branch
+`keycloakUser/normalizar-case-usuario-minusculas` (aguardando merge do Agent Master na
+`reviewAgents`). Bug relatado pelo Thiago: usuário informado com maiúscula (ex.:
+`formalizacao.Automacao`) fazia o `expect` do cenário `@keycloakUsuario` falhar, porque o
+Keycloak sempre grava/retorna o username já normalizado para minúsculas
+(`formalizacao.automacao`) — o teste comparava o valor original (com maiúscula) contra o
+valor retornado (minúsculo), uma divergência de case, não de dado real.
+
+- Nova função pura `normalizarUsername(username)` em `clonagemUsuarioKeycloak.js`
+  (`(username ?? '').toLowerCase()`), coberta por `node:test` com o cenário exato do bug
+  relatado (`formalizacao.Automacao` → `formalizacao.automacao`) e casos de entrada
+  vazia/ausente.
+- Aplicada em três pontos, cobrindo os dois modos (único e em lote) de uma vez, já que ambos
+  compartilham a mesma lógica interna (`executarClonagem`):
+  1. `montarPayloadNovoUsuario` — normaliza o `username` do payload de criação, e também o
+     valor passado para `gerarEmailInvalidoUnico` (email gerado a partir do username já
+     normalizado, por consistência — não afeta a estrutura do email, só o prefixo).
+  2. `executarClonagem` (`usuariosKeycloak.js`) — `usuarioOrigem`/`novoUsername` normalizados
+     logo na entrada da função (únicas variáveis usadas daí em diante: busca de origem em
+     PROD, busca de conflito de username em HML, mensagens de dúvida bloqueante, e o valor
+     passado para `criarUsuarioEAtribuir`).
+  3. Step definition (`gerenciamentoDeUsuarios.js`) — o `expect(usuarioClonado.username)`
+     agora compara contra `normalizarUsername(Cypress.env('novoUsername'))` em vez do valor
+     bruto vindo do `--env`.
+- **Decisão de design**: normalizar no ponto de entrada de `executarClonagem` (em vez de
+  normalizar dentro de cada comando/helper que usa username, ex. `buscarUsuarioKeycloakPorUsername`)
+  porque esse é o único choke point por onde os dois modos (único e em lote) já passam — evita
+  duplicar a normalização em múltiplos call sites sem ganhar robustez adicional (todos os
+  chamadores internos desses helpers já passam pelo `executarClonagem` primeiro).
+- **Autoteste**: `npm run lint` (0 erros), `npm run test:safety` (38/38, 4 novos). Rodei de novo
+  o cenário `@keycloakUsuario` contra o Keycloak real com o mesmo usuário de origem fictício
+  (inexistente em PROD) dos autotestes anteriores deste módulo, agora com um `novoUsername` em
+  case misto (`Teste.Case.NORMALIZACAO`) — passou (falha esperada antes de chegar a criar
+  qualquer coisa, sem crash na refatoração). Não testei o caminho de sucesso completo (criação
+  real confirmando que o username fica salvo/comparado em minúsculas) pelo mesmo motivo de
+  sempre: exigiria escolher um `usuarioOrigem` real de PROD, decisão que não é da automação — a
+  normalização em si já está coberta de forma direta e determinística pelo `node:test`.
+
+## Correção: fixture de lote "consome" usuários clonados; fixture vazia deixa de ser erro (2026-09-15)
+
+Tarefa `20260915111027-remover-clonados-fixture-lote-e-fixture-vazia-nao-quebra`, branch
+`keycloakUser/remover-clonados-fixture-lote-e-fixture-vazia-nao-quebra` (aguardando merge do Agent
+Master na `reviewAgents`). Pedido do Thiago: rodar o cenário `@clonarUsuariosEmLote` repetidamente
+tentava reclonar os mesmos usuários já clonados numa execução anterior, e a fixture vazia (estado
+normal depois de consumida) lançava erro em vez de simplesmente não fazer nada.
+
+- Nova função pura `removerUsuariosClonadosComSucesso(mapaUsuarios, resultados)`
+  (`clonagemUsuarioKeycloak.js`): recebe o mapa original `usuarioProd: usuarioHml` e a lista de
+  resultados de `clonarUsuariosEmLote`, devolve um novo mapa sem as entradas cujo `usuarioProd`
+  teve `ok: true`. Coberta por `node:test` (remoção parcial, nenhuma remoção quando tudo falhou,
+  remoção total quando tudo teve sucesso, mapa/resultados vazios/ausentes).
+- `cy.clonarUsuariosKeycloakEmLote` (`usuariosKeycloak.js`), ao final do processamento: se houve
+  pelo menos 1 sucesso, grava de volta em `cypress/fixtures/usuariosParaClonar.json` (via
+  `cy.writeFile`, mesmo padrão já usado no repo — ver `commands/estoque.js`/`arquivos.js`) o mapa
+  já sem os clonados com sucesso; se não houve nenhum sucesso, não escreve nada (evita I/O
+  desnecessário e mantém a fixture bit-a-bit igual quando nada mudou).
+- **Fixture vazia deixou de ser erro**: `cy.clonarUsuariosKeycloakEmLote` lançava
+  `Error('Fixture de usuários para clonar em lote está vazia...')` quando o mapa vinha vazio — era
+  um guard-rail intencional da tarefa anterior (documentado acima, seção "clonagem em lote"). Com
+  a remoção automática, esvaziar a fixture passou a ser o resultado esperado de um lote
+  bem-sucedido, não uma configuração incompleta — trocado por `cy.logExecucao(...)` + retorno de
+  lista vazia. O step `Then` do cenário (`gerenciamentoDeUsuarios.js`) também foi ajustado: antes
+  assertava `resultadosLote.length > 0` (falharia com lista vazia), agora trata lista vazia como
+  sucesso do cenário (loga e retorna, sem assertar mais nada).
+- Modo único (`cy.clonarUsuarioKeycloak`, `@keycloakUsuario`) não foi tocado — comportamento
+  inalterado, reconfirmado no autoteste.
+- **Autoteste rodado**: `npm run lint` (0 erros), `npm run test:safety` (42/42, 4 novos). Rodei o
+  cenário `@clonarUsuariosEmLote` fim a fim contra o Keycloak real em dois casos: (1) fixture já
+  vazia (`{}`, estado commitado) — passou, log informativo confirmado, fixture permaneceu `{}`;
+  (2) fixture com um único usuário fictício inexistente em PROD (mesmo padrão de autotestes
+  anteriores deste módulo) — passou (0/1 sucesso, dúvida bloqueante), fixture permaneceu
+  inalterada ao final (confirma que só sucesso aciona a escrita). Reconfirmei também o modo único
+  com o mesmo usuário fictício — falhou como esperado, comportamento inalterado. **Não testei e2e
+  o caminho de sucesso completo** (remoção real da fixture após clonagem bem-sucedida) pelo mesmo
+  motivo de sempre neste módulo: exigiria escolher um usuário real de PROD, decisão que não é da
+  automação — a remoção em si está coberta de forma direta e determinística pelo `node:test`.
+  Fixture commitada permanece como template vazio (`{}`).

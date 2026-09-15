@@ -210,6 +210,11 @@ ciclos).
   normalmente). O token está setado dentro de `agent-master/run-cycle.ps1` (acesso total aos
   repositórios, sem expiração) — nunca exponha esse valor em documentação/log.
 - Só o Agent Master precisa de `gh` (é ele quem abre/consulta PRs); subAgents de módulo não usam.
+- **`gh pr list`/`gh pr view` retornam `[]`/vazio silenciosamente (sem erro) se o cwd não estiver
+  dentro do clone git correto** (ex.: rodar de `agent-master/` em vez de `agent-master/repo/`) — o
+  `gh` detecta o repositório pelo `remote` do diretório atual, não por config global; mesmo com
+  `GH_TOKEN` válido e `gh auth status` OK, o comando "funciona" sem erro mas não acha nada. Sempre
+  rodar comandos `gh pr *`/`gh repo *` com cwd dentro de `repo/` (2026-09-15, Agent Master).
 - **Risco de exposição do `GH_TOKEN` via log em tempo real (2026-09-14):** como o `run-cycle.ps1`
   agora grava o `stream-json` do ciclo em tempo real em `run-log.txt` (ver seção "Scheduled Tasks"
   abaixo), qualquer comando de shell que ecoe/imprima uma variável de ambiente sensível (ex.: um
@@ -342,3 +347,33 @@ ciclos).
   `pendentes/` deve esperar o mesmo padrão de ciclos vazios repetidos se depender só da
   pré-checagem por existência de arquivo — não é bug do ciclo em si, é uma lacuna conhecida da
   pré-checagem.
+
+## `mop/mop-monitor-diario.feature` — terceiro sintoma catalogado: botão desabilitado (`Mui-disabled`) (2026-09-15)
+
+- Depois do Thiago liberar o aviso `20260914125955-atualizar-claude-md-fluxo-integracao` de
+  `fila-merge/pausados/` para nova tentativa, o Agent Master rodou `npm test` uma única vez contra
+  o merge de teste local (branch só docs, sem tocar `cypress/e2e/**`): `shared/login.feature` 2/2
+  passando, mas `mop/mop-monitor-diario.feature` falhou de novo com um sintoma **diferente dos dois
+  já catalogados** (`cy.origin() failed to create a spec bridge`, `ResizeObserver loop...`):
+  `CypressError: Timed out retrying after 4050ms: cy.click() failed because this element is
+  disabled`, num botão `Mui-disabled` na tela "Analisar uma operação que não está em Inclusão OPE".
+- Diferença importante: os dois primeiros sintomas ocorriam durante o **login**
+  (`cy.loginComoPerfil`/Keycloak) — compatível com instabilidade de rede/HML. Este terceiro ocorre
+  **depois** do login, numa interação de UI dentro da própria tela do Monitor Diário — um botão
+  aparecer desabilitado quando o teste espera clicável soa mais a um problema de
+  timing/estado real da aplicação ou do teste (ex.: uma condição que habilita o botão ainda não
+  foi satisfeita no momento do `cy.click()`) do que a instabilidade genérica de rede já suspeitada
+  antes. Reforça ainda mais o padrão já observado: `mop-monitor-diario.feature` falha quase sempre
+  que roda nesses ciclos, `login.feature` quase nunca falha — mas agora com um sintoma que aponta
+  para dentro da própria tela/teste do MOP, não para o Keycloak.
+- Sintomas de `mop-monitor-diario.feature` catalogados até agora (registrar o sintoma exato sempre
+  que reaparecer, em vez de assumir que é sempre o mesmo problema): `cy.origin() failed to create a
+  spec bridge...` (durante login), `ResizeObserver loop completed with undelivered notifications`
+  (já tratado como `uncaught:exception` conhecido desde `a2f2d88`), e agora `cy.click() failed
+  because this element is disabled` (`Mui-disabled`, depois do login, dentro da tela).
+- Nova dúvida bloqueante registrada pelo Agent Master (`agent-master/duvidas.md`,
+  `20260914125955-atualizar-claude-md-fluxo-integracao`, "retomada 2") — merge local desfeito, aviso
+  mantido em `fila-merge/pendentes/`. Ainda sem causa raiz confirmada; o Thiago mencionou que ia
+  investigar por conta própria o `cy.origin`/`mop-monitor-diario.feature` — este novo sintoma pode
+  ser relevante para essa investigação. Qualquer módulo que dependa dessa tela deve considerar que o
+  teste pode falhar por qualquer um dos três motivos acima até a causa raiz ser resolvida.

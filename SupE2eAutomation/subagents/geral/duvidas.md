@@ -55,3 +55,47 @@ modo headless é uma limitação conhecida do Cypress, não vale a pena investig
 Documente essa limitação (viewport configurado x resolução real do vídeo por modo/browser,
 conforme a tabela que você já levantou) em docs/documentacao.md e no README.md/CLAUDE.md do repo,
 feche a tarefa.
+
+## 20260915110528-reverter-handler-resizeobserver
+Status: respondida
+Pergunta: Revertido o handler de `uncaught:exception` em `cypress/support/e2e.js`: removida a
+checagem específica de `ResizeObserver loop completed with undelivered notifications` (introduzida
+no commit `a2f2d88`), mantendo intacto o tratamento do erro conhecido do widget de menu do Beyond
+(`Cannot read properties of undefined (reading 'content')`) — branch
+`feature/reverter-handler-resizeobserver`, commit `2866b45`, partindo da `reviewAgents` atualizada
+(`9f38a75`). Autoteste pedido pela tarefa (`mop/mop-monitor-diario.feature`) rodado uma única vez:
+**falhou** com exatamente o sintoma esperado —
+`Error: The following error originated from your application code, not from Cypress. >
+ResizeObserver loop completed with undelivered notifications.`, disparado em
+`https://beyond-hml.grupomultiplica.com.br/mop/monitor`, teste "Analisar uma operação que não está
+em Inclusão OPE" (0 passing / 1 failing, ~35s). Ou seja: a reversão funcionou como pedido — o erro
+volta a derrubar o teste normalmente, sem mascarar — mas isso significa que
+`mop-monitor-diario.feature` deixa de passar nesse estado (o `ResizeObserver` segue ocorrendo de
+verdade nessa tela, só que agora não é mais ignorado). A tarefa pede explicitamente para registrar
+como dúvida bloqueante nesse caso, sem decidir sozinho re-adicionar o handler nem mascarar o erro
+de novo. Como prefere proceder: (a) considerar a reversão do handler concluída mesmo assim (branch
+pronta para merge) e tratar a falha do `mop-monitor-diario.feature` como um problema separado, a
+ser corrigido na origem (ex.: investigar por que a tela do Monitor Diário do MOP dispara esse
+ResizeObserver e corrigir o layout/componente, não o teste) — possivelmente como nova tarefa do
+módulo `mop`; (b) pedir que eu (subAgent `geral`) investigue mais a fundo a causa do
+ResizeObserver nessa tela antes de considerar a reversão pronta; ou (c) outra prioridade que
+prefira. Branch e commit já estão prontos localmente (não pushado ainda) para qualquer um dos
+caminhos.
+Resposta: Thiago decidiu manter como estava antes desta tarefa — não prosseguir com a reversão. O
+handler de `uncaught:exception` em `cypress/support/e2e.js` deve continuar ignorando
+`ResizeObserver loop completed with undelivered notifications` (o mascaramento introduzido no
+commit `a2f2d88` fica valendo, sem mudança). Motivo: depois de eu explicar que remover o
+mascaramento não corrige nada na tela — só volta a expor uma falha que já existia (o
+ResizeObserver continua acontecendo de verdade no Monitor Diário; sem o handler, o Cypress só
+passa a acusar isso como falha do teste de novo) — ele preferiu manter o comportamento atual
+(teste passando, erro mascarado) em vez de deixar o teste falhando sem uma correção real da causa
+pronta.
+
+Ação esperada: abandone a branch `feature/reverter-handler-resizeobserver`/commit `2866b45` (não
+dar push, não deixar aviso em `agent-master/fila-merge/pendentes/` — não há nada para mergear).
+Registre em `docs/documentacao.md` que a reversão foi tentada e funcionou tecnicamente (confirmado
+que sem o handler o `ResizeObserver` volta a derrubar `mop-monitor-diario.feature`), mas foi
+descartada a pedido do Thiago — o handler permanece como estava. Se um dia a causa raiz do
+ResizeObserver na tela do Monitor Diário for investigada/corrigida de verdade, isso deve virar uma
+tarefa nova (não reaproveitar esta). Mova esta tarefa de `aguardando-resposta/` para `concluidas/`
+(encerrada sem merge, por decisão do Thiago).

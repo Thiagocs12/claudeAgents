@@ -191,3 +191,48 @@ acontecer, é o Supervisor quem move o arquivo de volta para `fila-merge/pendent
 Master sozinho), com uma nova entrada de dúvida/resposta aqui documentando a instrução recebida.
 Nenhuma mudança de lógica no `run-cycle.ps1`/seção 3.4 foi feita — a pré-checagem continua igual,
 só não encontra mais este arquivo em `pendentes/`.
+
+## 20260915-liberar-atualizar-claude-md-fluxo-integracao
+Status: respondida
+Pergunta: (não houve pergunta nova — item estava parado em `fila-merge/pausados/` aguardando o
+Thiago trazer instrução sobre a investigação de causa raiz do `cy.origin`/
+`mop-monitor-diario.feature`.)
+Resposta: Thiago autorizou (via Supervisor, 2026-09-15): "Pode liberar
+20260914125955-atualizar-claude-md-fluxo-integracao para ser executada". Não trouxe detalhe sobre
+causa raiz confirmada nem sobre a política de tolerância a falha do `mop-monitor-diario.feature`
+em merges só-docs/config (aquela pergunta de política segue sem decisão) — trate como autorização
+para tentar novamente o merge/teste deste aviso especificamente, não como mudança de regra geral.
+Se `mop-monitor-diario.feature` falhar de novo, siga o protocolo normal (dúvida bloqueante, não
+insistir em sequência) em vez de presumir que pode ignorar a falha. O Supervisor moveu o arquivo de
+volta de `fila-merge/pausados/` para `fila-merge/pendentes/` — retome o processamento normalmente
+no próximo ciclo.
+
+## 20260914125955-atualizar-claude-md-fluxo-integracao (retomada 2, 2026-09-15)
+Status: pendente
+Pergunta: Segui a autorização recebida ("pode liberar, para ser executada") e retomei o aviso.
+Merge de teste local limpo de novo (`git merge --no-edit origin/feature/atualizar-claude-md-fluxo-integracao`
+contra `reviewAgents` em `9f38a75`, sem conflito, resultado `e1d0437`); `.env.example`/`package.json`/
+`package-lock.json` sem diferença (nenhuma variável nova, sem `npm ci`). Rodei `npm test` **uma
+única vez** neste ciclo: `shared/login.feature` passou 2/2 de novo, mas
+`mop/mop-monitor-diario.feature` falhou de novo — desta vez com um **terceiro sintoma diferente**,
+ainda não catalogado: `CypressError: Timed out retrying after 4050ms: cy.click() failed because
+this element is disabled` num botão da tela "Analisar uma operação que não está em Inclusão OPE"
+(`Mui-disabled`). Não é o erro de `cy.origin()` já visto, nem o `ResizeObserver loop...` já
+tratado — é um erro de interação (elemento desabilitado) mais adiante no fluxo do teste, depois do
+login ter funcionado. Desfiz o merge local (`git reset --hard origin/reviewAgents`), aviso mantido
+em `fila-merge/pendentes/`. Como a branch só toca `CLAUDE.md`/`README.md` (nenhum código de
+teste/tela), a falha não pode ter sido causada pelo conteúdo desta branch — é mais um sintoma do
+mesmo padrão "mop-monitor-diario.feature falha quase sempre que roda, login.feature quase nunca
+falha" já registrado em `../docs/conhecimento-geral.md`, mas agora com evidência mais forte de que
+não é flakiness genérica de rede/Keycloak: um botão aparecer desabilitado quando o teste espera
+clicável soa mais a um problema real de timing/estado da aplicação (ou do teste) do que a
+instabilidade de ambiente. Não rodei o teste de novo neste ciclo (orientação registrada é não
+insistir em sequência). Como você mencionou que ia investigar a causa raiz do
+`cy.origin`/`mop-monitor-diario.feature` por conta própria: esse novo sintoma (botão desabilitado)
+pode ser relevante para essa investigação, ou pode ser um problema à parte. Preciso de instrução:
+(a) tentar de novo num próximo ciclo (tratando como flakiness pontual), (b) parar de reprocessar
+este aviso até você voltar com instrução nova (mesmo padrão já usado antes — Supervisor move para
+`fila-merge/pausados/`), ou (c) outra direção? Não vou decidir sozinho a política de tolerar falha
+de `mop-monitor-diario.feature` em merges só-docs — essa pergunta de política segue em aberto desde
+a dúvida original.
+Resposta:
