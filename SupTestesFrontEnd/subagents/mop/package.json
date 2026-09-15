@@ -1,0 +1,21 @@
+{
+  "name": "mop",
+  "version": "1.0.0",
+  "description": "Ferramenta descartável de QA exploratório (Cypress) do subAgent mop do Sup TestesFrontEnd — não é uma suíte persistente.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cypress": "15.20.1",
+    "dotenv": "^17.4.2"
+  }
+}
