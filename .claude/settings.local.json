@@ -4,7 +4,8 @@
       "Bash(git clone *)",
       "Bash(cp \"/c/Multiplica/claudeAgents/SupE2eAutomation/agent-master/.gh-token\" \"/c/Multiplica/claudeAgents/SupAutomacaoUteis/agent-master/.gh-token\" && \\\\ *)",
       "Bash(mkdir -p \"/c/Multiplica/claudeAgents/SupAutomacaoUteis/agent-master/repo/.claude/skills/resolve-conflicts\")",
-      "PowerShell(Get-Command New-ScheduledTaskSettingsSet)"
+      "PowerShell(Get-Command New-ScheduledTaskSettingsSet)",
+      "Bash(mkdir -p \"/c/Multiplica/claudeAgents/SupTestesFrontEnd/docs\" \\\\ *)"
     ]
   }
 }

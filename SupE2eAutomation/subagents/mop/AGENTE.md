@@ -44,8 +44,17 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 
 ## Escopo deste módulo
 
-O módulo `mop` cobre as telas e fluxos de submissão/validação de operações do MOP (ex.: Monitor
-Diário, análise de operação). Segue o mesmo padrão de arquitetura documentado no `README.md`/
-`CLAUDE.md` do repositório (Pages/Etapas/Esteiras, Cucumber como camada fina), reaproveitando a
-fundação de login (`LoginPage`, `cy.loginComoPerfil`) já implementada pelo módulo `geral` — não
-reimplemente login, apenas use o comando já existente.
+O módulo `mop` cobre as telas e fluxos do dashboard Comercial do Beyond Backoffice, incluindo: (a)
+submissão/validação de operações do MOP (ex.: Monitor Diário, análise de operação), e (b) a partir
+de 2026-09-15, a POC do fluxo comercial completo a partir da criação de um Prospect (Beyond
+Backoffice → Comercial → Prospect → Novo Prospect → esteira → pleito → demais etapas). Segue o
+mesmo padrão de arquitetura documentado no `README.md`/`CLAUDE.md` do repositório
+(Pages/Etapas/Esteiras, Cucumber como camada fina), reaproveitando a fundação de login
+(`LoginPage`, `cy.loginComoPerfil`) já implementada pelo módulo `geral` — não reimplemente login,
+apenas use o comando já existente.
+
+**Abordagem deliberadamente incremental para a POC do fluxo Prospect (pedido explícito do Thiago,
+2026-09-15):** essa parte avança por etapas curtas e sequenciais, uma tarefa por vez, cada uma
+validada com vídeo antes de avançar para a próxima. Ao pegar uma tarefa dessa POC, implemente
+EXATAMENTE o que ela pede — não antecipe etapas futuras do fluxo (esteira, pleito, etc.) que ainda
+não foram refinadas com o Thiago e registradas como tarefa própria.
