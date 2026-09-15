@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Do Prospect ao Cedente</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#eef1ec;
+    --surface:#ffffff;
+    --surface-2:#e4e9e2;
+    --ink:#1b2420;
+    --ink-muted:#57645b;
+    --ink-faint:#8b9790;
+    --border:#cdd7c8;
+    --border-strong:#a9b8a3;
+    --hub:#b6531e;
+    --hub-soft:#f3e2d4;
+    --flow:#2f6b74;
+    --flow-soft:#dfeaec;
+    --exclude:#9a3324;
+    --exclude-soft:#f3ded9;
+    --shadow: 0 1px 2px rgba(27,36,32,.06), 0 6px 20px -10px rgba(27,36,32,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121613;
+      --surface:#181f1b;
+      --surface-2:#1f2721;
+      --ink:#e7ece5;
+      --ink-muted:#a7b3aa;
+      --ink-faint:#6d7871;
+      --border:#2b352f;
+      --border-strong:#3c4a41;
+      --hub:#e08a4f;
+      --hub-soft:#3a2a1d;
+      --flow:#6fb3bd;
+      --flow-soft:#1c3236;
+      --exclude:#e28a7a;
+      --exclude-soft:#3a2320;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121613;
+    --surface:#181f1b;
+    --surface-2:#1f2721;
+    --ink:#e7ece5;
+    --ink-muted:#a7b3aa;
+    --ink-faint:#6d7871;
+    --border:#2b352f;
+    --border-strong:#3c4a41;
+    --hub:#e08a4f;
+    --hub-soft:#3a2a1d;
+    --flow:#6fb3bd;
+    --flow-soft:#1c3236;
+    --exclude:#e28a7a;
+    --exclude-soft:#3a2320;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px -12px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Serif", Georgia, "Times New Roman", serif;
+    padding-inline:20px;
+    padding-block:48px 80px;
+  }
+  .page{max-width:900px;margin-inline:auto}
+
+  h1,h2,h3,.label{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif}
+  code,.mono,.tbl{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Consolas,monospace}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.72rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    display:flex;
+    align-items:center;
+    gap:.6em;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--hub)}
+
+  header{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    padding-bottom:28px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:40px;
+  }
+  h1{
+    font-size:clamp(1.9rem,4vw,2.7rem);
+    line-height:1.08;
+    margin:0;
+    font-weight:700;
+    text-wrap:balance;
+    letter-spacing:-.01em;
+  }
+  .subtitle{
+    font-family:"IBM Plex Serif",serif;
+    font-size:1.05rem;
+    color:var(--ink-muted);
+    max-width:62ch;
+    line-height:1.55;
+    margin:0;
+  }
+  .status-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
+  .chip{
+    font-family:"IBM Plex Sans",sans-serif;
+    font-size:.78rem;
+    font-weight:600;
+    padding:5px 12px;
+    border-radius:999px;
+    border:1px solid var(--border-strong);
+    color:var(--ink-muted);
+    white-space:nowrap;
+  }
+  .chip.pending{background:var(--hub-soft);color:var(--hub);border-color:transparent}
+
+  section{margin-bottom:52px}
+  .section-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .section-num{font-family:"IBM Plex Mono",monospace;color:var(--hub);font-size:.85rem;font-weight:600}
+  h2{font-size:1.4rem;margin:0;font-weight:700;letter-spacing:-.005em}
+  .section-desc{color:var(--ink-muted);font-size:.96rem;max-width:66ch;line-height:1.6;margin:6px 0 24px}
+
+  /* ---- Fluxo (stages) ---- */
+  .flow{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:stretch;
+    gap:0;
+  }
+  .stage{
+    flex:1 1 150px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    box-shadow:var(--shadow);
+  }
+  .stage .n{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--flow);font-weight:600}
+  .stage .name{font-family:"IBM Plex Sans",sans-serif;font-weight:700;font-size:1.02rem}
+  .stage .tbl{font-size:.78rem;color:var(--ink-muted);word-break:break-word}
+  .stage .role{font-size:.82rem;color:var(--ink-muted);line-height:1.4;font-family:"IBM Plex Serif",serif}
+  .stage.hub{border-color:var(--hub);background:var(--hub-soft)}
+  .stage.hub .name{color:var(--hub)}
+  .arrow{
+    flex:0 0 34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--flow);
+    font-size:1.3rem;
+    opacity:.7;
+  }
+  @media (max-width:720px){
+    .flow{flex-direction:column}
+    .arrow{transform:rotate(90deg);flex:0 0 20px}
+  }
+
+  /* ---- Hub + categorias ---- */
+  .hub-banner{
+    background:var(--surface);
+    border:1.5px solid var(--hub);
+    border-radius:12px;
+    padding:20px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+    box-shadow:var(--shadow);
+  }
+  .hub-banner .tbl{font-size:1.15rem;color:var(--hub);font-weight:600}
+  .hub-banner .desc{font-size:.85rem;color:var(--ink-muted);font-family:"IBM Plex Sans",sans-serif}
+  .hub-stats{display:flex;gap:22px;flex-wrap:wrap}
+  .stat{text-align:right}
+  .stat .num{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:1.3rem;color:var(--ink);display:block;font-variant-numeric:tabular-nums}
+  .stat .lbl{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);font-family:"IBM Plex Sans",sans-serif}
+
+  .cat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:14px;
+  }
+  .cat{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-top:3px solid var(--flow);
+    border-radius:8px;
+    padding:14px 16px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .cat.exclude{border-top-color:var(--exclude)}
+  .cat .cat-title{
+    font-family:"IBM Plex Sans",sans-serif;
+    font-weight:600;
+    font-size:.92rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .cat.exclude .cat-title{color:var(--exclude)}
+  .cat .tag{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.65rem;
+    padding:2px 7px;
+    border-radius:5px;
+    background:var(--flow-soft);
+    color:var(--flow);
+    white-space:nowrap;
+  }
+  .cat.exclude .tag{background:var(--exclude-soft);color:var(--exclude)}
+  .cat ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+  .cat li{font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--ink-muted)}
+  .cat .note{font-size:.78rem;color:var(--ink-faint);font-family:"IBM Plex Serif",serif;font-style:italic;line-height:1.4;margin-top:2px}
+
+  /* ---- Legenda de prefixos ---- */
+  .legend{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:1px;
+    background:var(--border);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .legend-item{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+  .legend-item .prefix{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.85rem;color:var(--hub)}
+  .legend-item .meaning{font-size:.82rem;color:var(--ink);font-family:"IBM Plex Sans",sans-serif}
+  .legend-item .example{font-size:.72rem;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace}
+
+  /* ---- Recomendação ---- */
+  .rec-table{width:100%;border-collapse:collapse;font-size:.88rem}
+  .rec-table th{
+    font-family:"IBM Plex Sans",sans-serif;
+    text-align:left;
+    font-size:.7rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    padding:0 12px 8px;
+    border-bottom:1px solid var(--border-strong);
+  }
+  .rec-table td{
+    padding:12px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+    line-height:1.45;
+  }
+  .rec-table tr:last-child td{border-bottom:none}
+  .verdict{
+    font-family:"IBM Plex Sans",sans-serif;
+    font-weight:600;
+    font-size:.74rem;
+    padding:3px 9px;
+    border-radius:5px;
+    white-space:nowrap;
+    display:inline-block;
+  }
+  .verdict.in{background:var(--flow-soft);color:var(--flow)}
+  .verdict.out{background:var(--exclude-soft);color:var(--exclude)}
+  .verdict.ask{background:var(--hub-soft);color:var(--hub)}
+  .rec-table .grupo{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--ink)}
+  .rec-table .why{color:var(--ink-muted)}
+
+  footer{
+    border-top:1px solid var(--border);
+    padding-top:20px;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.72rem;
+    color:var(--ink-faint);
+  }
+
+  @media (max-width:480px){
+    body{padding-inline:14px}
+    .hub-banner{flex-direction:column;align-items:flex-start}
+    .hub-stats{gap:16px}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <span class="eyebrow"><span class="dot"></span>Sup AutomaçãoUteis · Mapeamento direto do PROD</span>
+    <h1>Do Prospect ao Cedente</h1>
+    <p class="subtitle">Levantamento do schema real (SQL Server, somente leitura) do ciclo de vida que termina em <strong>Cedente</strong> — base para definir o escopo da próxima automação: cópia de cedentes inteiros de PROD para HML.</p>
+    <div class="status-row">
+      <span class="chip pending">Aguardando aprovação de escopo</span>
+      <span class="chip">174 tabelas distintas mapeadas</span>
+      <span class="chip">330 relações de FK conferidas</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-head"><span class="section-num">01</span><h2>O ciclo de vida</h2></div>
+    <p class="section-desc">Confirmado com o Thiago: nasce um prospect, vira proposta, passa por comitê, vira cedente. Cada etapa tem uma tabela-âncora no banco (nome real) e um conjunto próprio de tabelas satélite.</p>
+
+    <div class="flow">
+      <div class="stage">
+        <span class="n">ETAPA 1</span>
+        <span class="name">Prospect</span>
+        <span class="tbl">MC_PRT_PROSPECT</span>
+        <span class="role">Empresa em prospecção. 28 tabelas satélite referenciam este id diretamente (KYC, dados de mercado, concorrentes, filiais, capex…).</span>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="n">ETAPA 2</span>
+        <span class="name">Pleito</span>
+        <span class="tbl">MC_PRT_PLEITO</span>
+        <span class="role">O pedido de crédito do prospect — produto, garantia, boletos, fluxo — antes de virar proposta formal.</span>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="n">ETAPA 3</span>
+        <span class="name">Proposta</span>
+        <span class="tbl">MC_POC_PROPOSTA</span>
+        <span class="role">51 tabelas satélite: rating, restritivos, balanço, faturamento, endividamento, compliance, COAF…</span>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="n">ETAPA 4</span>
+        <span class="name">Comitê</span>
+        <span class="tbl">MC_CAD_COMITE · MC_POC_COMITE</span>
+        <span class="role">Cadastro/agenda do comitê (MC_CAD_COMITE) + a decisão em si por proposta (MC_POC_COMITE): ata, votação, limites por produto.</span>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage hub">
+        <span class="n">ETAPA 5 · DESTINO</span>
+        <span class="name">Cedente</span>
+        <span class="tbl">MC_CED_CEDENTE</span>
+        <span class="role">66 tabelas referenciam idCedente diretamente. É aqui que a próxima automação precisa copiar PROD → HML.</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="section-num">02</span><h2>O que gravita em torno do Cedente</h2></div>
+    <p class="section-desc">Uma vez virado cedente, o registro passa a ser referenciado por dezenas de domínios operacionais. Agrupado por assunto de negócio — cada card lista tabelas reais confirmadas via <code>sys.foreign_keys</code>. Faixa no topo do card: <span style="color:var(--flow)">verde-azulada</span> = ligada por FK (idCedente), <span style="color:var(--exclude)">terracota</span> = merece atenção antes de decidir copiar.</p>
+
+    <div class="hub-banner">
+      <div>
+        <div class="tbl">MC_CED_CEDENTE</div>
+        <div class="desc">hub central — id referenciado por 66 tabelas distintas</div>
+      </div>
+      <div class="hub-stats">
+        <div class="stat"><span class="num">8</span><span class="lbl">domínios de negócio</span></div>
+        <div class="stat"><span class="num">2</span><span class="lbl">grupos fora do padrão FK</span></div>
+      </div>
+    </div>
+
+    <div class="cat-grid">
+      <div class="cat">
+        <div class="cat-title">Cadastro &amp; estrutura<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_CED_FILIAL</li>
+          <li>MC_CED_FUNDO</li>
+          <li>MC_CED_SEGMENTO</li>
+          <li>MC_CED_SITUACAO</li>
+          <li>MC_CED_PRODUTO</li>
+          <li>MC_CED_CEDENTE_VINCULADO</li>
+          <li>MC_CED_GERENTE_FOCO / _HIST / _LOG</li>
+        </ul>
+      </div>
+
+      <div class="cat">
+        <div class="cat-title">Formalização &amp; documentos<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_CED_CEDENTE_CONTRATO (+ HISTORICO)</li>
+          <li>MC_CED_CEDENTE_DOCUMENTO (+ SECAO, HIST)</li>
+          <li>MC_CADASTRO_CEDENTE_FORMALIZACAO</li>
+          <li>MC_CED_FORMALIZACAO_IA (+ DOCS)</li>
+          <li>MC_CED_FIRMAS_PODERES_REGRA / _VALIDADE</li>
+          <li>MC_CED_ANEXO · MC_CED_ATA</li>
+        </ul>
+      </div>
+
+      <div class="cat">
+        <div class="cat-title">Garantias<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_CED_GARANTIA (+ HIST)</li>
+          <li>MC_CED_GARANTIA_REGRA</li>
+          <li>MC_CED_FORMULARIO_GARANTIA</li>
+        </ul>
+      </div>
+
+      <div class="cat">
+        <div class="cat-title">Portal &amp; convênio<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_CED_LOGIN</li>
+          <li>MC_CED_PORTAL (+ CONVENIO)</li>
+          <li>MC_CED_CEDENTE_CONVENIO</li>
+          <li>MC_PORTAL_FORNECEDOR_ARQUIVO / _RETORNO</li>
+          <li>MC_CAD_CONVENIO_PORTAL</li>
+        </ul>
+      </div>
+
+      <div class="cat">
+        <div class="cat-title">Operação (MOP)<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_MOP_OPERACAO</li>
+          <li>MC_MOP_PRE_OPERACAO (+ BATCH, EXC)</li>
+          <li>MC_MOP_SIMULACAO · MC_MOP_TITULOS</li>
+          <li>MC_MOP_NOTA_XML</li>
+        </ul>
+      </div>
+
+      <div class="cat">
+        <div class="cat-title">Câmbio, liquidação &amp; financeiro<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_CAMBIO_ORDEM_PAGAMENTO (+ PRE)</li>
+          <li>MC_LIQ_INSTRUCAO (+ LOTE, LOTE_ARQUIVO_ITEM)</li>
+          <li>MC_CED_BOLETO · MC_CED_TARIFA</li>
+          <li>MC_PENDENCIA · MC_RECOMPRA</li>
+        </ul>
+      </div>
+
+      <div class="cat">
+        <div class="cat-title">Compliance &amp; checagem<span class="tag">idCedente</span></div>
+        <ul>
+          <li>MC_CED_COMPLIANCE</li>
+          <li>MC_CHECAGEM_DIARIA / _HISTORICO</li>
+          <li>MC_BEYOND_PROTESTO_PROCESSO</li>
+        </ul>
+      </div>
+
+      <div class="cat exclude">
+        <div class="cat-title">Risco por CNPJ (bureau externo)<span class="tag">sem FK</span></div>
+        <ul>
+          <li>CPL_CEDENTE_RISCO</li>
+          <li>CPL_CEDENTE_CHECAGEM</li>
+          <li>CPL_CEDENTE_CONCENTRACAO</li>
+          <li>CPL_CEDENTE_LIQUIDEZ · _PRORROGACAO</li>
+          <li>CPL_CEDENTE_VENCIDO · _VOP · _RECOMPRA</li>
+        </ul>
+        <div class="note">Ligadas por <code>cnpj</code>/<code>codigoGrupo</code>, não por id — dado analítico alimentado por fonte externa, não cadastro do cedente em si.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="section-num">03</span><h2>Legenda dos prefixos</h2></div>
+    <p class="section-desc">Vocabulário real do schema — útil pra reconhecer de qual etapa do ciclo uma tabela nova pertence.</p>
+    <div class="legend">
+      <div class="legend-item"><span class="prefix">PRT_</span><span class="meaning">Prospect — fase de captação, antes de virar proposta</span><span class="example">MC_PRT_PROSPECT, MC_PRT_KYC</span></div>
+      <div class="legend-item"><span class="prefix">POC_</span><span class="meaning">Proposta &amp; Comitê — análise de crédito e decisão</span><span class="example">MC_POC_PROPOSTA, MC_POC_COMITE</span></div>
+      <div class="legend-item"><span class="prefix">CED_</span><span class="meaning">Cedente — depois de aprovado, a empresa operacional</span><span class="example">MC_CED_CEDENTE, MC_CED_GARANTIA</span></div>
+      <div class="legend-item"><span class="prefix">CAD_</span><span class="meaning">Cadastro — tabelas de domínio/catálogo compartilhadas por todo o sistema</span><span class="example">MC_CAD_PESSOA, MC_CAD_COMITE</span></div>
+      <div class="legend-item"><span class="prefix">MOP_</span><span class="meaning">Operações — títulos, simulação, execução do produto</span><span class="example">MC_MOP_OPERACAO</span></div>
+      <div class="legend-item"><span class="prefix">LIQ_ / CAMBIO_</span><span class="meaning">Liquidação e câmbio financeiro</span><span class="example">MC_LIQ_INSTRUCAO</span></div>
+      <div class="legend-item"><span class="prefix">CPL_</span><span class="meaning">Compliance — dado de risco por CNPJ, fonte externa</span><span class="example">CPL_CEDENTE_RISCO</span></div>
+      <div class="legend-item"><span class="prefix">TB_BEYOND_</span><span class="meaning">Integração com plataforma de onboarding/KYC "Beyond"</span><span class="example">TB_BEYOND_FORMALIZACAO_CADASTRO_CEDENTE</span></div>
+      <div class="legend-item"><span class="prefix">LOG_</span><span class="meaning">Auditoria de atualização — histórico técnico, não cadastro</span><span class="example">LOG_ATUALIZA_CEDENTE_COMITE</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="section-num">04</span><h2>Recomendação de escopo — pra sua aprovação</h2></div>
+    <p class="section-desc">Rascunho de classificação pra próxima automação (clonar cedente inteiro PROD → HML). Preciso da sua decisão nas linhas marcadas "decidir".</p>
+
+    <div style="overflow-x:auto">
+      <table class="rec-table">
+        <thead>
+          <tr><th>Grupo</th><th>Veredito</th><th>Por quê</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="grupo">Cadastro, formalização, garantias, portal/convênio, comitê/proposta/prospect de origem</td>
+            <td><span class="verdict in">Incluir</span></td>
+            <td class="why">Ligadas por FK direta ao id do cedente/proposta/prospect — mesmo padrão de resolução PROD→HML já usado nos outros domínios do repositório (busca por id no estoque, cria se não existir).</td>
+          </tr>
+          <tr>
+            <td class="grupo">Operação (MOP), câmbio/liquidação, boletos, pendências</td>
+            <td><span class="verdict ask">Decidir</span></td>
+            <td class="why">É movimento financeiro real (operações, pagamentos). Copiar pra HML faz sentido pra teste, ou HML deveria começar "zerado" nessas tabelas mesmo clonando o cadastro do cedente?</td>
+          </tr>
+          <tr>
+            <td class="grupo">Compliance/checagem por CNPJ (CPL_CEDENTE_*)</td>
+            <td><span class="verdict out">Excluir</span></td>
+            <td class="why">Não tem FK pro cedente — é snapshot de bureau externo, casado por CNPJ. Não faz parte do "cadastro do cedente" e recalcula sozinho quando a rotina de checagem rodar em HML.</td>
+          </tr>
+          <tr>
+            <td class="grupo">LOG_* (auditoria técnica)</td>
+            <td><span class="verdict out">Excluir</span></td>
+            <td class="why">Histórico de execução da própria aplicação, não dado de negócio — recomeça naturalmente em HML.</td>
+          </tr>
+          <tr>
+            <td class="grupo">Tabelas *_BKP* (ex.: MC_CED_CEDENTE_CONVENIO_BKP20231020, MC_PRT_PROSPECTBKP1504)</td>
+            <td><span class="verdict out">Excluir</span></td>
+            <td class="why">Backups pontuais de uma migração passada, não fazem parte do fluxo corrente.</td>
+          </tr>
+          <tr>
+            <td class="grupo">TB_BEYOND_FORMALIZACAO_CADASTRO_CEDENTE*</td>
+            <td><span class="verdict ask">Decidir</span></td>
+            <td class="why">Liga por idCedente (sem FK física, mas coluna presente) — é dado de onboarding vindo da plataforma externa "Beyond". Faz sentido existir em HML sem essa integração ativa lá?</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>Consulta somente leitura via INFORMATION_SCHEMA + sys.foreign_keys, direto no SQL Server de PROD · autorizada por Thiago em 2026-09-15</span>
+    <span>174 tabelas · 330 FKs · gerado pelo Sup AutomaçãoUteis</span>
+  </footer>
+
+</div>
+</body>
+</html>

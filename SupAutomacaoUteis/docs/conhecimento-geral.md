@@ -15,6 +15,13 @@ ciclos).
   maduro (Cypress + Cucumber) que sincroniza dados de referência PROD→HML nos domínios Produtos,
   Esteiras, Vínculos e Grupos e Permissões (Keycloak) — não é um repositório vazio criado para os
   agentes.
+- **Módulo `cedente` (criado em 2026-09-15):** clona um cedente inteiro de PROD para HML,
+  percorrendo o ciclo prospect → pleito → proposta → comitê → cedente (schema mapeado via
+  `INFORMATION_SCHEMA`/`sys.foreign_keys` direto no PROD, só leitura). Escopo completo (o que
+  entra/fica de fora, regra de match por CNPJ/CPF, "já existe em HML → apaga e refaz") está na
+  tarefa `20260915130215-clonar-cedente-completo-prod-hml.md` e em
+  `subagents/cedente/docs/documentacao.md`. Diagrama de referência:
+  `mapa-cedente-diagrama.html` na raiz do Supervisor.
 - Branch de integração: **`reviewAgents`** (criada em 2026-09-14, a partir da `master`, só para
   este propósito). `master` só recebe merge de `reviewAgents` em momentos de release — nunca
   commit/merge direto.
@@ -51,7 +58,8 @@ ciclos).
   `C:\Multiplica\claudeAgents`).
 - **Agent Master**: fixo em `contaB`. **Status Watcher**: fixo em `contaB`.
 - **SubAgents de módulo**: revezam `contaA`/`contaB` pela ordem de criação. Atribuição atual:
-  `keycloakUser` = `contaA` (1º módulo). Próximo módulo novo = `contaB`.
+  `keycloakUser` = `contaA` (1º módulo), `cedente` = `contaB` (2º módulo, criado em 2026-09-15).
+  Próximo módulo novo = `contaA`.
 
 ## GitHub CLI (`gh`) — usado pelo Agent Master para abrir PR
 
