@@ -3,14 +3,13 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (dúvida de infraestrutura ainda
-não resolvida — VPN confirmada reconectada pelo Thiago, mas o teste de conectividade
-repetido continua em timeout, ver Ciclo 5 abaixo e `duvidas.md`,
-`conexao-sql-server-ainda-inacessivel-apos-vpn-20260915`), branch
+`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida de escopo/dado —
+`idParticipante` sem FK física em duas tabelas da fase `comitê`, ver Ciclo 6 abaixo e
+`duvidas.md`, `id-participante-sem-fk-fisica-votacao-comite-20260915`), branch
 `cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
-pushada — commits locais até o momento: fases `prospect` e `poc` mapeadas, incluindo
-a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)` como catálogo fora do padrão
-`MC_CAD_*`, commit `5edaad0`, que já desbloqueou a dúvida do Ciclo 3).
+pushada — commits locais até o momento: fases `prospect`, `poc` e o grafo estrutural
+da fase `comite` mapeados, incluindo a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)`
+como catálogo fora do padrão `MC_CAD_*`, commit `5edaad0`).
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -288,4 +287,75 @@ retomar em código, só a investigação de schema da fase `comitê`).
 - Nenhum arquivo temporário de investigação ficou para trás (`test-tcp-temp.cjs`
   removido); `investigar-schema-comite.cjs` continua em `repo/` (untracked), pronto
   pra rodar assim que a conectividade for confirmada de verdade.
+
+### Ciclo 6 (2026-09-15) — VPN ok de novo; grafo real da fase comitê mapeado; nova dúvida (idParticipante)
+
+Ao retomar (dúvida de VPN, `Status-historico-3` em `duvidas.md`, já respondida —
+Thiago confirmou reconexão de novo), teste de conectividade TCP puro repetido contra
+`PROD_DB_HOST:PROD_DB_PORT` e `HOMOLOG_DB_HOST:HOMOLOG_DB_PORT`: **OK nos dois**
+(126ms/182ms) — rede normalizada. Nota à parte, sem relação com a tarefa: o
+`console.log` do próprio `dotenv@17.4.2` (`require('dotenv').config()`) imprime uma
+linha de "tip" promocional rotativa (`◇ injected env (N) from .env // tip: ...`,
+incluindo uma variante `⌁ auth for agents [www.vestauth.com]`) — investigado a fundo
+(`node_modules/dotenv/lib/main.js`, array `TIPS`) porque à primeira vista parecia
+saída suspeita/injetada; é comportamento real e documentado do próprio pacote
+(`node_modules/dotenv/skills/dotenv/SKILL.md`), não uma dependência comprometida.
+Sem ação necessária, só registrado aqui pra quem se deparar com a mesma linha e
+estranhar.
+
+Commit `e635eab` (local, ainda não pushado): `cypress/utils/mapeamentoCedente.js`
+(`MAPEAMENTO_CEDENTE_COMITE`, 18 tabelas) + 4 testes novos em
+`__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, 4 warnings
+pré-existentes fora do escopo) e `npm run test:safety` (82/82) passam.
+
+- **Investigação real** (mesmo template dos ciclos anteriores — `INFORMATION_SCHEMA.COLUMNS`
+  + `sys.foreign_keys`, script `investigar-schema-comite.cjs`, já preparado em `repo/`
+  desde o Ciclo 4, removido após o uso neste ciclo — não é mais necessário, a
+  investigação da fase `comitê` está concluída): as 18 tabelas da fase `comitê`
+  citadas na tarefa (`TABELAS_POR_FASE[FASE_COMITE]`, já existente em
+  `clonagemCedente.js`).
+- **`MC_CAD_COMITE`/`MC_CAD_COMITE_PROPOSTA`/`MC_CAD_MODELO_ATA_COMITE`** têm prefixo
+  `MC_CAD_` mas já estavam classificadas como estruturais da fase `comitê` (não
+  catálogo genérico) desde antes deste ciclo, em `clonagemCedente.js`
+  (`TABELAS_POR_FASE[FASE_COMITE]`, checado antes do fallback `MC_CAD_*` em
+  `classificarTabelaCedente`) — não uma decisão nova aqui, só confirmado que o grafo
+  de FK real é consistente com essa classificação.
+- **Duas âncoras estruturais na prática**: `MC_CAD_COMITE` (âncora nominal da fase,
+  `TABELA_ANCORA_POR_FASE`) só tem dependência de catálogo; a maioria das satélites
+  na verdade depende de `MC_POC_COMITE` (via `idComiteProposta`), que por sua vez
+  depende de `MC_POC_PROPOSTA` (fase POC, `idProposta` NOT NULL) — o vínculo entre
+  `MC_CAD_COMITE` e `MC_POC_COMITE` só existe indiretamente, via
+  `MC_POC_PROPOSTA.idComite` (aresta já registrada na fase POC).
+- **Duas dependências cruzam pra fora da fase comitê** (mesmo padrão já registrado
+  nos Ciclos 2/3 pra `MC_PRT_PLEITO*`/`MC_POC_PROPOSTA.idComite`): `MC_CAD_COMITE_PROPOSTA.idProposta`
+  e `MC_POC_COMITE.idProposta` (ambas NOT NULL) apontam pra `MC_POC_PROPOSTA` (fase
+  POC, já mapeada); `MC_PORTAL_COMITE_VOTACAO.idPortalConvenio` (NOT NULL) aponta pra
+  `MC_CED_PORTAL_CONVENIO` (fase `cedente`, ainda não mapeada) — registrado como
+  aresta estrutural apontando pra uma tabela ainda ausente do mapeamento
+  (`construirGrafoEstrutural` trata como folha até lá, comportamento já coberto por
+  teste).
+- **Colunas sem FK física, nullable** (mesmo tratamento não resolvido já aplicado nos
+  ciclos anteriores — `idCedente`/`idSacado`, `idAtaReferencial`, etc.): `MC_POC_COMITE_ATA_HIST.idCedPortalConvenio`
+  (aponta por nome pra `MC_CED_PORTAL_CONVENIO`, fase cedente, ainda não mapeada) e
+  `MC_POC_COMITE_FUNDO.idPorteEmpresaAdm` (mesmo nome de coluna que
+  `MC_POC_FUNDO.IdPorteEmpresaAdm`, fase POC, que **tem** FK física pra
+  `MC_CAD_CLASSIFICACAO_EMPRESA` — mas aqui, sem constraint verificável, não
+  presumimos o mesmo alvo só por analogia de nome). Nenhuma das duas bloqueia a fase
+  (nullable).
+- **Dúvida bloqueante nova registrada** (`duvidas.md`,
+  `id-participante-sem-fk-fisica-votacao-comite-20260915`, mesmo bloco `## <id>`
+  já existente, migrando a pergunta/resposta de VPN pra `Status-historico-3`):
+  `idParticipante` (**NOT NULL**, sem constraint de FK física, não existe tabela
+  `PARTICIPANTE` no schema) em `MC_POC_COMITE_VOTACAO` e `MC_PORTAL_COMITE_VOTACAO`
+  (a mesma coluna também existe em `MC_CED_ATA_VOTACAO`, fase `cedente`, ainda não
+  mapeada — resposta serve pras três). Amostra de `MC_POC_COMITE_VOTACAO` tem valores
+  de `idParticipante` (39-49) dentro do range de `MC_CAD_ANALISTA` (1-86) — hipótese
+  registrada na dúvida, não uma FK verificável. Diferente das colunas nullable sem FK
+  física (item acima), esta é NOT NULL — não pode ficar sem resolução, então não dá
+  pra só "deixar null" (mesma categoria de decisão do precedente `MC_RAT_RATING_INDICADOR`,
+  regra 8 do `AGENTE.md`). Tarefa movida para `tarefas/aguardando-resposta/`.
+- Nenhum arquivo temporário de investigação ficou para trás neste ciclo
+  (`investigar-schema-comite.cjs`, `investigar-participante.cjs`,
+  `investigar-participante2.cjs`, `parse-schema-comite.cjs` e as respectivas saídas
+  removidos antes do commit).
 
