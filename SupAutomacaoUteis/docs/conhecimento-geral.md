@@ -188,3 +188,16 @@ precisar de algo parecido:
    `cypress/temp/tokens.json` com `{}` antes de rodar pela primeira vez. Correção real sugerida:
    trocar por um `cy.task` que checa existência no Node (`fs.existsSync`) em vez de depender do
    `cy.readFile` "assertivo" do Cypress para um arquivo opcional.
+
+## PR único `reviewAgents → master` — o que fazer se o Thiago já mergeou manualmente (2026-09-15)
+
+- A regra "cria uma vez, nunca recria" do PR único pressupõe que ele continua aberto até o Agent
+  Master decidir recriar. Na prática, o Thiago pode mesclar esse PR manualmente no GitHub a
+  qualquer momento (é o ponto de revisão dele, ele tem controle total sobre quando mesclar) —
+  aconteceu pela primeira vez em 2026-09-15 (PR #6 mergeado às 14:38 UTC sem aviso prévio a nenhum
+  agente).
+- Isso **não é um evento excepcional que precise de dúvida bloqueante**: o próximo ciclo do Agent
+  Master detecta via `gh pr list --base master --head reviewAgents --state open` retornando vazio
+  e simplesmente cria um novo PR contínuo (regra 3 do `AGENTE.md`), com o corpo explicando que foi
+  recriado por causa do merge anterior. Não precisa perguntar ao Thiago nem esperar decisão dele —
+  abrir/manter esse PR já é descrito como automático e independente de aprovação.

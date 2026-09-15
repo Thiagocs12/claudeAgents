@@ -402,3 +402,49 @@
   `node_modules` presente, não precisou `npm install`. Nomes de variáveis de `.env` comparados (sem
   exibir valores) contra `repo/.env` — idênticos, nenhuma cópia necessária.
 - Nenhuma dúvida nova registrada neste ciclo.
+
+## 2026-09-15 — Ciclo: merge direto de `keycloakUser/nao-quebrar-parametros-clonagem-unica-ausentes` + PR único recriado (PR #6 já tinha sido mergeado pelo Thiago, PR #7 aberto)
+
+- **`GH_TOKEN`**: `gh auth status` confirmou autenticado normalmente (`Thiagocs12`). Sem pendência.
+- **PR único `reviewAgents → master`**: `gh pr list --base master --head reviewAgents --state
+  open` voltou vazio — checagem direta (`gh pr view 6`) confirmou que o **PR #6 já estava
+  `MERGED`** (`mergedAt: 2026-09-15T14:38:34Z`), ou seja, o Thiago mesclou manualmente esse ponto
+  de revisão desde o último ciclo registrado. **Primeira vez que isso acontece no projeto.** Como
+  a regra 3 do `AGENTE.md` manda criar um PR novo sempre que a busca não retornar nenhum aberto
+  (sem esperar aprovação/decisão do Thiago pra isso), criei o **PR #7**
+  (https://github.com/Thiagocs12/automacaoUteisMultiplica/pull/7) — corpo resume que ele foi
+  recriado por causa do merge do #6 e lista o que está pendente de revisão (o merge desta tarefa).
+  Este é o novo ponto único de revisão contínua — não recriar de novo enquanto continuar aberto.
+- **`fila-merge/aguardando-aprovacao/`**: vazio (legado já todo processado).
+- **`fila-merge/pendentes/`**: 1 aviso processado —
+  `20260915114846-nao-quebrar-quando-parametros-clonagem-unica-ausentes.md` (módulo `keycloakUser`,
+  branch `keycloakUser/nao-quebrar-parametros-clonagem-unica-ausentes`: correção reportada pelo
+  Thiago em teste manual — rodar a suíte completa sem `tags=@keycloakUsuario` lançava `Error`
+  bloqueante no cenário de clonagem única por falta de `usuarioOrigem`/`novoUsername`/`novaSenha`;
+  agora loga e segue sem clonar, mesmo padrão de guard-rail já usado na tarefa anterior de fixture
+  vazia do modo em lote).
+  - Merge de teste local contra `reviewAgents`: sem conflito (merge automático, só precisou de
+    commit de merge — histórico divergente, não foi fast-forward).
+  - `.env.example`: sem variável nova (diff vazio entre os commits mesclados).
+  - `npm run lint`: 0 erros (mesmos 4 warnings pré-existentes). `npm run test:safety`: 45/45 (bate
+    com o relatado pelo subAgent).
+  - `npx cypress run --env tags=@keycloakUsuario` contra o Keycloak real: todos os specs passaram
+    (6 tests, 1 passing, 5 pending, 0 failing) — o cenário de clonagem única (sem parâmetros
+    adicionais de usuário/senha) logou a mensagem orientativa e completou sem lançar erro,
+    confirmando a correção. Sem screenshots gerados (sem falha).
+  - Merge finalizado e pushado direto em `reviewAgents` (commit `f4c41cf`, sem PR). Aviso movido de
+    `fila-merge/pendentes/` para `fila-merge/concluidos/`. Não havia branch local própria criada
+    para esta tarefa (merge feito direto de `origin/<branch>`), então não há branch local pra
+    deletar — mesma situação já documentada no ciclo anterior, branch remota preservada.
+- **Sincronização da pasta manual** (`C:\multiplica\cypress-uteis`): encontrada com a mesma
+  alteração não commitada do Thiago em `cypress/fixtures/usuariosParaClonar.json` do ciclo
+  anterior (ainda não commitada por ele). Confirmei que o novo commit (`c9bf535..f4c41cf`) não
+  toca esse arquivo antes de agir — `git pull origin reviewAgents` fez fast-forward normalmente,
+  preservando a modificação local do Thiago intacta. `node_modules` presente, não precisou
+  `npm install`. Nomes de variáveis de `.env` comparados (sem exibir valores) contra `repo/.env` —
+  idênticos, nenhuma cópia necessária.
+- Nenhuma dúvida nova registrada neste ciclo. Aprendizado cross-módulo registrado em
+  `../docs/conhecimento-geral.md`: o fluxo "PR único nunca precisa ser recriado" tem uma exceção
+  implícita que vale deixar explícita — se o Thiago mergear manualmente o PR contínuo (fora do
+  controle do Agent Master), o próximo ciclo detecta via `gh pr list` vazio e recria normalmente,
+  sem precisar de decisão dele pra isso.
