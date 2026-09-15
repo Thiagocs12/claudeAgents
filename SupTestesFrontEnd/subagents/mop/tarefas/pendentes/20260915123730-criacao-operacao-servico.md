@@ -49,12 +49,9 @@ trabalho do subAgent, isto aqui é o roteiro funcional a seguir):
 - **Beyond Banking** (criação da operação): `https://beyondbanking-hml.grupomultiplica.com.br/`
   — HML. Login: mesmo SSO/Keycloak já mapeado (perfil `master`) — confirmar que funciona igual
   aqui; se pedir algo diferente, registrar dúvida em vez de assumir.
-- **Beyond / Beyond BackOffice** (checagem no Monitor Diário): `beyond.grupomultiplica.com.br`
-  — **atenção**: essa URL, do jeito que foi passada, não tem o sufixo `-hml` que aparece em outras
-  referências de HML deste sistema (ex. `beyond-hml.grupomultiplica.com.br`, documentado no
-  `SupE2eAutomation`). **Confirmar visualmente que caiu no ambiente HML** (banner/indicador de
-  ambiente, ou dados batendo com o que foi criado nesta tarefa) antes de considerar a checagem
-  válida — se parecer produção ou ambiente errado, **parar e registrar dúvida**, não prosseguir.
+- **Beyond / Beyond BackOffice** (checagem no Monitor Diário): `beyond-hml.grupomultiplica.com.br`
+  — HML (confirmado pelo Thiago em 2026-09-15; a menção sem `-hml` foi só um esquecimento de
+  digitação, mesmo host já documentado pelo `SupE2eAutomation`).
 
 ## Material de apoio
 

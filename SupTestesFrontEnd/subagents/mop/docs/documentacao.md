@@ -24,11 +24,9 @@ Este módulo mexe com **dois sistemas diferentes**, não duas telas do mesmo app
   digitação, Cad Pessoa (consulta de CPF pra usar como sacado), preenchimento e geração da
   operação, e o dashboard de Operações onde ela é avançada. **Território novo, nada mapeado ainda
   aqui.**
-- **Beyond / Beyond BackOffice** (`beyond-hml.grupomultiplica.com.br` na convenção já usada pelo
-  `SupE2eAutomation` — **mas o Thiago passou `beyond.grupomultiplica.com.br`, sem `-hml`, ao
-  pedir a primeira tarefa; ainda não confirmado se são a mesma coisa ou hosts diferentes**) — onde
-  se **verifica** o resultado: Monitor Diário, histórico da operação, etapa "Inclusão OPE". É o
-  que o `SupE2eAutomation` já mapeou (login, navegação, seletores da tabela).
+- **Beyond / Beyond BackOffice** (`beyond-hml.grupomultiplica.com.br`, confirmado pelo Thiago em
+  2026-09-15) — onde se **verifica** o resultado: Monitor Diário, histórico da operação, etapa
+  "Inclusão OPE". É o que o `SupE2eAutomation` já mapeou (login, navegação, seletores da tabela).
 - Login (Keycloak, perfil `master`) é o mesmo mecanismo nos dois, segundo o Thiago — mas confirmar
   na prática antes de assumir que credenciais/sessão viajam entre os dois hosts sem novo login.
 
