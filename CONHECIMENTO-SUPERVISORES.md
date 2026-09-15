@@ -1,0 +1,277 @@
+# Conhecimento entre Supervisores (C:\Multiplica\claudeAgents)
+
+Este arquivo fica um nível acima de qualquer Supervisor individual (ex.: `SupE2eAutomation/`).
+Todo Supervisor criado nesta pasta deve ler este arquivo INTEIRO ao iniciar uma sessão e antes de
+reservar um recurso compartilhado (conta de Claude Code, nome de Scheduled Task) — evita colisão
+entre Supervisores diferentes rodando na mesma máquina e reaplica o padrão estrutural já validado
+em vez de reinventar.
+
+**Antes de escrever:** releia este arquivo imediatamente antes de salvar sua atualização — pode
+haver outro Supervisor/agente escrevendo em paralelo.
+
+## Supervisores existentes
+
+- **`SupE2eAutomation/`** — "Sup Automação UI". Refina demandas de automação de testes E2E
+  (Cypress) da plataforma Multiplica junto ao Thiago e organiza subAgents por módulo. Repositório
+  alvo: `automacaoUiMultiplica`.
+- **`SupAutomacaoUteis/`** — "Sup AutomaçãoUteis" (criado em 2026-09-14). Refina demandas de
+  automações utilitárias/back-office (não é automação de UI de ponta a ponta) junto ao Thiago.
+  Repositório alvo: `automacaoUteisMultiplica` (GitHub, `Thiagocs12/automacaoUteisMultiplica`) —
+  já era um projeto maduro (Cypress+Cucumber, sincronização PROD→HML de Produtos/Esteiras/
+  Vínculos/Grupos e Permissões) antes de virar alvo de agentes; branch `reviewAgents` criada a
+  partir da `master` especificamente para este fluxo. Primeiro módulo: `keycloakUser` (clonagem de
+  usuário Keycloak PROD→HML com novo username/senha).
+
+## Pool de contas do Claude Code (`%USERPROFILE%\.claude-accounts\`)
+
+- `contaA` e `contaB` existem hoje, reservadas pelo `SupE2eAutomation` **e agora também pelo
+  `SupAutomacaoUteis`** (decisão explícita do Thiago em 2026-09-14, ciente da concorrência extra
+  de rate-limit entre os dois Supervisores — ele preferiu reusar a criar `contaC`/`contaD` por
+  enquanto):
+  - `SupE2eAutomation`: revezamento de subAgents (ver seção 3.0 do `CLAUDE.md` dele), `contaB`
+    fixa para o Agent Master, `contaA` fixa para o `StatusWatcher`.
+  - `SupAutomacaoUteis`: revezamento de subAgents começando em `contaA` (`keycloakUser` = 1º
+    módulo = `contaA`), `contaB` fixa para o Agent Master, `contaB` fixa para o `StatusWatcher`.
+- Um Supervisor novo que precisar de conta própria (ou se a concorrência de rate-limit virar
+  problema real) deve criar uma nova (`contaC`, `contaD`, ...) em vez de continuar empilhando em
+  `contaA`/`contaB` — isso exige um login interativo do Thiago na máquina na hora de criar.
+- Ao reservar uma conta nova, registre aqui: nome da conta, qual Supervisor/agente é dono dela.
+- **O Supervisor em si também alterna `contaA`/`contaB` (pedido explícito do Thiago em
+  2026-09-14)** — não só os agentes automatizados dentro dele. Mesma regra de ordem de criação dos
+  subAgents: 1º Supervisor criado = `contaA`, 2º = `contaB`, e assim por diante.
+  - `SupE2eAutomation` (1º Supervisor) → **`contaA`**.
+  - `SupAutomacaoUteis` (2º Supervisor) → **`contaB`**.
+  - Isso é sobre a **sessão interativa do Supervisor em si** (a conversa com o Thiago, tipo esta
+    aqui), não sobre os agentes automatizados internos dele — aqueles continuam com suas próprias
+    atribuições já documentadas acima (ex.: dentro do `SupE2eAutomation`, o `StatusWatcher` também
+    usa `contaA` e o Agent Master usa `contaB`; a conta do Supervisor pode coincidir ou não com a
+    de um agente interno específico, não tem relação direta).
+  - Pra abrir uma sessão de Supervisor já na conta certa: setar `CLAUDE_CONFIG_DIR` **antes** de
+    iniciar o `claude` interativo nessa pasta (mesmo mecanismo dos `run-cycle.ps1`, só que manual/
+    interativo em vez de scheduled) — ex., pra abrir o `SupE2eAutomation`:
+    ```powershell
+    $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaA"
+    cd C:\Multiplica\claudeAgents\SupE2eAutomation
+    claude
+    ```
+    Não retroativo a sessões já abertas sem essa variável — só passa a valer na próxima vez que o
+    Thiago abrir uma sessão nova nessa pasta.
+
+## Padrão de nomes de Scheduled Task (Windows Task Scheduler)
+
+- Prefixe toda task com o nome do Supervisor: `<NomeDoSupervisor>-<agente>` (ex.:
+  `SupE2eAutomation-SubAgent-geral`, `SupE2eAutomation-AgentMaster`) — evita colisão de nomes
+  entre Supervisores diferentes na mesma máquina.
+- Cada task aponta para um `run-cycle.ps1` local, chamado via `powershell.exe -NoProfile
+  -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File <script>`, que roda `claude -p
+  <prompt> --permission-mode bypassPermissions --output-format stream-json --verbose`, com log em
+  `run-log.txt` na própria pasta do agente.
+- **Log em tempo real (mudança de 2026-09-14, pedido do Thiago em ambos os Supervisores):** antes
+  disso era `--output-format text` — só grava no log quando o ciclo inteiro termina, sem
+  visibilidade de progresso durante a execução. Trocado para `--output-format stream-json
+  --verbose` (sem `--include-partial-messages` — isso incluiria delta de token a token, ruído
+  demais para log) piped para um `ForEach-Object` que faz parse de cada linha NDJSON e grava em
+  `run-log.txt` já formatado (`[sessao]`, `[fala]`, `[tool] <nome> <args>`, `[resultado]`, `[ciclo
+  encerrado] <subtype> duracao=...ms custo=$...`), uma linha por evento, assim que ele acontece —
+  dá pra acompanhar o progresso real olhando o log durante o ciclo, não só no final. Qualquer linha
+  que não for JSON válido (ex. stderr) ou tiver schema inesperado cai no fallback e é gravada crua,
+  nunca derruba o pipeline. Padrão a reaplicar em qualquer `run-cycle.ps1` novo — ver o bloco
+  completo em qualquer `run-cycle.ps1` já existente (idêntico nos dois Supervisores) em vez de
+  reescrever do zero.
+- **Cadência real (não confie em comentário/doc — confira sempre `Export-ScheduledTask -TaskName
+  <nome>` ou `(Get-ScheduledTask -TaskName <nome>).Triggers.Repetition.Interval` se precisar ter
+  certeza; já rolou doc ficar desatualizada em relação à task de fato registrada mais de uma vez):**
+  - **`SupE2eAutomation`** (histórico: 30min/1h → 5min/15min → 15min/30min/15min → **de volta a
+    5min (SubAgent de módulo) / 15min (Agent Master) / 15min (Status Watcher) em 2026-09-14**,
+    pedido explícito do Thiago depois que a pré-checagem em PowerShell da seção 3.4 tornou seguro
+    chamar o Claude com mais frequência sem gastar rate-limit à toa nos ciclos vazios) — esse é o
+    valor atual real, aplicado via `Set-ScheduledTaskTrigger`/`Set-ScheduledTask` diretamente nas 3
+    tasks (`SubAgent-geral`, `SubAgent-mop`, `AgentMaster`; `StatusWatcher` já estava em 15min, sem
+    mudança): confira sempre a task, esse número pode mudar de novo por pedido dele.
+  - **`SupAutomacaoUteis`**: nasceu com 5min (SubAgent) / 15min (Agent Master e Status Watcher) e
+    segue nesses valores (confirmado em 2026-09-14 ao alinhar o `SupE2eAutomation`) — os dois
+    Supervisores ajustam cadência de forma independente, não presuma que vão continuar
+    sincronizados só porque coincidem agora.
+
+## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
+
+- `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.
+- `docs/conhecimento-geral.md` — conhecimento cross-módulo/cross-agente **dentro** daquele
+  Supervisor (não confundir com este arquivo, que é cross-**Supervisor**).
+- `subagents/<modulo>/` — um por módulo/domínio de demanda: `AGENTE.md`, `repo/` (clone do
+  repositório do módulo), `docs/documentacao.md`, `duvidas.md`,
+  `tarefas/{pendentes,executando,aguardando-resposta,concluidas}`.
+- `agent-master/` — único por Supervisor, integra as branches dos subAgents na branch de
+  integração do repositório via **Pull Request** (nunca merge/push direto): `AGENTE.md`, `repo/`,
+  `docs/documentacao.md`, `duvidas.md`, `fila-merge/{pendentes,aguardando-aprovacao,concluidos}`.
+- **Integração (mudou em 2026-09-14, pedido explícito do Thiago — novo padrão geral pros dois
+  Supervisores, não só `SupE2eAutomation`):** o Agent Master faz **merge direto (com push)** na
+  branch de integração (`reviewAgents`) de cada tarefa que passar nos testes — sem PR nem
+  aprovação humana por tarefa. Ele **nunca** mergeia/dá push direto na `main`: o único ponto de
+  revisão manual do humano responsável é um **PR único e contínuo `reviewAgents → main`**, que o
+  Agent Master garante que existe (cria uma vez se faltar, `gh pr create --base main --head
+  reviewAgents`; nunca recria) e que reflete sozinho, via GitHub, cada commit novo pusheado na
+  `reviewAgents` — não precisa de nenhuma ação extra do agente a cada ciclo além de checar que
+  continua aberto (`gh pr list --base main --head reviewAgents --state open`).
+  - **Isso nunca espera aprovação do humano responsável** (esclarecido explicitamente a pedido do
+    Thiago em 2026-09-14, para os dois Supervisores): abrir/manter esse PR único é automático, não
+    depende de nenhuma decisão dele. Se uma tarefa hoje bloqueada por dúvida (ex.: teste falhando)
+    for desbloqueada e pusheada na `reviewAgents` num ciclo futuro, o PR já aberto reflete essa
+    mudança sozinho (o GitHub atualiza o diff automaticamente) — o humano responsável só precisa,
+    quando quiser, mesclar esse PR já existente na branch de release. Aprovação/decisão dele só
+    entra para desbloquear itens individuais em `duvidas.md`, nunca para manter o PR contínuo
+    aberto.
+  - **Modelo anterior (abandonado):** cada tarefa gerava seu próprio PR `feature/xxx →
+    reviewAgents`, aprovado manualmente um por um — trocado por ser lento demais pro volume de
+    tarefas. Um Supervisor que ainda estiver no modelo antigo deve migrar pro novo (releia a seção
+    3.3 do `CLAUDE.md` do `SupE2eAutomation` como referência de como ficou depois da migração).
+  - PRs por-tarefa já abertos no modelo antigo no momento da troca (ex.: PR #9 do
+    `SupE2eAutomation`) continuam sendo aprovados manualmente do jeito de sempre — é só legado
+    transitório, não crie PR novo por tarefa daqui pra frente.
+  - **`SupAutomacaoUteis`: já atualizado (2026-09-14)** — `CLAUDE.md` (3.3), `agent-master/AGENTE.md`
+    e `agent-master/run-cycle.ps1` já foram alinhados a este mesmo padrão. Diferença local: a
+    branch de release desse repositório chama-se `master` (não `main`), então o PR de
+    acompanhamento contínuo é `reviewAgents -> master`. O aviso pré-existente
+    (`keycloakUser/clonar-usuario-prod-hml`) permanece em `fila-merge/aguardando-aprovacao/` como
+    referência histórica do modelo anterior, aguardando a revisão manual de sempre.
+- Protocolo de dúvidas: cada agente registra em `duvidas.md`; só o Supervisor (repassando o humano
+  responsável) marca uma dúvida como respondida — nenhum agente responde a própria dúvida.
+
+## GitHub CLI (`gh`) — necessário para qualquer Agent Master abrir PR
+
+- Nesta máquina, o instalador `.msi` padrão do `gh` exige elevação (UAC) e falha em sessão não
+  administrativa. Use a versão portátil: baixe o `.zip` do release (`gh_<versão>_windows_amd64.zip`
+  em https://github.com/cli/cli/releases/latest), extraia em
+  `%LOCALAPPDATA%\Programs\gh\bin\` e adicione ao PATH do **usuário** (não precisa de admin).
+- Autentique via variável de ambiente `GH_TOKEN` (Personal Access Token), setada no `run-cycle.ps1`
+  do Agent Master antes de chamar `claude` — **não** via `gh auth login --with-token`: essa versão
+  do `gh` (2.100.0) tem um bug validando token fine-grained (`github_pat_...`) por esse fluxo
+  (retorna `401 Bad credentials` mesmo com token válido), mas `GH_TOKEN` funciona normalmente.
+  `gh auth login` interativo (device flow) também travou nesta máquina após autorizar no navegador
+  (não confirmou o login) — não perca tempo tentando de novo, vá direto para `GH_TOKEN`.
+- Nunca exponha o valor do token em documentação ou log.
+- **O token sendo válido e com push/admin no repositório não é garantia de conseguir abrir PR**:
+  em 2026-09-14, o mesmo token (fine-grained) que funciona para o `SupE2eAutomation` falhou com
+  `gh pr create` no repositório do `SupAutomacaoUteis` (`Resource not accessible by personal
+  access token`), mesmo `gh api repos/.../permissions` mostrando `push: true`. Suspeita: token
+  fine-grained restrito a repositórios específicos e/ou sem a permissão "Pull requests"
+  habilitada na sua configuração no GitHub — isso é por token, não por conta/usuário. Ao
+  reaproveitar um `.gh-token` existente para um repositório novo, teste `gh pr create` cedo (ou ao
+  menos `gh api repos/<owner>/<repo>` com um token de teste) antes de assumir que vai funcionar;
+  se falhar, é o Thiago quem precisa ajustar o token nas configurações do GitHub, não é algo
+  contornável via código.
+
+## `PushNotification` é suprimido enquanto houver qualquer sessão interativa aberta — pop-up local como fallback (2026-09-14)
+
+- Descoberto ao investigar por que o Thiago nunca recebia push dos Status Watchers: o Status
+  Watcher (`SupE2eAutomation`) detectou um PR novo, chamou `PushNotification` corretamente, e a
+  ferramenta devolveu **"Not sent — this terminal is active, so your output here already reaches
+  the user; a separate notification would be redundant."** O critério de "terminal ativo" parece
+  ser por conta (qualquer sessão interativa do Claude Code aberta, mesmo ociosa, mesmo em outra
+  pasta/Supervisor — confirmado via `ListAgents` mostrando sessões peer idle) — não por quem
+  realmente está olhando aquele processo específico. Como o Thiago normalmente mantém alguma
+  sessão interativa aberta, o push nunca chega. Reportado como feedback de produto, mas não é algo
+  contornável via prompt.
+- **Fallback implementado (nos dois Supervisores):** o Status Watcher, além de tentar
+  `PushNotification` (sem depender do resultado), termina a resposta final do ciclo com uma linha
+  exata `NOTIFICAR: <resumo>` sempre que há algo para notificar. O `run-cycle.ps1` (código
+  determinístico, não a LLM) varre os eventos `assistant`/`result` do stream NDJSON procurando essa
+  linha via regex (`(?m)^NOTIFICAR:\s*(.+)$`) e, se achar, grava a mensagem em
+  `ultima-notificacao.txt` e dispara, via `Start-Process` **destacado** (não bloqueia o ciclo nem
+  trava execuções futuras da Scheduled Task), um pop-up modal (`MessageBox` do
+  `System.Windows.Forms`) com som (`SystemSounds.Exclamation`) na tela do usuário — função
+  `Show-PopupNotificacao` em cada `run-cycle.ps1` de Status Watcher. Testado ao vivo com o Thiago,
+  confirmado funcionando ("apareceu, assim serve pra mim").
+- **Por que a mensagem passa por um arquivo (`ultima-notificacao.txt`) em vez de ir direto no
+  argumento do `Start-Process`:** evita expor o texto da notificação (gerado pela LLM, conteúdo
+  arbitrário) a problemas de escaping de aspas na linha de comando — mesma classe de bug da seção
+  abaixo. Só o caminho do arquivo (fixo, controlado, sem aspas) entra na string do comando.
+- Ao criar um Status Watcher novo (ou qualquer agente que precise alertar o Thiago de forma
+  confiável), reaproveite esse padrão em vez de depender só de `PushNotification`.
+
+## Aspas duplas dentro do prompt de `run-cycle.ps1` — nunca use (armadilha real, 2026-09-14)
+
+- `$prompt` é passado como argumento de linha de comando pro `claude.exe` (`claude -p $prompt ...`).
+  Quando o texto do prompt contém aspas duplas **aninhadas** (aspas dentro de aspas, ex.:
+  `"gh pr create --title "<resumo>" --body "<texto>""`), o Windows corrompe o parsing do argv na
+  hora de repassar a string pro processo nativo — pedaços do texto acabam sendo lidos como flags
+  soltas pelo próprio `claude.exe`, que falha de cara com `error: unknown option '--json'` (mesmo
+  sem nenhuma opção `--json` de verdade no comando) e o ciclo inteiro não roda nada.
+- Foi exatamente isso que aconteceu nos dois Agent Master (`SupAutomacaoUteis` e
+  `SupE2eAutomation`) nas primeiras execuções reais deles em 2026-09-14 — o prompt de ambos tinha
+  um trecho tipo `abra o PR com "gh pr create --title "<resumo>" --body "<texto>""` só pra
+  exemplificar o comando `gh` em prosa. A Scheduled Task "tinha sucesso" (`LastTaskResult=0`)
+  porque o `.ps1` em si não falha, só o `claude` dentro dele — sempre olhe o `run-log.txt`, não só
+  o resultado da task, pra confirmar que o ciclo realmente fez algo.
+- **Correção definitiva (padrão atual, aplicada em todos os `run-cycle.ps1` dos dois
+  Supervisores):** não passe `$prompt` como argumento de `claude -p` — faça o pipe pelo stdin,
+  `$prompt | claude -p --permission-mode bypassPermissions --output-format stream-json --verbose`
+  (sem `$prompt` depois de `-p`). Isso tira o texto do prompt do argv por completo, então aspas
+  (simples, duplas, aninhadas, o que for) dentro dele deixam de ser um risco — não depende mais de
+  disciplina manual de "nunca usar aspas". As duas famílias de Supervisor chegaram nessa mesma
+  correção de forma independente em 2026-09-14 (um sinal de que é o jeito certo). Continue evitando
+  aspas duplas por clareza/legibilidade do prompt, mas o que realmente impede o bug é o stdin, não
+  a ausência de aspas.
+
+## Pré-checagem em PowerShell antes de chamar `claude -p` — evita ciclo vazio gastando rate-limit (2026-09-14, `SupAutomacaoUteis`)
+
+- Até aqui, todo `run-cycle.ps1` (subAgent, Agent Master, Status Watcher) chamava `claude -p` **a
+  cada ciclo**, mesmo quando não havia nada pendente — o próprio Claude constatava "nada a fazer"
+  (passos 1-4 da lógica de subAgent/Agent Master, ou a comparação de estado do Status Watcher) e
+  encerrava. Isso gasta uma invocação/rate-limit por ciclo à toa, na maioria dos ciclos.
+- **Padrão novo (pedido explícito do Thiago):** `run-cycle.ps1` faz uma checagem determinística —
+  só existência de arquivo em pastas de fila e o campo `Status:` de `duvidas.md` via regex, sem
+  interpretar conteúdo — **antes** de montar/chamar o `claude -p`. Se não achar nada que justifique
+  o ciclo, grava `[ciclo pulado] ...` em `run-log.txt` e sai (`exit 0`) sem invocar `claude` nenhuma
+  vez. Ver seção 3.4 do `CLAUDE.md` do `SupAutomacaoUteis` pro detalhe exato de cada tipo de agente
+  (subAgent, Agent Master, Status Watcher) e o código de referência em qualquer `run-cycle.ps1`
+  daquele Supervisor.
+- Continua sendo puramente uma otimização de custo — não muda nenhuma regra de negócio de quando o
+  Claude É chamado (ele mesmo ainda confere de novo como reforço).
+- **`SupE2eAutomation`: já aplicado (atualização em 2026-09-14, pedido do Thiago)** — os 4
+  `run-cycle.ps1` (subAgents `geral`/`mop`, Agent Master, Status Watcher) e a seção 3.4 do
+  `CLAUDE.md` desse Supervisor foram alinhados a este mesmo padrão. Diferença local: o Status
+  Watcher do `SupE2eAutomation` também notifica um gatilho `conclusao` (tarefa concluída) que o
+  `SupAutomacaoUteis` não tinha — a pré-checagem em PowerShell dele foi estendida pra também
+  disparar quando aparece um arquivo em `tarefas/concluidas/`/`fila-merge/concluidos/` cujo nome
+  ainda não conste (busca de texto cru, sem parsear JSON) em `estado-anterior.json`, além das
+  checagens de dúvida pendente/PR legado que os dois Supervisores já compartilhavam.
+- **Cadência voltou a ficar mais frequente depois desse padrão (2026-09-14):** com a maioria dos
+  ciclos agora sendo pulados sem custo, o Thiago pediu pra voltar a cadência de ambos os
+  Supervisores pro valor mais frequente de antes (`SupE2eAutomation`: subAgents 15min→5min, Agent
+  Master 30min→15min, Status Watcher já estava 15min; `SupAutomacaoUteis` já estava em 5min/15min,
+  sem mudança) — ver a seção "Cadência real" acima, sempre atualizada. Reforça o racional: a
+  pré-checagem existe justamente pra permitir cadência mais frequente sem multiplicar o gasto de
+  rate-limit, já que a maior parte dos ciclos extra é pulada de graça.
+
+## Economia de tokens dentro de um ciclo que roda de verdade (2026-09-14)
+
+A pré-checagem acima evita gastar tokens em ciclos **vazios**. Para os ciclos que realmente têm
+algo a fazer (e por isso chamam `claude -p`), o segundo padrão de economia, aplicado à regra fixa
+de todo `AGENTE.md` (subAgent e Agent Master, dos dois Supervisores): **nunca despejar a saída bruta
+de comandos potencialmente grandes** (`npm test`/`npx cypress run`/`npm ci`/`npm install`/
+`--legacy-peer-deps`) de volta no contexto do agente ou em `docs/documentacao.md`/`duvidas.md` —
+redirecionar pra um arquivo e ler/relatar só o resumo relevante (passed/failed, mensagem de erro
+específica, últimas linhas). Isso é puramente uma otimização de custo, igual à pré-checagem — não
+muda nenhuma regra de negócio sobre quando um teste é considerado passou/falhou.
+
+## Início de sessão interativa do Supervisor — reler documentação antes da primeira resposta (2026-09-14)
+
+Pedido explícito do Thiago, aplicado aos dois Supervisores: no início de **toda sessão nova** do
+Supervisor (a conversa interativa dele com o Thiago, não os ciclos automáticos de subAgent/Agent
+Master/Status Watcher — esses já releem `conhecimento-geral.md`/`documentacao.md` a cada ciclo por
+regra própria do `AGENTE.md`), antes de responder à primeira mensagem, o Supervisor deve reler por
+completo: este arquivo (`CONHECIMENTO-SUPERVISORES.md`), o `docs/conhecimento-geral.md` da sua
+própria pasta, e o `docs/documentacao.md` de cada subAgent + do `agent-master/`. Motivo: entre uma
+sessão interativa e outra, ciclos automáticos podem ter escrito conhecimento novo (aprendizado,
+padrão descoberto, mudança de estado) que o Supervisor precisa conhecer antes de conversar com o
+Thiago — não vale confiar em memória de uma sessão anterior. Ver o parágrafo equivalente no início
+do `CLAUDE.md` de cada Supervisor (idêntico nos dois). Um Supervisor novo deve nascer já com esse
+parágrafo.
+
+## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
+
+- O cache de binário do Cypress é **global por usuário do Windows**
+  (`%LOCALAPPDATA%\Cypress\Cache`), compartilhado por qualquer projeto Node/Cypress rodado nesta
+  máquina — relevante para qualquer Supervisor futuro que também use Cypress, não só o
+  `SupE2eAutomation`.

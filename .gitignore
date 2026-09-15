@@ -1,0 +1,16 @@
+# Clones de repositórios de terceiros usados pelos agentes (não fazem parte deste repositório)
+**/repo/
+
+# Dependências
+node_modules/
+
+# Segredos e credenciais
+.env
+.env.*
+!.env.example
+.gh-token
+
+# Estado/logs transitórios dos agentes
+run-log.txt
+estado-anterior.json
+ultima-notificacao.txt

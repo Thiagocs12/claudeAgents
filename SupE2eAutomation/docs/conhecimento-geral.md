@@ -1,0 +1,344 @@
+# Conhecimento geral do sistema (leitura obrigatória para todo agente)
+
+Este arquivo reúne aprendizados e convenções que atravessam módulos — todo subAgent e o Agent
+Master devem ler este arquivo INTEIRO antes de iniciar qualquer ciclo, além do
+`docs/documentacao.md` do próprio módulo. Se você (agente) aprender algo que outro módulo também
+precisaria saber, registre aqui — não só no seu `docs/documentacao.md` local.
+
+**Antes de escrever:** releia este arquivo imediatamente antes de salvar sua atualização, para não
+perder uma edição feita por outro agente rodando em paralelo (não há lock automático entre
+ciclos).
+
+## Segurança — nunca ecoe GH_TOKEN (ou qualquer secret) em comando de diagnóstico (2026-09-14)
+
+- Um comando de diagnóstico rodado pelo Agent Master (erro de sintaxe/quoting, não foi uma tarefa)
+  ecoou o `GH_TOKEN` completo em texto puro na saída, que foi parar em `agent-master/run-log.txt`
+  (o log em streaming grava literalmente o que passa pelo stdout/stderr do ciclo). Token tinha
+  acesso total aos repositórios e não expira — ficou exposto até o Supervisor redigir o log e o
+  Thiago revogar/rotacionar no GitHub.
+- **Nunca rode um comando que possa imprimir `$env:GH_TOKEN` (ou qualquer variável de
+  credencial) por inteiro** — nem para depurar. Se precisar confirmar que a variável está setada,
+  cheque só o comprimento/prefixo (`$env:GH_TOKEN.Length`, `$env:GH_TOKEN.Substring(0,4)`), nunca
+  o valor completo.
+- Se acontecer de novo (qualquer secret vazar em `run-log.txt`, `docs/documentacao.md`, ou
+  qualquer arquivo lido por outro agente/Supervisor): registre dúvida bloqueante imediatamente
+  (não tente redigir/apagar sozinho — isso é decisão do Supervisor/Thiago) e não repita o comando
+  que causou o vazamento tentando "corrigir" — pare e espere resposta.
+
+## Convenções do repositório do projeto (automacaoUiMultiplica)
+
+- Branch de integração: **`reviewAgents`** (nunca `reviewAgent`, no singular). `main` só recebe
+  merge de `reviewAgents` em momentos de release — nunca commit/merge direto.
+- O padrão de arquitetura do projeto está documentado no `README.md` e `CLAUDE.md` **do próprio
+  repositório clonado** (não confundir com o `CLAUDE.md`/`docs/` do Supervisor, que é sobre como
+  os agentes se organizam, não sobre a automação de UI em si).
+- **Fluxo de integração (atualizado 2026-09-14, pedido explícito do Thiago):** o Agent Master faz
+  merge direto (com push) de cada tarefa aprovada nos testes **na `reviewAgents`** — sem PR nem
+  aprovação humana por tarefa. Ele **nunca** mergeia/dá push direto na `main`: o único ponto de
+  revisão manual do Thiago é um **PR único e contínuo `reviewAgents → main`** — reflete sozinho no
+  GitHub cada commit novo pusheado na `reviewAgents`; o Agent Master só garante que ele existe a
+  cada ciclo (`gh pr list`/`gh pr create` se faltar), nunca recria. **Atenção: o número do PR muda**
+  toda vez que o anterior é mergeado pelo Thiago e não há commit novo pendente (`gh pr create`
+  falha com "No commits between main and reviewAgents" nesse caso — normal, só criar de novo depois
+  do próximo push em `reviewAgents`) — não hardcode o número aqui; confira sempre com `gh pr list`.
+  Histórico: PR #10 (criado 2026-09-14) foi mergeado pelo Thiago no mesmo dia; PR #11 (criado
+  2026-09-14, mesmo dia, depois do push do commit `9f38a75`) é o atual em aberto. Autenticado via
+  `GH_TOKEN` setado em `agent-master/run-cycle.ps1`. Modelo anterior (PR por tarefa,
+  `feature/xxx → reviewAgents`, aprovado manualmente um a um) foi abandonado por ser lento demais
+  para o volume de tarefas; `fila-merge/aguardando-aprovacao/` do Agent Master só existe hoje para
+  terminar de processar avisos que já tinham PR aberto na troca de fluxo — ex.: PR #9
+  (`feature/mop-monitor-diario-analisar-operacao`), que ficou `OPEN` até **2026-09-14** e nesse dia
+  foi **MERGED** pelo Thiago (processado pelo Agent Master como legado/MERGED, aviso movido para
+  `concluidos/`) — nenhum aviso novo passa mais por ali.
+  - **Resolvido (2026-09-14) — docs do próprio repositório (`repo/CLAUDE.md`, `repo/README.md`)
+    estavam desatualizadas:** o commit `69cc6cd` (2026-09-11, "docs: fluxo de integração volta a
+    usar Pull Request, aprovado manualmente por tarefa") havia documentado o modelo **antigo** (PR
+    por tarefa) como vigente, sem nunca ter sido corrigido após a mudança de 2026-09-14 acima.
+    Corrigido pelo subAgent `geral` (tarefa `20260914125955-atualizar-claude-md-fluxo-integracao`,
+    branch `feature/atualizar-claude-md-fluxo-integracao`): seção "Collaboration workflow" do
+    `CLAUDE.md` e "Fluxo de trabalho" do `README.md` agora descrevem o fluxo atual (merge direto +
+    PR único). Aviso deixado em `agent-master/fila-merge/pendentes/` para merge em `reviewAgents`.
+- Arquitetura alvo: camadas Pages / Etapas / Esteiras, com Cucumber como camada fina de
+  legibilidade sobre as Esteiras (não orquestra nada sozinho).
+
+## Contas de Claude Code por agente
+
+- Cada subAgent/Agent Master roda um `claude -p` fixado numa conta própria via
+  `CLAUDE_CONFIG_DIR` (pastas em `%USERPROFILE%\.claude-accounts\<conta>`), setada no início do
+  `run-cycle.ps1` antes do `claude` iniciar.
+- **Agent Master**: sempre fixo em `contaB`.
+- **SubAgents de módulo**: revezam `contaA`/`contaB` pela ordem de criação (1º módulo = `contaA`,
+  2º = `contaB`, 3º = `contaA`, ...). Ver seção 3.0 do `CLAUDE.md` do Supervisor.
+- Atribuições atuais: `geral` = `contaA` (1º módulo), `mop` = `contaB` (2º módulo). Próximo módulo
+  novo = `contaA`.
+
+## `.env` / variáveis de ambiente — quem cuida do quê
+
+- O Agent Master mantém `agent-master/repo/.env` atualizado automaticamente: a cada merge, compara
+  `.env.example` antes/depois para achar variáveis novas e busca o valor em
+  `subagents/<modulo>/docs/documentacao.md` e/ou na tarefa concluída correspondente. Nunca inventa
+  nem deixa em branco — se não achar, vira dúvida bloqueante.
+- O Agent Master sincroniza `C:\multiplica\cypress-e2e` (pasta de teste manual do Thiago, mesmo
+  repositório em clone separado) a cada ciclo: `npm ci`/`npm install` se necessário, e copia
+  `repo/.env` por cima do `.env` de lá. **Atualizado 2026-09-14:** essa pasta agora fica sempre na
+  `reviewAgents` (não há mais branch de PR-por-tarefa pra testar antes de aprovar) — mesmo
+  enquanto o PR legado #9 (`feature/mop-monitor-diario-analisar-operacao`) segue `OPEN`, a pasta
+  não fica mais presa à branch dele. O Thiago não precisa criar/manter esse `.env` na mão.
+- **Nunca** exponha valores de variáveis de `.env` em `docs/documentacao.md`, `duvidas.md` ou em
+  log de saída — só o nome da variável e de onde veio o valor.
+
+## Armadilhas conhecidas de ambiente (Windows / Cypress)
+
+- O cache de binário do Cypress é **global por usuário do Windows**
+  (`%LOCALAPPDATA%\Cypress\Cache`), compartilhado entre **todos** os projetos da máquina — não é
+  isolado por repositório. Rodar `npx cypress open`/`run` num projeto cujo `node_modules` ainda
+  não tem o Cypress resolvido localmente pode disparar a instalação de uma versão diferente da
+  pinada no `package.json` (já aconteceu: instalou `16.0.0` em vez da `15.20.1` pinada, causando um
+  erro que parecia bug de código mas não era). Prefira versão **exata** (sem `^`) de `cypress` no
+  `package.json` quando isso for um risco, e garanta que `npm ci`/`npm install` já rodou antes de
+  qualquer `cypress open`/`run`.
+- `cy.session`: o `setup`/`validate` só restaura cookies/localStorage — ao final, a página fica em
+  `about:blank`. Sempre fazer um `cy.visit` adicional logo após o `cy.session` para que a asserção
+  de "autenticado com sucesso" funcione (senão a URL fica em `about:blank` mesmo com sessão
+  válida). Ver `cy.loginComoPerfil` em `commands.js` como referência já implementada.
+- Widget de menu do Beyond (`mc-menu.js`, carregado de `beyond-hml.grupomultiplica.com.br`): ao
+  clicar em "Beyond BackOffice" às vezes lança uma exceção não tratada própria
+  (`Cannot read properties of undefined (reading 'content')`) que derruba o teste por padrão, sem
+  afetar a navegação visual real. Corrigido globalmente em `cypress/support/e2e.js` com um handler
+  `Cypress.on('uncaught:exception', ...)` que ignora especificamente essa mensagem (commit
+  `a83b438` na branch `feature/mop-monitor-diario-analisar-operacao`, ainda sem PR). Qualquer
+  módulo que navegue por esse menu já herda a correção assim que essa branch for mergeada em
+  `reviewAgents`.
+- **Login (`cy.loginComoPerfil`) via `cy.origin` falhou de forma consistente (3 tentativas) com
+  `CypressError: cy.origin() failed to create a spec bridge...` logo após o redirect para
+  `keycloak-new-2.grupomultiplica.com.br`, depois de funcionar normalmente pouco antes**: a
+  suspeita inicial foi rate-limit/bloqueio de bot no Keycloak por múltiplas execuções seguidas em
+  curto intervalo (~10 min), mas o Thiago avaliou como mais provável que o **ambiente HML estivesse
+  instável/fora do ar** naquele momento — não confirmado como rate-limit. Se notar o mesmo erro:
+  não insista em várias tentativas seguidas; registre dúvida bloqueante assumindo primeiro
+  instabilidade pontual do ambiente (não rate-limit) e aguarde confirmação antes de tentar de novo
+  (ver módulo `mop`, tarefa `20260911214610-monitor-diario-analisar-operacao`, para o caso
+  original).
+  - **Atualização (2026-09-14):** numa retomada ~3 dias depois, uma única tentativa (não em
+    sequência rápida) reproduziu o **mesmo erro exato**. Isso enfraquece a hipótese de
+    "instabilidade pontual do ambiente naquele momento" — o problema pode ser mais estrutural
+    (config do Keycloak, certificado, CORS/CSP afetando especificamente `cy.origin`) e não ligado a
+    volume/frequência de tentativas. Qualquer módulo que dependa de `cy.loginComoPerfil` deve
+    considerar esse erro como possivelmente recorrente/estrutural, não só transitório, até o Thiago
+    confirmar a causa. Nova dúvida bloqueante registrada (mesma tarefa `mop`), respondida pelo
+    Thiago ("HML está ok agora, pode retomar").
+  - **Resolvido, sem causa raiz confirmada (2026-09-14, mesmo dia):** na retomada seguinte à
+    resposta do Thiago, `cy.loginComoPerfil('master')` funcionou normalmente de ponta a ponta, sem
+    reproduzir o erro. A causa raiz nunca foi confirmada como rate-limit nem como algo estrutural —
+    só que o erro não é permanente. Se reaparecer em outro módulo: seguir o mesmo protocolo (não
+    insistir em várias tentativas seguidas, registrar dúvida bloqueante) em vez de assumir que é
+    definitivo.
+  - **Nova reprodução (2026-09-14, Agent Master, merge de `feature/atualizar-claude-md-fluxo-integracao`,
+    só docs):** no mesmo `npm test` (mesma execução, mesmo instante, mesmo ambiente HML),
+    `shared/login.feature` passou 2/2 usando `cy.loginComoPerfil` normalmente, mas
+    `mop/mop-monitor-diario.feature` falhou com o erro exato de `cy.origin()` no próprio
+    `cy.loginComoPerfil` do setup. Isso enfraquece ainda mais a hipótese de "ambiente HML
+    instável no momento" (já que outro teste, rodado segundos depois, usou o mesmo mecanismo de
+    login com sucesso) — sugere algo específico do fluxo/perfil/timing do teste do `mop`, não do
+    Keycloak/HML em geral. Ainda sem causa raiz confirmada. Tratado como dúvida bloqueante (não
+    retentado no mesmo ciclo), merge local desfeito, aviso mantido em
+    `agent-master/fila-merge/pendentes/` — ver `agent-master/duvidas.md`
+    (`20260914125955-atualizar-claude-md-fluxo-integracao`).
+- **Inputs controlados por React (ex.: `input[type="date"]` do Monitor Diário do MOP) não reagem a
+  `.val()`/`.type()` do jQuery/Cypress da forma ingênua** — setar o valor sem passar pelo setter
+  nativo não dispara o `onChange` do React, então o componente não percebe a mudança. Solução:
+  pegar o setter nativo do protótipo antes de disparar os eventos manualmente:
+  ```js
+  const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+  nativeSetter.call(input, novoValor)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  input.dispatchEvent(new Event('change', { bubbles: true }))
+  ```
+  Útil para qualquer módulo que precise setar programaticamente um input controlado por React em
+  vez de digitar caractere a caractere com `cy.type()`.
+- **Resolução do vídeo gravado (`cypress/videos/*.mp4`) não bate com `viewportWidth`/
+  `viewportHeight` configurado** — não é bug, é limitação do Cypress: a captura de vídeo é um
+  pipeline interno separado da renderização do viewport, sem nenhuma opção de config para a
+  resolução do `.mp4` (`cypress.config.js` só expõe `video`/`videoCompression`/`videosFolder`).
+  Medido (lendo o box `tkhd` do `.mp4`) com viewport configurado em 1920x1080: Electron headless
+  (`npm test`/`cypress run` padrão, o que qualquer Scheduled Task usa) grava em **1280x720**;
+  Chrome headless (`--browser chrome --headless`) grava em **1264x624**; Electron `--headed`
+  (manual) grava em **1920x982** (largura bate, altura varia por decoração de janela/DPI). O
+  viewport configurado segue correto e é o que importa para a app renderizar certo durante o
+  teste — só a resolução do vídeo em si sai menor que Full HD no modo headless. Qualquer módulo
+  que documente/prometa "vídeo em 1920x1080" deve corrigir para não afirmar isso; documentar a
+  tabela acima em vez disso (ver módulo `geral`, tarefa
+  `20260914130450-resolucao-viewport-e-video-execucao`).
+
+## Git — branch nova pode não aparecer sem `fetch`
+
+- Um checkout local (`repo/` do Agent Master ou de um subAgent) pode não listar uma branch remota
+  recém-criada em `git branch -a` até rodar `git fetch` (`--prune` para também limpar branches
+  remotas apagadas). Isso já causou confusão real (2026-09-14, módulo `mop`, tarefa
+  `20260911214610-monitor-diario-analisar-operacao`): o aviso já estava em
+  `fila-merge/pendentes/` referenciando a branch, mas ela só apareceu depois do fetch. Sempre dar
+  `git fetch` (ou `--prune`) antes de concluir que uma branch referenciada não existe.
+
+## Tarefas que não cabem em um ciclo (retomada)
+
+- Um ciclo de subAgent roda `claude -p` uma única vez; tarefas que exigem investigação ao vivo de
+  tela (sem prints/spec prontos, ex.: descobrir seletores de uma tela nova) podem esgotar o ciclo
+  antes de terminar. Isso já aconteceu (módulo `mop`, tarefa do Monitor Diário): o ciclo terminou
+  com a tarefa ainda em `tarefas/executando/`, uma branch criada, mas nada commitado.
+- Por isso a regra "se `executando/` já tiver uma tarefa" agora é **retomar**, não encerrar o
+  ciclo: o subAgent deve procurar uma branch já criada para aquela tarefa em `repo/` e continuar
+  de onde parou, em vez de ficar preso para sempre (a versão antiga da regra travava a tarefa
+  indefinidamente, já que nada nunca movia ela de volta para `pendentes/`).
+- Consequência prática: ao implementar algo que pode não caber num ciclo só, sempre faça commit do
+  progresso parcial na branch antes do ciclo terminar — nunca deixe só em arquivos não commitados
+  (o próximo ciclo não teria como saber o que já foi descoberto/feito).
+- **Nunca inicie um processo em segundo plano (ex.: `cypress open`, `cypress run` em background) e
+  encerre o ciclo "esperando ele terminar depois"** — isso já aconteceu (mesma tarefa do `mop`) e
+  trava a tarefa para sempre, porque o processo em segundo plano não sobrevive entre ciclos (cada
+  ciclo é uma execução nova e isolada do `claude -p`; nada do que ficou rodando em background
+  continua quando o processo termina). Qualquer comando de investigação/teste deve ser executado
+  de forma síncrona (aguardar terminar) dentro do próprio ciclo. Se mesmo assim não der tempo de
+  terminar a tarefa, faça commit do progresso parcial e pare — nunca apenas diga "continuo depois"
+  sem persistir nada de concreto.
+
+## GitHub CLI (`gh`) — usado pelo Agent Master para abrir PR
+
+- Instalado como versão portátil em `%LOCALAPPDATA%\Programs\gh\bin\gh.exe` (sem precisar de
+  admin/UAC — o instalador `.msi` padrão exige elevação e falha nesta máquina).
+- Autenticado via variável de ambiente `GH_TOKEN` (não via `gh auth login` — essa versão do `gh`
+  tem um bug validando token fine-grained (`github_pat_...`) nesse fluxo; `GH_TOKEN` funciona
+  normalmente). O token está setado dentro de `agent-master/run-cycle.ps1` (acesso total aos
+  repositórios, sem expiração) — nunca exponha esse valor em documentação/log.
+- Só o Agent Master precisa de `gh` (é ele quem abre/consulta PRs); subAgents de módulo não usam.
+- **Risco de exposição do `GH_TOKEN` via log em tempo real (2026-09-14):** como o `run-cycle.ps1`
+  agora grava o `stream-json` do ciclo em tempo real em `run-log.txt` (ver seção "Scheduled Tasks"
+  abaixo), qualquer comando de shell que ecoe/imprima uma variável de ambiente sensível (ex.: um
+  `echo $GH_TOKEN` de diagnóstico, mesmo que acidental por erro de quoting) fica gravado em texto
+  puro no log. Já aconteceu uma vez (Agent Master, ciclo de 2026-09-14) — token não foi rotacionado
+  ainda, dúvida bloqueante registrada em `agent-master/duvidas.md`. **Nunca rode comandos que
+  imprimam o valor de `GH_TOKEN` (ou qualquer segredo) no stdout/stderr**, nem para "confirmar que
+  está setado" — use `gh auth status` (mascara o token) se precisar verificar autenticação.
+
+## Git — checkout local de `main` pode ficar obsoleto sem ninguém perceber (2026-09-14)
+
+- Como o Agent Master nunca faz checkout de `main` (só mergeia/push em `reviewAgents`), o `git
+  fetch` atualiza `origin/main` mas **não** avança o ponteiro local do branch `main` — ele só se
+  move com checkout explícito ou `git branch -f main origin/main`/merge. Isso já causou uma
+  medição errada de "quantos commits `reviewAgents` está à frente de `main`" num ciclo (`main`
+  local ainda em `0492943`, 8 commits atrás do `origin/main` real em `50542bb`, mesmo depois de
+  `git fetch --prune`). Antes de comparar `main..reviewAgents` (p.ex. pra decidir se cria o PR
+  único), confirme que o `main` local está em dia com `origin/main`
+  (`git merge-base --is-ancestor main origin/main` deve dar sucesso; se sim, é seguro
+  `git branch -f main origin/main` antes de comparar).
+
+## HML/login — mais sintomas de instabilidade além do já catalogado `cy.origin` (2026-09-14)
+
+- Além do erro de `cy.origin() failed to create a spec bridge` já documentado acima, apareceu um
+  sintoma **diferente** no mesmo teste (`shared/login.feature`, `cy.loginComoPerfil`): `CypressError:
+  Timed out after waiting 60000ms for your remote page to load` (a página do Keycloak nem chegou a
+  carregar). Rodando de novo minutos depois (mesma máquina, mesmo ambiente), o teste passou 2/2 sem
+  repetir o erro — reforça que o HML segue instável/intermitente de formas variadas (não é sempre o
+  mesmo sintoma), então qualquer falha de login em qualquer módulo deve ser tratada com a mesma
+  cautela já registrada (dúvida bloqueante, não insistir em sequência), mesmo que a mensagem de erro
+  não bata exatamente com uma já vista antes.
+- **Novo erro não catalogado em `mop/mop-monitor-diario.feature`:** `Error: The following error
+  originated from your application code, not from Cypress. > ResizeObserver loop completed with
+  undelivered notifications.`, disparado em `https://beyond-hml.grupomultiplica.com.br/mop/monitor`
+  e derrubando o teste (Cypress falha por padrão em qualquer `uncaught:exception`). É diferente do
+  erro do widget de menu do Beyond (`Cannot read properties of undefined (reading 'content')`) já
+  tratado em `cypress/support/e2e.js` — esse aqui **não** está coberto pelo handler existente.
+  "ResizeObserver loop..." é um erro de browser conhecido por ser inofensivo/ruído (comum em telas
+  com layout dinâmico), mas nenhum agente deve decidir sozinho estender o handler de
+  `uncaught:exception` sem confirmação do Thiago — registrado como dúvida bloqueante pelo Agent
+  Master (ver `agent-master/duvidas.md`,
+  `20260914130450-resolucao-viewport-e-video-execucao`). Qualquer módulo que navegue pela mesma
+  tela do Monitor Diário do MOP pode reproduzir esse mesmo erro até isso ser resolvido.
+- **Atualização (2026-09-14, Agent Master, ciclo de retomada dos dois avisos que ficavam
+  bloqueados esperando resposta):** depois do Thiago responder "é instabilidade pontual, tente de
+  novo" pras duas dúvidas pendentes, o Agent Master retentou (uma vez cada, sem sequência rápida) o
+  merge de teste local das duas branches (`feature/atualizar-claude-md-fluxo-integracao` e
+  `feature/resolucao-viewport-e-video-execucao`, ambas só docs/config, sem tocar
+  `cypress/e2e/**`). Resultado: `mop/mop-monitor-diario.feature` falhou nas **duas**, com **dois
+  sintomas diferentes** (`cy.origin()` failed to create a spec bridge numa, `ResizeObserver loop...`
+  na outra); `shared/login.feature` passou 2/2 nas duas. Isso enfraquece bastante a hipótese de
+  "instabilidade genérica do HML" (que sugeriria falha aleatória em qualquer teste) — o padrão
+  observado até agora é: `mop-monitor-diario.feature` falha quase sempre que roda nesses ciclos,
+  `login.feature` praticamente nunca falha. Sugere algo mais específico daquele teste/tela (timing,
+  performance, ou um problema real na implementação) do que instabilidade de rede/Keycloak
+  genérica. Duas dúvidas foram reabertas em `agent-master/duvidas.md`
+  (`20260914125955-atualizar-claude-md-fluxo-integracao` e
+  `20260914130450-resolucao-viewport-e-video-execucao`) pedindo ao Thiago uma decisão definitiva
+  (não mais "tente de novo"): autorizar estender o handler de `uncaught:exception` para
+  `ResizeObserver loop...`, e/ou autorizar não bloquear merges só-docs/config por falha isolada
+  nesse teste específico. Qualquer agente que veja `mop-monitor-diario.feature` falhar de novo deve
+  registrar o sintoma exato (os já vistos até agora: `cy.origin() failed to create a spec
+  bridge...`, `Timed out after waiting 60000ms for your remote page to load`, `ResizeObserver loop
+  completed with undelivered notifications`) em vez de assumir que é sempre o mesmo problema.
+- **Resolvido (2026-09-14) — `ResizeObserver loop...` agora tratado como `uncaught:exception`
+  conhecido, autorizado pelo Thiago:** resposta à dúvida
+  `20260914130450-resolucao-viewport-e-video-execucao` autorizou opção (a) — estender o handler em
+  `cypress/support/e2e.js` (mesmo padrão já usado pro erro do widget de menu do Beyond) para também
+  ignorar `ResizeObserver loop completed with undelivered notifications`. Aplicado pelo Agent
+  Master diretamente na branch `feature/resolucao-viewport-e-video-execucao` (commit `a2f2d88`)
+  antes de redar o merge de teste; `npm test` rodado uma única vez após a mudança:
+  `mop-monitor-diario.feature` (1/1) e `login.feature` (2/2) passaram. Merge finalizado e pushado em
+  `reviewAgents` (`9f38a75`). **Atenção:** essa única execução limpa **não** confirma causa raiz — o
+  handler cobre o sintoma `ResizeObserver`, mas os outros dois sintomas já catalogados
+  (`cy.origin()` failed to create a spec bridge, timeout de carregamento de página) não têm relação
+  com esse handler e podem reaparecer. A pergunta em aberto sobre tolerar falha do
+  `mop-monitor-diario.feature` em merges só-docs/config (tarefa
+  `20260914125955-atualizar-claude-md-fluxo-integracao`) **segue não respondida** — não foi decidida
+  por esta resolução.
+
+## Scheduled Tasks (Windows Task Scheduler)
+
+- `SupE2eAutomation-SubAgent-<modulo>`: a cada 15 min.
+- `SupE2eAutomation-AgentMaster`: a cada 30 min.
+- `SupE2eAutomation-StatusWatcher`: a cada 15 min (somente leitura + notificação, nunca mexe em
+  `repo/`; ver seção 7 do `CLAUDE.md` do Supervisor).
+- Todas via `run-cycle.ps1` de cada pasta, chamando `powershell.exe -NoProfile -NonInteractive
+  -ExecutionPolicy Bypass -WindowStyle Hidden -File <script>`, com `claude -p ... --permission-mode
+  bypassPermissions --output-format stream-json --verbose`, log em `run-log.txt` na própria pasta.
+- **Log em tempo real (2026-09-14, a pedido do Thiago):** trocado de `--output-format text` (só
+  grava no fim do ciclo) para `stream-json --verbose` piped para um `ForEach-Object` que formata
+  cada evento NDJSON em uma linha legível (`[sessao]`/`[fala]`/`[tool]`/`[resultado]`/`[ciclo
+  encerrado]`) e grava em `run-log.txt` assim que acontece — dá pra ver o progresso real olhando o
+  log durante a execução. Ver detalhe completo em `CONHECIMENTO-SUPERVISORES.md` (mudança feita
+  pelo Sup AutomaçãoUteis nos `run-cycle.ps1` dos dois Supervisores).
+
+## Remote `origin` de `C:\multiplica\cypress-e2e` ainda aponta pro nome antigo do repositório (2026-09-15)
+
+- O clone de teste manual do Thiago (`C:\multiplica\cypress-e2e`) tem `origin` configurado como
+  `git@github.com:Thiagocs12/automacaoMultiplica.git` (nome antigo), enquanto todo o resto (ex.:
+  `agent-master/repo/`, `subagents/<modulo>/repo/`) usa
+  `https://github.com/Thiagocs12/automacaoUiMultiplica.git` (nome atual, pós-rename). Verificado
+  que não há divergência de conteúdo hoje (`git rev-parse reviewAgents` bateu o mesmo hash nas duas
+  URLs) — o GitHub redireciona automaticamente pull/fetch/push do nome antigo pro repositório
+  renomeado. Não é um problema agora, mas **se o Thiago um dia liberar/reutilizar o nome antigo no
+  GitHub, esse redirect quebra** e qualquer `git pull`/`fetch` feito contra essa URL (só a pasta
+  `cypress-e2e`, que não é gerenciada por nenhum agente/repo/) passaria a falhar. Se algum agente
+  notar erro de fetch/clone inesperado nessa pasta específica, checar primeiro se é isso antes de
+  tratar como bug — a correção seria só `git remote set-url origin
+  https://github.com/Thiagocs12/automacaoUiMultiplica.git` nessa pasta.
+
+## Pré-checagem (seção 3.4) não distingue "pendente normal" de "pendente deliberadamente parado" (2026-09-15)
+
+- Quando o Thiago responde uma dúvida bloqueante dizendo "não reprocesse automaticamente até eu
+  trazer instrução nova" mas o item continua fisicamente em `fila-merge/pendentes/` (Agent Master)
+  ou `tarefas/pendentes/` (subAgent) — em vez de ser movido para um estado de espera — a
+  pré-checagem em PowerShell da seção 3.4 do `CLAUDE.md` continua achando "há arquivo em
+  pendentes/" e chamando o `claude -p` a cada ciclo, mesmo que a resposta já registrada diga
+  explicitamente para não fazer nada. Isso já gerou **21 ciclos idênticos** de "nada a fazer" num
+  único dia (Agent Master, aviso `20260914125955-atualizar-claude-md-fluxo-integracao`, ver
+  `agent-master/docs/documentacao.md`) — gasto de invocação/rate-limit sem trabalho real, além de
+  inflar o log e a documentação com entradas repetidas.
+- Dúvida registrada pedindo decisão do Thiago (`agent-master/duvidas.md`,
+  `20260915-ciclos-vazios-fila-merge-pendentes`): ajustar a pré-checagem para também tratar como
+  "sem novidade" um item cuja resposta mais recente instrua explicitamente a não reprocessar (só
+  volta a chamar o Claude quando houver resposta nova), aceitar o custo, ou mover esse tipo de item
+  para uma pasta de espera própria enquanto aguarda instrução.
+- Até essa decisão: qualquer agente (subAgent ou Agent Master) que receber uma resposta do tipo
+  "não reprocesse automaticamente, aguarde instrução nova" para um item que continua em
+  `pendentes/` deve esperar o mesmo padrão de ciclos vazios repetidos se depender só da
+  pré-checagem por existência de arquivo — não é bug do ciclo em si, é uma lacuna conhecida da
+  pré-checagem.
