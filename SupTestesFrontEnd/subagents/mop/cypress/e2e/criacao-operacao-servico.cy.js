@@ -87,31 +87,42 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
     // `/clients` -- tela "Selecao de cliente" ("Automacao, Qual cliente deseja acessar?") com um
     // dropdown "Selecione aqui" e botao "Avancar". Isso resolve os passos 2-3 do roteiro
     // diretamente (nao precisa navegar por "Beyond Operacao Interno" -> icone de casa como as
-    // rodadas anteriores tentaram). Abrindo o dropdown para localizar "kenerson".
-    cy.get('body', { timeout: 15000 }).should('contain.text', 'Seleção de cliente')
-    cy.contains('label', 'Selecione aqui').parent().click()
-    // Achado: o dropdown e um autocomplete que carrega as opcoes de forma assincrona
-    // ("Loading..." visivel logo apos abrir) - digitar o termo de busca antes de checar as
-    // opcoes, em vez de so abrir e olhar a lista completa.
-    cy.focused().type('kenerson', { delay: 100 })
-    cy.wait(2000)
-    cy.get('body').then(($body) => {
-      const textos = [...$body.find('[role="option"], li, .MuiAutocomplete-option, .MuiMenuItem-root')]
-        .map((el) => el.textContent.trim())
-        .filter((t) => t && t.length > 0 && t.length < 150)
-      cy.writeFile('cypress/debug-output.txt', '\nOPCOES NO DROPDOWN APOS DIGITAR "kenerson":\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
-    })
-    cy.screenshot('03-dropdown-apos-digitar-kenerson')
+    // rodadas anteriores tentaram).
+    // NOVO ACHADO (2026-09-15, rodada 33): em rodadas onde o perfil do browser do Cypress ja
+    // tinha uma selecao anterior de "kenerson" persistida (cookie/sessao do servidor), a tela de
+    // selecao e pulada e a app cai direto na Home ja com o cedente selecionado. Tratando os dois
+    // casos aqui em vez de assumir sempre a tela de selecao.
+    cy.get('body', { timeout: 15000 }).then(($body) => {
+      if ($body.text().includes('Seleção de cliente')) {
+        cy.writeFile('cypress/debug-output.txt', '\nCENARIO: tela de selecao de cliente apareceu\n', { flag: 'a+' })
+        cy.contains('label', 'Selecione aqui').parent().click()
+        // Achado: o dropdown e um autocomplete que carrega as opcoes de forma assincrona
+        // ("Loading..." visivel logo apos abrir) - digitar o termo de busca antes de checar as
+        // opcoes, em vez de so abrir e olhar a lista completa.
+        cy.focused().type('kenerson', { delay: 100 })
+        cy.wait(2000)
+        cy.get('body').then(($body2) => {
+          const textos = [...$body2.find('[role="option"], li, .MuiAutocomplete-option, .MuiMenuItem-root')]
+            .map((el) => el.textContent.trim())
+            .filter((t) => t && t.length > 0 && t.length < 150)
+          cy.writeFile('cypress/debug-output.txt', '\nOPCOES NO DROPDOWN APOS DIGITAR "kenerson":\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+        })
+        cy.screenshot('03-dropdown-apos-digitar-kenerson')
 
-    // Achado: so apareceu 1 opcao (o cedente "kenerson" em si, CNPJ 07.019.231/0001-96) - nao ha
-    // uma escolha de "cadastro master" visivel aqui ainda. Selecionando essa opcao e avancando
-    // para ver se o cadastro master aparece na proxima tela (passo 3 do roteiro).
-    cy.contains('[role="option"], li, .MuiAutocomplete-option, .MuiMenuItem-root', 'KENERSON').click()
-    cy.contains('button', 'Avançar').click()
-    cy.wait(3000)
+        // Achado: so apareceu 1 opcao (o cedente "kenerson" em si, CNPJ 07.019.231/0001-96) - nao
+        // ha uma escolha de "cadastro master" visivel aqui ainda. Selecionando essa opcao e
+        // avancando para ver se o cadastro master aparece na proxima tela (passo 3 do roteiro).
+        cy.contains('[role="option"], li, .MuiAutocomplete-option, .MuiMenuItem-root', 'KENERSON').click()
+        cy.contains('button', 'Avançar').click()
+        cy.wait(3000)
+      } else {
+        cy.writeFile('cypress/debug-output.txt', '\nCENARIO: sessao ja tinha kenerson selecionado, Home direto\n', { flag: 'a+' })
+      }
+    })
     cy.location().then((loc) => {
       cy.writeFile('cypress/debug-output.txt', '\nURL APOS SELECIONAR KENERSON E AVANCAR: ' + loc.href + '\n', { flag: 'a+' })
     })
+    cy.get('body', { timeout: 15000 }).should('contain.text', 'KENERSON')
     cy.get('body', { timeout: 15000 }).then(($body) => {
       const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], .MuiCard-root, input, [role="menuitem"], li')]
         .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))

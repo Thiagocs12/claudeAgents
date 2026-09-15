@@ -54,3 +54,17 @@ acessível agora. Pode retentar o `cypress run` normalmente. Se o mesmo erro (`c
 pro IP `10.101.10.254`) acontecer de novo, trate como nova ocorrência de instabilidade de
 rede/VPN (mesmo protocolo já usado para instabilidade de ambiente: não insistir em várias
 tentativas seguidas, registrar dúvida nova) — não presuma que é definitivo na primeira falha.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: respondida
+Pergunta: Na retomada seguinte à sua resposta anterior, tentei rodar de novo o fluxo (scratch
+`explorar-prospect-sucesso.feature`, que dá o segundo "Salvar" com os 3 campos preenchidos, para
+descobrir onde o cedente criado aparece). O mesmo erro voltou a acontecer: `cypress run` falhou de
+novo com `Error: connect ETIMEDOUT 10.101.10.254:443`. Confirmei fora do Cypress, uma única vez
+(sem insistir em sequência), com `curl --max-time 15`: `beyond-hml.grupomultiplica.com.br`
+continua sem conectar (timeout), enquanto `keycloak-new-2.grupomultiplica.com.br` respondeu
+normalmente (`403`, mas conectou) — exatamente o mesmo padrão de antes. Como combinado, não
+insisti em mais tentativas. A VPN caiu de novo (ou nunca reconectou de fato dessa vez)? Devo só
+aguardar e retentar num próximo ciclo, ou há algo que só você consegue verificar/reconectar dessa
+vez?
+Resposta: Era a VPN de novo — já reconectada, pode continuar normalmente.

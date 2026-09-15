@@ -96,3 +96,24 @@ Dúvida dos 3 campos obrigatórios foi respondida pelo Thiago (valores: `Tipo de
   poder afetar qualquer módulo que dependa de `beyond-hml`.
 - Dúvida bloqueante registrada em `duvidas.md` (mesmo id da tarefa). Tarefa movida de volta para
   `tarefas/aguardando-resposta/`.
+
+## Retomada (2026-09-15): dúvida da VPN respondida, mas mesmo sintoma reapareceu na tentativa seguinte
+
+Thiago respondeu a dúvida de conectividade confirmando queda de VPN (já deveria estar
+reconectada) e autorizando retentar. Nesta retomada: nenhum código novo (Page Object
+`NovoProspectPage` de `c36db44` segue igual, working tree limpo). Tentativa de rodar o scratch
+`explorar-prospect-sucesso.feature` (segundo "Salvar" com os 3 campos preenchidos, para descobrir
+onde o cedente criado aparece — critério de aceite pendente) falhou de novo com o **mesmo** erro:
+`connect ETIMEDOUT 10.101.10.254:443`. Confirmado fora do Cypress com uma única tentativa de
+`curl --max-time 15` (sem insistir em sequência, conforme protocolo): `beyond-hml` continua sem
+conectar, `keycloak-new-2` respondeu `403` normalmente — padrão idêntico ao bloqueio original.
+
+Nova dúvida bloqueante registrada em `duvidas.md` (mesmo id da tarefa) perguntando ao Thiago se é
+nova queda de VPN ou se a reconexão anterior não se sustentou. Tarefa movida de volta para
+`tarefas/aguardando-resposta/`. Registrado também em `../../docs/conhecimento-geral.md` (a
+recorrência é relevante para qualquer módulo que dependa de `beyond-hml`, não só o `POC`).
+
+**Ainda pendente para a próxima retomada** (sem mudança desde a retomada anterior): rodar o fluxo
+completo (segundo "Salvar") uma vez via scratch para descobrir a tela/rota da listagem de
+cedentes, depois criar `EtapaCriarProspectPorCnpj` + `EsteiraCriarProspectPorCnpj` +
+feature/step_definitions em `poc/`, seguindo o padrão do módulo `mop`.

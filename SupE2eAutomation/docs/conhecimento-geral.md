@@ -228,6 +228,16 @@ capacidade ociosa da outra conta.
   esse mesmo tipo de bloqueio — não confundir com os sintomas de `cy.origin`/Keycloak já
   catalogados acima, e registrar dúvida bloqueante em vez de insistir em múltiplas tentativas
   seguidas.
+- **Recorrência (2026-09-15, mesma tarefa, mesma retomada):** o Thiago respondeu a dúvida original
+  confirmando que era queda de VPN e que já devia estar reconectada, autorizando retentar. Na
+  retomada seguinte, o exato mesmo sintoma reapareceu (`connect ETIMEDOUT 10.101.10.254:443` no
+  `cypress run`; `curl --max-time 15` a `beyond-hml` deu timeout de novo, `keycloak-new-2` respondeu
+  `403` normalmente) — ou seja, a reconexão de VPN não é necessariamente automática/estável nesta
+  máquina, ou caiu de novo de forma independente. Seguido o mesmo protocolo: uma única checagem via
+  `curl` (sem insistir em sequência), dúvida bloqueante nova registrada em vez de presumir resolvido.
+  Qualquer módulo que reencontrar esse sintoma deve tratar cada ocorrência como um evento novo a
+  confirmar com o Thiago, não assumir que uma resposta anterior de "já deve estar ok" cobre
+  recorrências futuras.
 
 ## Git — branch nova pode não aparecer sem `fetch`
 

@@ -1,0 +1,19 @@
+URL APOS VISIT: https://keycloak-new-2.grupomultiplica.com.br/auth/realms/beyondbanking-hml/protocol/openid-connect/auth?client_id=autenticacao&redirect_uri=https%3A%2F%2Fbeyondbanking-hml.grupomultiplica.com.br%2F&state=30e05307-4f56-4f21-8132-4f50af5cea86&response_mode=fragment&response_type=code&scope=openid&nonce=59b1d6e9-fc9f-43ef-a599-9b8e770a121e&code_challenge=fZgHqb9Q5Eyf20W36ZKqLTAUUlwCoX1_9gKItScOxCA&code_challenge_method=S256
+
+FOI PRA KEYCLOAK: true
+
+URL APOS LOGIN: https://beyondbanking-hml.grupomultiplica.com.br/
+
+ELEMENTOS NA TELA APOS LOGIN:
+[
+  "Bem Vindo ao Beyond Banking",
+  "Beyond ComexOperações Exportação",
+  "Beyond Operação InternoOperações Brasil",
+  "Beyond PortalPortal Fornecedores"
+]
+
+CHAMADAS COM ERRO:
+[]
+
+ERROS JS CAPTURADOS:
+[]

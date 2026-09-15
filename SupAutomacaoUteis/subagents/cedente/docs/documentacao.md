@@ -3,13 +3,14 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida bloqueante de
-infraestrutura, `conexao-sql-server-prod-hml-inacessivel-20260915`, ver Ciclo 4
-abaixo e `duvidas.md`), branch `cedente/clonar-cedente-completo-prod-hml` (a partir
-de `reviewAgents`, ainda não pushada — commits locais até o momento: fases
-`prospect` e `poc` mapeadas, incluindo a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)`
-como catálogo fora do padrão `MC_CAD_*`, commit `5edaad0`, que já desbloqueou a
-dúvida anterior — ver Ciclo 3).
+`AGENTE.md`). Estado atual: **aguardando resposta** (dúvida de infraestrutura ainda
+não resolvida — VPN confirmada reconectada pelo Thiago, mas o teste de conectividade
+repetido continua em timeout, ver Ciclo 5 abaixo e `duvidas.md`,
+`conexao-sql-server-ainda-inacessivel-apos-vpn-20260915`), branch
+`cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
+pushada — commits locais até o momento: fases `prospect` e `poc` mapeadas, incluindo
+a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)` como catálogo fora do padrão
+`MC_CAD_*`, commit `5edaad0`, que já desbloqueou a dúvida do Ciclo 3).
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -260,4 +261,31 @@ código novo escrito neste ciclo.
   foram removidos); `investigar-schema-comite.cjs` continua em `repo/`
   (untracked, não é escopo pra commitar), pronto pra ser rodado assim que a
   rede/VPN for confirmada — não precisa ser reescrito.
+
+### Ciclo 5 (2026-09-15) — dúvida de VPN respondida, mas conexão ainda inacessível
+
+Ao retomar (dúvida `conexao-sql-server-prod-hml-inacessivel-20260915` já com
+`Status: respondida`, Thiago confirmou reconexão de VPN), a tarefa voltou de
+`aguardando-resposta/` pra `pendentes/` e depois `executando/` normalmente. Branch
+`cedente/clonar-cedente-completo-prod-hml` já estava no commit `5edaad0` (nada a
+retomar em código, só a investigação de schema da fase `comitê`).
+
+- Repetido o mesmo teste de conectividade TCP pura (`net.createConnection`, script
+  `.cjs` temporário em `repo/`, removido antes de terminar o ciclo) contra
+  `PROD_DB_HOST:PROD_DB_PORT` (`10.101.1.18:1433`) e `HOMOLOG_DB_HOST:HOMOLOG_DB_PORT`
+  (`10.201.1.6:1433`) — **timeout nos dois novamente**, rodado duas vezes seguidas
+  pra descartar instabilidade pontual (mesmo resultado nas duas).
+- Ou seja, a resposta anterior (VPN reconectada) não se confirmou na prática nesta
+  máquina/momento — pode ter caído de novo depois da confirmação, ou a reconexão não
+  cobriu a rota até esses hosts especificamente. Não é algo que o subAgent possa
+  diagnosticar mais fundo sem acesso à infraestrutura de rede.
+- **Nova dúvida registrada em `duvidas.md`, no mesmo bloco `## <id>` já existente**
+  (não criado um bloco novo — ver seção já existente em
+  `../../docs/conhecimento-geral.md` sobre não duplicar título): a pergunta/resposta
+  anterior (VPN) migrou para `Status-historico-2`/`Pergunta-2`/`Resposta-2`; o campo
+  `Status`/`Pergunta-3`/`Resposta-3` (sem sufixo o `Status`) agora reflete esta nova
+  pergunta, ainda em aberto. Tarefa movida de volta para `tarefas/aguardando-resposta/`.
+- Nenhum arquivo temporário de investigação ficou para trás (`test-tcp-temp.cjs`
+  removido); `investigar-schema-comite.cjs` continua em `repo/` (untracked), pronto
+  pra rodar assim que a conectividade for confirmada de verdade.
 

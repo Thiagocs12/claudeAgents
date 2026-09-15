@@ -182,3 +182,23 @@ versão, app correto: Beyond Banking (`beyondbanking-hml.grupomultiplica.com.br`
   sentido gastar o ciclo contra um host ainda confirmadamente down. Não é dúvida bloqueante nem
   resultado final — deixando a tarefa em `executando/` para o próximo ciclo (5 min) tentar de novo,
   sem alterar a spec já escrita (trecho do passo 4-5 do roteiro, ainda não validado).
+- **Novo ciclo (2026-09-15, continuação):** antes de rodar, confirmei que o host voltou —
+  `curl --max-time 20` contra `beyondbanking-hml.grupomultiplica.com.br` respondeu `HTTP_CODE=200`
+  (controle: Keycloak respondeu `302` no mesmo teste). Checagem de processo órfão (regra 5): só
+  encontrados os próprios processos `bash.exe`/`powershell.exe` da checagem em si, nenhum
+  `cypress`/`node` órfão de fato — nada para matar. Rodei `npx cypress run` (`cypress-run-33.log`,
+  `timeout: 300000`) → falhou em 47s, mas de um jeito **diferente** de `ESOCKETTIMEDOUT`: desta
+  vez a aplicação **pulou a tela "Seleção de cliente" inteiramente** e caiu direto na Home já com
+  "KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDA" selecionado no topo (mostrando os 3
+  cards: "Beyond Comex", "Beyond Operação Interno", "Beyond Portal") — a asserção
+  `cy.get('body').should('contain.text', 'Seleção de cliente')` (linha 91 da spec) deu timeout
+  porque esse texto nunca apareceu. Hipótese: o Electron do Cypress reaproveita o mesmo perfil de
+  browser (cookies/localStorage) entre invocações separadas de `cypress run` neste projeto — como
+  uma rodada anterior já tinha selecionado "kenerson" com sucesso, o servidor lembrou a seleção via
+  sessão/cookie e não pediu de novo. Isso na prática **resolve os passos 2-3 do roteiro de forma
+  ainda mais direta** (nem precisa da tela de seleção), mas a spec precisa aceitar os dois casos
+  (tela de seleção OU Home já com cedente selecionado) pra não quebrar dependendo do estado do
+  perfil do browser. Ajustando a spec pra detectar qual dos dois cenários aconteceu e seguir o
+  fluxo correto a partir daí, sem travar numa asserção rígida. Vídeo desta rodada (mostra o app já
+  na Home) não foi copiado pra `../videos/` ainda — só copio o vídeo da rodada que de fato avançar
+  além deste ponto, pra não acumular vídeos parciais sem valor.
