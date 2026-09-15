@@ -1,5 +1,5 @@
 
-◇ injected env (5) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (5) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
 Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
 
 1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
@@ -31,34 +31,42 @@ Learn more: https://on.cypress.io/cypress-env-migration
     1) acessa o Beyond Banking e mapeia a tela inicial / login
 
 
-  0 passing (32s)
+  0 passing (36s)
   1 failing
 
   1) Exploracao: criacao de operacao de servico no Beyond Banking
        acessa o Beyond Banking e mapeia a tela inicial / login:
-     TypeError: Cannot destructure property 'duration' of 'props' as it is undefined.
-      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:136377:11)
+     CypressError: Timed out retrying after 4000ms: The command was expected to run against origin `https://beyondbanking-hml.grupomultiplica.com.br` but the application is at origin `https://beyondbanking-ope-hml.grupomultiplica.com.br`.
+
+This commonly happens when you have either not navigated to the expected origin or have navigated away unexpectedly.
+
+Using `cy.origin()` to wrap the commands run on `https://beyondbanking-ope-hml.grupomultiplica.com.br` will likely fix this issue.
+
+`cy.origin('https://beyondbanking-ope-hml.grupomultiplica.com.br', () => {`
+`  <commands targeting https://beyondbanking-ope-hml.grupomultiplica.com.br go here>`
+`})`
+
+https://on.cypress.io/cy-visit-succeeded-but-commands-fail
+      at cypressErr (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75939:18)
+      at Object.errByPath (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75999:10)
+      at Object.commandCanCommunicateWithAUT (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:153615:90)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:133709:22)
+      at Object.subjectFn (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:152342:16)
+      at $Cy.verifyUpcomingAssertions (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:151573:31)
+      at onRetry (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:152333:15)
+      at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:4288:29)
+      at whenStable (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:152215:70)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:152115:14)
       at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
       at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1492:31)
       at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
       at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
       at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1674:18)
       at Promise._fulfill (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1618:18)
-      at Promise._resolveCallback (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1412:57)
-      at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1504:17)
-      at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
-      at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
-      at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1674:18)
-      at Promise._fulfill (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1618:18)
-      at Promise._resolveCallback (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1412:57)
-      at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1504:17)
-      at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
-      at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
-      at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1674:18)
-      at Promise._fulfill (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1618:18)
-      at PromiseArray._resolve (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2905:19)
-      at PromiseArray._promiseFulfilled (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2923:14)
-      at PromiseArray._iterate (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2893:31)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:5423:46)
+  From Your Spec Code:
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:90:7)
 
 
 
@@ -73,7 +81,7 @@ Learn more: https://on.cypress.io/cypress-env-migration
   │ Skipped:      0                                                                                │
   │ Screenshots:  2                                                                                │
   │ Video:        true                                                                             │
-  │ Duration:     31 seconds                                                                       │
+  │ Duration:     35 seconds                                                                       │
   │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -99,7 +107,7 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
        Spec                                              Tests  Passing  Failing  Pending  Skipped  
   ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ ✖  criacao-operacao-servico.cy.js           00:31        1        -        1        -        - │
+  │ ✖  criacao-operacao-servico.cy.js           00:35        1        -        1        -        - │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
-    ✖  1 of 1 failed (100%)                     00:31        1        -        1        -        -  
+    ✖  1 of 1 failed (100%)                     00:35        1        -        1        -        -  
 

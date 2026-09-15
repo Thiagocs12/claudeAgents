@@ -349,3 +349,18 @@ em vez de insistir nela e arriscar um ciclo perdido.
   (`%LOCALAPPDATA%\Cypress\Cache`), compartilhado por qualquer projeto Node/Cypress rodado nesta
   máquina — relevante para qualquer Supervisor futuro que também use Cypress, não só o
   `SupE2eAutomation`.
+- **`npx cypress run` sem `timeout` explícito pode virar processo órfão** (descoberto no
+  `SupTestesFrontEnd/mop`, 2026-09-15): num ciclo `claude -p` real, o agente chamou
+  `npx cypress run` via Bash sem passar `timeout`, o comando estourou o timeout implícito do Bash
+  e foi movido pra background pela ferramenta; o agente tentou "esperar terminar depois"
+  (chegou a chamar `ScheduleWakeup`, que não se aplica a um ciclo `-p` de execução única — não há
+  próximo turno pra um wakeup disparar) e encerrou o ciclo com o processo Cypress/Electron/node
+  ainda vivo. Ficaram processos órfãos rodando por mais de 2h até serem achados e encerrados
+  manualmente. Qualquer Supervisor que chame Cypress via `claude -p` (os três hoje) deveria: (1)
+  instruir no `AGENTE.md` a sempre passar `timeout: 300000`+ nessas chamadas e nunca usar
+  `ScheduleWakeup`/esperar background; (2) ter uma rede de segurança determinística no
+  `run-cycle.ps1` que mate, no início e no fim de cada ciclo, qualquer processo cuja `CommandLine`
+  referencie a pasta do agente e contenha "cypress" (raiz) mais toda a árvore de processos filhos
+  — não depende do LLM se comportar. Implementado assim em `SupTestesFrontEnd/subagents/mop/
+  run-cycle.ps1` (função `Stop-ProcessosCypressOrfaos`) — usar como referência antes de reinventar
+  em outro Supervisor.

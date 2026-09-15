@@ -7,6 +7,54 @@ Set-Location -Path $PSScriptRoot
 # Conta do Claude Code dedicada a este subAgent (1º módulo criado neste Supervisor -> contaA).
 $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaA"
 
+# Rede de segurança determinística (não depende do LLM se comportar): mata qualquer processo
+# Cypress/node remanescente desta pasta, órfão de um ciclo anterior que tenha travado/backgrounded
+# um "npx cypress run" e encerrado sem limpar (já aconteceu em 2026-09-15 — ver
+# docs/documentacao.md e CONHECIMENTO-SUPERVISORES.md). Roda no início (limpa lixo de um ciclo
+# anterior antes de decidir se há trabalho a fazer) e no fim (garante que este ciclo não deixa
+# nada pra trás), independente do que o `claude -p` tenha feito.
+function Get-ArvoreDeProcessos {
+    param([int[]]$RaizIds, $TodosProcessos)
+    $resultado = New-Object System.Collections.Generic.HashSet[int]
+    $fila = New-Object System.Collections.Generic.Queue[int]
+    foreach ($id in $RaizIds) { $fila.Enqueue($id) }
+    while ($fila.Count -gt 0) {
+        $atual = $fila.Dequeue()
+        if ($resultado.Add($atual)) {
+            foreach ($filho in ($TodosProcessos | Where-Object { $_.ParentProcessId -eq $atual })) {
+                $fila.Enqueue($filho.ProcessId)
+            }
+        }
+    }
+    return $resultado
+}
+
+function Stop-ProcessosCypressOrfaos {
+    param([string]$Pasta, [string]$LogPath)
+    try {
+        $todos = Get-CimInstance Win32_Process -ErrorAction Stop
+    } catch { return }
+    $pastaEscapada = [regex]::Escape($Pasta)
+    $raizes = $todos | Where-Object {
+        $_.CommandLine -and $_.CommandLine -match $pastaEscapada -and $_.CommandLine -match "cypress"
+    }
+    if (-not $raizes) { return }
+    $arvore = Get-ArvoreDeProcessos -RaizIds ($raizes | Select-Object -ExpandProperty ProcessId) -TodosProcessos $todos
+    foreach ($procId in $arvore) {
+        $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
+        if ($proc) {
+            try {
+                Stop-Process -Id $procId -Force -ErrorAction Stop
+                $ts = Get-Date -Format "HH:mm:ss"
+                "$ts | [limpeza] processo remanescente encerrado: PID=$procId $($proc.ProcessName)" |
+                    Add-Content -Path $LogPath -Encoding utf8
+            } catch {}
+        }
+    }
+}
+
+Stop-ProcessosCypressOrfaos -Pasta $PSScriptRoot -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+
 # Checagem determinística (sem custo de chamada ao Claude) — mesmo padrão dos outros Supervisores.
 function Test-DuvidaRespondida {
     param([string]$DuvidasPath, [string]$Id)
@@ -124,3 +172,8 @@ $prompt | claude -p --permission-mode bypassPermissions --output-format stream-j
         if (-not $texto) { $texto = $linha }
         "$ts | $texto" | Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     }
+
+# Segunda passada da rede de segurança: garante que este ciclo não deixa nenhum processo
+# Cypress/node vivo pra trás, mesmo que o `claude -p` acima tenha tentado rodar algo em
+# background e encerrado sem esperar.
+Stop-ProcessosCypressOrfaos -Pasta $PSScriptRoot -LogPath (Join-Path $PSScriptRoot "run-log.txt")

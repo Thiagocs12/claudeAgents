@@ -24,7 +24,19 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 5. Se encontrar uma tarefa já em `tarefas/executando/` ao iniciar o ciclo, **retome-a** lendo a
    seção `## Execução` já existente para saber onde parou, em vez de recomeçar do zero. **Nunca**
    inicie um processo em segundo plano e encerre o ciclo "esperando terminar depois" — rode sempre
-   de forma síncrona, dentro do ciclo.
+   de forma síncrona, dentro do ciclo. Isso inclui **nunca usar `ScheduleWakeup`**: este ciclo roda
+   como `claude -p` de execução única (não é um `/loop` interativo) — não existe "próximo turno"
+   pra um wakeup disparar, e tentar isso só faz o ciclo encerrar cedo com o `npx cypress run`
+   ainda rodando solto (já aconteceu, ver `docs/documentacao.md` e `CONHECIMENTO-SUPERVISORES.md`).
+   Ao chamar `npx cypress run` via Bash, **sempre passe um `timeout` explícito de pelo menos
+   `300000` (5 min)** — sem isso, o Bash pode empurrar o comando pra segundo plano sozinho antes
+   dele terminar (o padrão implícito não é confiável pra durações de Cypress), o que geraria
+   exatamente o problema acima mesmo sem querer. Se mesmo assim um comando acabar sendo movido pra
+   background, mate o processo (não deixe rodando) e rode de novo de forma síncrona antes de
+   encerrar o ciclo — nunca encerre o ciclo com um processo Cypress/node ainda vivo. (Rede de
+   segurança determinística: `run-cycle.ps1` também mata qualquer processo Cypress/node
+   remanescente desta pasta no início e no fim de cada ciclo, mas isso é um backup — não substitui
+   seguir esta regra.)
 6. **Ao terminar** (objetivo cumprido, ou travado sem ser uma dúvida que precise de decisão do
    Thiago — bug real impedindo continuar é RESULTADO, não dúvida):
    - Grave um vídeo Cypress da execução relevante (`video: true` já cobre isso automaticamente em

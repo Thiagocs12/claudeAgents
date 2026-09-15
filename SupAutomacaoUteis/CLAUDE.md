@@ -152,6 +152,13 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 8. Se travar numa dúvida bloqueante (inclusive dúvida sobre qual padrão do projeto seguir, ou sobre
    dados sensíveis — ex. qual usuário copiar, que credencial usar): registre em `duvidas.md`, mova
    a tarefa de `executando/` para `aguardando-resposta/`, e encerre o ciclo sem terminar a tarefa.
+   **O título do bloco (`## <título>`) tem que ser exatamente o id da tarefa** (o nome do arquivo
+   em `tarefas/`, sem extensão) — não um slug descritivo à parte. A pré-checagem em PowerShell do
+   `run-cycle.ps1` (seção 3.4) procura por esse título exato pra saber quando mover a tarefa de
+   volta pra `pendentes/`; um título diferente faz a tarefa ficar presa em `aguardando-resposta/`
+   para sempre, mesmo já respondida (bug real observado no módulo `cedente` em 2026-09-15 — ver
+   `docs/conhecimento-geral.md`). Se quiser um resumo legível, use um campo extra dentro do bloco
+   (ex. `Resumo:`), nunca o título.
 9. Nunca responda sua própria dúvida — apenas o Supervisor, repassando o Thiago, pode marcar uma
    dúvida como respondida.
 10. Nunca exponha valor de credencial/segredo (`.env`, tokens, senhas) em `docs/documentacao.md`,

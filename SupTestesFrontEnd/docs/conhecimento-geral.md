@@ -43,6 +43,15 @@ Ver `CONHECIMENTO-SUPERVISORES.md` (raiz de `C:\Multiplica\claudeAgents`) para o
 completo. Resumo: sessão interativa deste Supervisor = `contaA`; subAgents revezam `contaA`/
 `contaB` pela ordem de criação; Status Watcher = `contaB`.
 
+## Armadilha: `npx cypress run` sem timeout explícito vira processo órfão (2026-09-15)
+
+Ver `subagents/mop/docs/documentacao.md` (seção de mesmo nome) e
+`CONHECIMENTO-SUPERVISORES.md` para o detalhe completo. Resumo: todo `AGENTE.md` de módulo desta
+pasta deve instruir a sempre passar `timeout: 300000`+ ao chamar `npx cypress run` via Bash, nunca
+usar `ScheduleWakeup`/esperar processo em background, e todo `run-cycle.ps1` novo deve reaplicar a
+função `Stop-ProcessosCypressOrfaos` (referência: `subagents/mop/run-cycle.ps1`) que mata, no
+início e no fim do ciclo, qualquer processo Cypress/node remanescente daquela pasta.
+
 ## Scheduled Tasks (Windows Task Scheduler)
 
 - `SupTestesFrontEnd-SubAgent-<modulo>`: a cada 5 minutos.

@@ -1,15 +1,14 @@
-URL APOS VISIT: https://keycloak-new-2.grupomultiplica.com.br/auth/realms/beyondbanking-hml/protocol/openid-connect/auth?client_id=autenticacao&redirect_uri=https%3A%2F%2Fbeyondbanking-hml.grupomultiplica.com.br%2F&state=e78999a7-4ab8-4e35-9acd-a8228102454e&response_mode=fragment&response_type=code&scope=openid&nonce=84642a96-a45b-4b2e-a7fa-c71dec04640b&code_challenge=9J7xm1UNCkhiYFzmBqQ8TmxgMexW24MrZD1QHsoiBNA&code_challenge_method=S256
+URL APOS VISIT: https://keycloak-new-2.grupomultiplica.com.br/auth/realms/beyondbanking-hml/protocol/openid-connect/auth?client_id=autenticacao&redirect_uri=https%3A%2F%2Fbeyondbanking-hml.grupomultiplica.com.br%2F&state=43c5b8bb-93e2-4fcf-9e73-31a3d10fa66e&response_mode=fragment&response_type=code&scope=openid&nonce=5b807a24-83e5-4a64-9504-8619ac27b5e4&code_challenge=UdIr_wk75sis3ZiDg98VwTQy8-13smCQXywTsCuQvEM&code_challenge_method=S256
 
 FOI PRA KEYCLOAK: true
 
-URL APOS LOGIN: https://beyondbanking-hml.grupomultiplica.com.br/
+URL APOS LOGIN: https://beyondbanking-hml.grupomultiplica.com.br/clients
 
 ELEMENTOS NA TELA APOS LOGIN:
 [
-  "Bem Vindo ao Beyond Banking",
-  "Beyond ComexOperações Exportação",
-  "Beyond Operação InternoOperações Brasil",
-  "Beyond PortalPortal Fornecedores"
+  "Selecione aqui",
+  "INPUT[name=null,placeholder=null]",
+  "Avançar"
 ]
 
 CHAMADAS COM ERRO:
@@ -17,3 +16,16 @@ CHAMADAS COM ERRO:
 
 ERROS JS CAPTURADOS:
 []
+OPCOES NO DROPDOWN APOS DIGITAR "kenerson":
+[
+  "07.019.231/0001-96 - KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDA"
+]
+URL APOS SELECIONAR KENERSON E AVANCAR: https://beyondbanking-hml.grupomultiplica.com.br/
+
+ELEMENTOS APOS SELECIONAR KENERSON:
+[
+  "Bem Vindo ao Beyond Banking",
+  "Beyond ComexOperações Exportação",
+  "Beyond Operação InternoOperações Brasil",
+  "Beyond PortalPortal Fornecedores"
+]

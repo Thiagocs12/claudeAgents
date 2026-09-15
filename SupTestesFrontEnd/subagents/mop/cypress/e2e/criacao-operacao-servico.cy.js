@@ -5,6 +5,9 @@
 
 const ambiente = {
   beyondBankingUrl: Cypress.env('HML_BEYOND_BANKING_URL'),
+  // Descoberto nesta exploracao: "Beyond Operação Interno" navega pra um subdominio separado
+  // (origem distinta pro Cypress) - registrado em .env e em docs/documentacao.md.
+  beyondBankingOperacaoUrl: Cypress.env('HML_BEYOND_BANKING_OPERACAO_URL'),
   keycloakUrl: Cypress.env('HML_KEYCLOAK_URL'),
   username: Cypress.env('HML_MASTER_USERNAME'),
   password: Cypress.env('HML_MASTER_PASSWORD'),
@@ -80,25 +83,70 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
       cy.writeFile('cypress/debug-output.txt', '\n\nERROS JS CAPTURADOS:\n' + JSON.stringify(win.__errosCapturados || [], null, 2), { flag: 'a+' })
     })
 
-    // Passo 4 do roteiro: nenhum card se chama exatamente "Beyond Operação" -- "Beyond Operação
-    // Interno" e a interpretacao mais provavel (ver docs/documentacao.md). Clicando para mapear.
-    cy.contains('.MuiCard-root, [role="button"], a, button', 'Beyond Operação Interno').click()
+    // NOVO ACHADO (2026-09-15, rodada 24): apos o login, a aplicacao redirecionou direto pra
+    // `/clients` -- tela "Selecao de cliente" ("Automacao, Qual cliente deseja acessar?") com um
+    // dropdown "Selecione aqui" e botao "Avancar". Isso resolve os passos 2-3 do roteiro
+    // diretamente (nao precisa navegar por "Beyond Operacao Interno" -> icone de casa como as
+    // rodadas anteriores tentaram). Abrindo o dropdown para localizar "kenerson".
+    cy.get('body', { timeout: 15000 }).should('contain.text', 'Seleção de cliente')
+    cy.contains('label', 'Selecione aqui').parent().click()
+    // Achado: o dropdown e um autocomplete que carrega as opcoes de forma assincrona
+    // ("Loading..." visivel logo apos abrir) - digitar o termo de busca antes de checar as
+    // opcoes, em vez de so abrir e olhar a lista completa.
+    cy.focused().type('kenerson', { delay: 100 })
+    cy.wait(2000)
+    cy.get('body').then(($body) => {
+      const textos = [...$body.find('[role="option"], li, .MuiAutocomplete-option, .MuiMenuItem-root')]
+        .map((el) => el.textContent.trim())
+        .filter((t) => t && t.length > 0 && t.length < 150)
+      cy.writeFile('cypress/debug-output.txt', '\nOPCOES NO DROPDOWN APOS DIGITAR "kenerson":\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+    })
+    cy.screenshot('03-dropdown-apos-digitar-kenerson')
+
+    // Achado: so apareceu 1 opcao (o cedente "kenerson" em si, CNPJ 07.019.231/0001-96) - nao ha
+    // uma escolha de "cadastro master" visivel aqui ainda. Selecionando essa opcao e avancando
+    // para ver se o cadastro master aparece na proxima tela (passo 3 do roteiro).
+    cy.contains('[role="option"], li, .MuiAutocomplete-option, .MuiMenuItem-root', 'KENERSON').click()
+    cy.contains('button', 'Avançar').click()
     cy.wait(3000)
-    cy.screenshot('03-apos-clicar-beyond-operacao-interno')
+    cy.location().then((loc) => {
+      cy.writeFile('cypress/debug-output.txt', '\nURL APOS SELECIONAR KENERSON E AVANCAR: ' + loc.href + '\n', { flag: 'a+' })
+    })
+    cy.get('body', { timeout: 15000 }).then(($body) => {
+      const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], .MuiCard-root, input, [role="menuitem"], li')]
+        .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+        .filter((t) => t && t.length > 0 && t.length < 150)
+      cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS SELECIONAR KENERSON:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+    })
+    cy.screenshot('04-apos-selecionar-kenerson-avancar')
+
+    // Passo 4-5 do roteiro: card mais proximo de "Beyond Operacao" e "Beyond Operacao Interno".
+    // Navega pra um subdominio diferente (origem distinta pro Cypress) - precisa de cy.origin
+    // a partir daqui (ja mapeado em ciclo anterior, ver docs/documentacao.md).
+    cy.contains('.MuiCard-root, [class*="card" i], div', 'Beyond Operação Interno').click()
+    cy.wait(3000)
     cy.location().then((loc) => {
       cy.writeFile('cypress/debug-output.txt', '\nURL APOS CLICAR BEYOND OPERACAO INTERNO: ' + loc.href + '\n', { flag: 'a+' })
     })
-    cy.get('body').then(($body) => {
-      const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], .MuiCard-root, input, [role="menuitem"], li')]
-        .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
-        .filter((t) => t && t.length > 0 && t.length < 100)
-      cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR BEYOND OPERACAO INTERNO:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
-    })
-    cy.then(() => {
-      cy.writeFile('cypress/debug-output.txt', '\n\nCHAMADAS COM ERRO (apos card):\n' + JSON.stringify(chamadasFalhas, null, 2), { flag: 'a+' })
-    })
-    cy.window().then((win) => {
-      cy.writeFile('cypress/debug-output.txt', '\n\nERROS JS CAPTURADOS (apos card):\n' + JSON.stringify(win.__errosCapturados || [], null, 2), { flag: 'a+' })
+    cy.origin(ambiente.beyondBankingOperacaoUrl, () => {
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], .MuiCard-root, input, [role="menuitem"], li')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS NA TELA DE OPERACOES:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('05-tela-operacoes')
+
+      // Passo 5: clicar em "Criar Operacao".
+      cy.contains('button, a, [role="button"]', 'Criar Operação').click()
+      cy.wait(2000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], .MuiCard-root, input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR CRIAR OPERACAO:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('06-apos-clicar-criar-operacao')
     })
   })
 })

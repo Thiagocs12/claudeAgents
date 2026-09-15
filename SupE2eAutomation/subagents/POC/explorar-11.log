@@ -1,0 +1,79 @@
+
+◇ injected env (4) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (explorar-prospect.feature)                                            │
+  │ Searched:       C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\e2e\fea │
+  │                 tures\_scratch\explorar-prospect.feature                                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  explorar-prospect.feature                                                       (1 of 1)
+
+
+  Exploracao scratch - navegacao ate Novo Prospect
+    √ Mapear navegacao Comercial -> Prospect -> Novo Prospect (73226ms)
+
+
+  1 passing (1m)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  4                                                                                │
+  │ Video:        true                                                                             │
+  │ Duration:     1 minute, 18 seconds                                                             │
+  │ Spec Ran:     explorar-prospect.feature                                                        │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\screensho     (1280x720)
+     ts\explorar-prospect.feature\novo-prospect-form.png                                            
+  -  C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\screensho     (1280x720)
+     ts\explorar-prospect.feature\novo-prospect-form-preenchido.png                                 
+  -  C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\screensho     (1280x720)
+     ts\explorar-prospect.feature\novo-prospect-apos-salvar.png                                     
+  -  C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\screensho     (1280x720)
+     ts\explorar-prospect.feature\novo-prospect-dropdowns-explorados.png                            
+
+
+  (Video)
+
+  -  Video output: C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\videos\explorar-prospect.feature.mp4
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  explorar-prospect.feature                01:18        1        1        -        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✔  All specs passed!                        01:18        1        1        -        -        -  
+

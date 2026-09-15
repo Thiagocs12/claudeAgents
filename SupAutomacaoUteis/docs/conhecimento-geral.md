@@ -197,6 +197,30 @@ precisar de algo parecido:
    trocar por um `cy.task` que checa existência no Node (`fs.existsSync`) em vez de depender do
    `cy.readFile` "assertivo" do Cypress para um arquivo opcional.
 
+## Título da dúvida em `duvidas.md` precisa ser o id da tarefa, não um slug descritivo (2026-09-15)
+
+- A pré-checagem em PowerShell de `run-cycle.ps1` (função `Test-DuvidaRespondida`, seção 3.4 do
+  `CLAUDE.md`) decide se uma tarefa em `tarefas/aguardando-resposta/` pode voltar pra `pendentes/`
+  procurando, em `duvidas.md`, um bloco `## <título>` cujo `<título>` seja **exatamente** o nome do
+  arquivo da tarefa (o id, ex.: `20260915130215-clonar-cedente-completo-prod-hml`) — não faz
+  correspondência aproximada nem lê o conteúdo da pergunta.
+- **Bug real observado (módulo `cedente`, 2026-09-15):** o subAgent registrou a dúvida com um
+  título descritivo (`mc-rat-rating-indicador-fora-do-padrao-mc-cad`) em vez do id da tarefa — o
+  Thiago respondeu, `Status` virou `respondida`, mas a pré-checagem nunca encontrou o bloco (o
+  título não batia com o id do arquivo em `aguardando-resposta/`) e a tarefa ficou presa, pulando
+  ciclo após ciclo (`[ciclo pulado] sem tarefa pendente/retomavel/respondida`) por várias horas até
+  o Supervisor perceber olhando o `run-log.txt`.
+- **Correção aplicada**: renomeado o título do bloco em `duvidas.md` para o id exato da tarefa,
+  preservando o slug original como uma linha `Id-original-da-duvida:` dentro do bloco (só pra
+  contexto humano, a pré-checagem ignora essa linha).
+- **Regra a seguir daqui pra frente, em qualquer subAgent (novo ou existente)**: o título de cada
+  entrada em `duvidas.md` que bloqueia uma tarefa **deve ser o id da tarefa** (mesmo formato do
+  nome do arquivo em `tarefas/`), exatamente como o template da seção 4 do `CLAUDE.md` já
+  especificava (`## <id-da-tarefa>`) — um título descritivo é mais legível, mas quebra a
+  automação. Se quiser um resumo legível, coloque como um campo extra dentro do bloco (ex.:
+  `Resumo:`), nunca como o título do `##`. Vale para todo `AGENTE.md`/prompt de `run-cycle.ps1` que
+  vier a ser criado — reforçar essa regra ao copiar o padrão de um módulo existente.
+
 ## PR único `reviewAgents → master` — o que fazer se o Thiago já mergeou manualmente (2026-09-15)
 
 - A regra "cria uma vez, nunca recria" do PR único pressupõe que ele continua aberto até o Agent

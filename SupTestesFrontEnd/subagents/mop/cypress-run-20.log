@@ -1,5 +1,5 @@
 
-◇ injected env (5) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (6) from .env // tip: ⌘ override existing { override: true }
 Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
 
 1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
@@ -31,34 +31,21 @@ Learn more: https://on.cypress.io/cypress-env-migration
     1) acessa o Beyond Banking e mapeia a tela inicial / login
 
 
-  0 passing (32s)
+  0 passing (35s)
   1 failing
 
   1) Exploracao: criacao de operacao de servico no Beyond Banking
        acessa o Beyond Banking e mapeia a tela inicial / login:
-     TypeError: Cannot destructure property 'duration' of 'props' as it is undefined.
-      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:136377:11)
+     SecurityError: Failed to read a named property '__errosCapturados' from 'Window': Blocked a frame with origin "https://beyondbanking-hml.grupomultiplica.com.br" from accessing a cross-origin frame.
+      at getRet (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:146374:19)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:152495:15)
       at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
       at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1492:31)
-      at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
-      at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
-      at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1674:18)
-      at Promise._fulfill (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1618:18)
-      at Promise._resolveCallback (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1412:57)
-      at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1504:17)
-      at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
-      at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
-      at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1674:18)
-      at Promise._fulfill (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1618:18)
-      at Promise._resolveCallback (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1412:57)
-      at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1504:17)
-      at Promise._settlePromise (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1549:18)
-      at Promise._settlePromise0 (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1594:10)
-      at Promise._settlePromises (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1674:18)
-      at Promise._fulfill (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1618:18)
-      at PromiseArray._resolve (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2905:19)
-      at PromiseArray._promiseFulfilled (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2923:14)
-      at PromiseArray._iterate (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:2893:31)
 
 
 
@@ -71,9 +58,9 @@ Learn more: https://on.cypress.io/cypress-env-migration
   │ Failing:      1                                                                                │
   │ Pending:      0                                                                                │
   │ Skipped:      0                                                                                │
-  │ Screenshots:  2                                                                                │
+  │ Screenshots:  3                                                                                │
   │ Video:        true                                                                             │
-  │ Duration:     31 seconds                                                                       │
+  │ Duration:     34 seconds                                                                       │
   │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -82,6 +69,8 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
      riacao-operacao-servico.cy.js\02-apos-tentativa-login.png                                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1782)
+     riacao-operacao-servico.cy.js\03-apos-clicar-beyond-operacao-interno.png                       
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
      riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
      d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
@@ -99,7 +88,7 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
        Spec                                              Tests  Passing  Failing  Pending  Skipped  
   ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ ✖  criacao-operacao-servico.cy.js           00:31        1        -        1        -        - │
+  │ ✖  criacao-operacao-servico.cy.js           00:34        1        -        1        -        - │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
-    ✖  1 of 1 failed (100%)                     00:31        1        -        1        -        -  
+    ✖  1 of 1 failed (100%)                     00:34        1        -        1        -        -  
 

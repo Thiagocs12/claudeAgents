@@ -38,6 +38,24 @@ do Beyond BackOffice/API/Keycloak já usadas pelo outro Supervisor — **não ne
 Beyond Banking**, que é sistema novo pra qualquer um dos dois Supervisores; se faltar alguma URL
 de ambiente/config, registrar como aprendizado aqui assim que descoberta.
 
+## Armadilha: `npx cypress run` sem timeout explícito pode ficar órfão (2026-09-15)
+
+Num ciclo real, o subAgent chamou `npx cypress run` via Bash sem passar um `timeout` explícito;
+o comando estourou o timeout implícito do Bash, foi movido pra background pela ferramenta, e o
+subAgent tentou "esperar terminar depois" (chegou a chamar `ScheduleWakeup`, que não se aplica a
+um ciclo `claude -p` de execução única — não existe próximo turno pra um wakeup disparar) e
+encerrou o ciclo com o processo Cypress/Electron/node ainda rodando. Ficaram processos órfãos
+vivos por mais de 2h até serem encontrados e encerrados manualmente pelo Supervisor.
+
+- **Correção na regra (`AGENTE.md`, regra 5):** sempre passar `timeout: 300000` (5 min) ou mais ao
+  chamar `npx cypress run` via Bash; nunca usar `ScheduleWakeup` neste contexto; nunca encerrar o
+  ciclo com um processo Cypress/node ainda vivo.
+- **Rede de segurança determinística (`run-cycle.ps1`):** no início e no fim de todo ciclo, mata
+  qualquer processo cuja `CommandLine` referencie esta pasta e contenha "cypress" (raiz) mais toda
+  a árvore de processos filhos (Electron/Cypress) — independe do LLM se comportar corretamente.
+  Ver também `CONHECIMENTO-SUPERVISORES.md` (relevante pros outros dois Supervisores, que também
+  chamam Cypress via ciclos `claude -p`).
+
 URL do Beyond Banking (HML) adicionada ao `.env` local como `HML_BEYOND_BANKING_URL` (não
 versionado, `.env` está no `.gitignore`).
 

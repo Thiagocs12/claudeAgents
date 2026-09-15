@@ -85,3 +85,32 @@ versão, app correto: Beyond Banking (`beyondbanking-hml.grupomultiplica.com.br`
   card chamado exatamente "Beyond Operação" (passo 4 do roteiro) — o mais próximo é "Beyond
   Operação Interno". Vou seguir por ele como a interpretação mais provável do passo 4 e continuar a
   exploração; se não for o caminho certo, volto e registro aqui.
+- Tentei clicar no card "Beyond Operação Interno" → navegou para um **subdomínio diferente**
+  (`https://beyondbanking-ope-hml.grupomultiplica.com.br/`, origem distinta pro Cypress — precisou
+  de `cy.origin()` a partir daqui, senão o comando seguinte falha com "command was expected to run
+  against origin X but the application is at origin Y"). Caiu direto numa tela "Operações" com
+  filtros, cards de resumo (Operações/Títulos/Valor a Receber) e um botão **"Criar Operação"**
+  visível — bate com o passo 5 do roteiro. Cedente mostrado no topo da tela: **"SO LARANJA
+  COMERCIO DE CITR..."** (nome truncado) — não é o cedente "kenerson" pedido no passo 2. Existe um
+  ícone de "casa"/home ao lado do nome do cedente no topo, ainda não explorado — hipótese: é o
+  seletor pra trocar de cedente. Próximo passo: explorar esse seletor antes de clicar em "Criar
+  Operação", pra resolver os passos 2-3 do roteiro (selecionar cedente kenerson, cadastro
+  master) antes de avançar.
+- Tentei clicar no ícone de "casa" ao lado do nome do cedente (hipótese de seletor de cedente) →
+  navegou de volta pro domínio raiz, para `https://beyondbanking-hml.grupomultiplica.com.br/clients`
+  (rota `/clients` — provável tela de seleção de cedentes, bate com os passos 2-3 do roteiro).
+  Confirmado via aba de rede do Cypress (`GET /clients` 200), mas o `cy.screenshot()` logo em
+  seguida (ainda dentro da mesma origem cross-origin anterior, tela em branco com o logo/spinner
+  animado do Beyond carregando) **reproduziu de novo a armadilha já documentada**
+  (`TypeError: Cannot destructure property 'duration' of 'props'...`) — confirma que o gatilho é
+  genérico (qualquer tela com logo/spinner animado logo após navegação, não só a tela de login).
+- **Novo ciclo (retomada 2026-09-15, tarde):** ao rodar de novo do zero (login limpo, sem sessão
+  anterior), a aplicação **redirecionou direto para `/clients` logo após o login** — sem passar
+  pela Home com os 3 cards nem precisar clicar em "Beyond Operação Interno"/ícone de casa. A tela
+  é "Seleção de cliente" ("Automacao, Qual cliente deseja acessar?"), com um dropdown "Selecione
+  aqui" e botão "Avançar" (screenshot `02-apos-tentativa-login.png`). **Isso resolve os passos 2-3
+  do roteiro diretamente e de forma mais simples** — parece que o app só mostra a Home/cards depois
+  que um cliente já foi selecionado na sessão; o caminho anterior (Home → card → ícone de casa →
+  `/clients`) era uma volta desnecessária só porque a sessão de exploração anterior já tinha um
+  cliente pré-selecionado. Reescrevi a spec para focar direto neste fluxo: abrir o dropdown e
+  localizar "kenerson". Próximo passo: rodar e ver as opções do dropdown.

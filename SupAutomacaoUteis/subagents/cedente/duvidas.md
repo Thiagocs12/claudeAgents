@@ -1,4 +1,5 @@
-## mc-rat-rating-indicador-fora-do-padrao-mc-cad
-Status: pendente
+## 20260915130215-clonar-cedente-completo-prod-hml
+Status: respondida
+Id-original-da-duvida: mc-rat-rating-indicador-fora-do-padrao-mc-cad
 Pergunta: Mapeando a fase POC (proposta) da tarefa `20260915130215-clonar-cedente-completo-prod-hml`, encontrei que `MC_POC_RATING_INDICADOR_RESULTADO.idRatingIndicador` (coluna NOT NULL) e `.idRatingIndicadorItem` (nullable) apontam para `MC_RAT_RATING_INDICADOR` e `MC_RAT_RATING_INDICADOR_ITEM` — duas tabelas com cara de catálogo/domínio compartilhado (indicador e item de indicador de rating, não algo que "pertence" a uma proposta específica), mas com prefixo `MC_RAT_`, fora do padrão `MC_CAD_*` que a automação já sabe resolver automaticamente como catálogo (busca por chave natural em HML, cria se faltar). Nenhuma das duas tabelas foi citada na tarefa original (nem na lista explícita, nem na nota sobre "Dependências de catálogo (MC_CAD_* genéricas)"). Preciso de uma decisão: (1) tratar `MC_RAT_RATING_INDICADOR`/`_ITEM` como catálogo, resolvidas pelo mesmo padrão das `MC_CAD_*` (mesma lógica de dependencias.js/estoque.js, só que buscando nessas duas tabelas em vez de uma `MC_CAD_*`)? Ou (2) outro tratamento? Sem resposta, `MC_POC_RATING_INDICADOR_RESULTADO` não pode ser inserida em HML (a coluna `idRatingIndicador` é NOT NULL) — o resto da fase POC já está mapeado e commitado (branch `cedente/clonar-cedente-completo-prod-hml`, ainda local).
-Resposta:
+Resposta: Thiago confirmou opção 1 (2026-09-15): tratar `MC_RAT_RATING_INDICADOR` e `MC_RAT_RATING_INDICADOR_ITEM` como catálogo, resolvidas pelo mesmo padrão de dependência já usado nas `MC_CAD_*` (busca por chave natural em HML, cria se faltar).
