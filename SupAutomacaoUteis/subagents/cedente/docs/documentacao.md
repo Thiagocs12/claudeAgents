@@ -187,4 +187,14 @@ puras novas; `montarInsertCatalogo` alterada) + `__tests__/clonagemCedente.test.
 - Nenhum arquivo temporário ficou para trás (`_tcp_test.cjs`/`_check_situacao.cjs`/
   `_verify.cjs`, além das saídas de lint/test/cypress, removidos antes do commit;
   `git status` confirmou working tree limpa após o commit).
+- **Nota de infraestrutura para o próximo ciclo**: ao final deste ciclo, um
+  `PAUSA-HML.flag` (raiz de `C:\Multiplica\claudeAgents`) foi criado pelo Thiago —
+  ambiente HML fora do ar, confirmado por commit dele fora desta sessão (`45bd5a8`,
+  16:10). O `run-cycle.ps1` deste subAgent já foi atualizado (pelo próprio Thiago)
+  para checar esse arquivo antes de chamar o Claude e pular o ciclo enquanto ele
+  existir — não é algo a resolver por aqui, só um lembrete: se um próximo ciclo
+  rodar mesmo assim e a conexão a HML falhar, não é um bloqueio novo de rede
+  (como os já registrados nos Ciclos 4/5/6/8/9), é o ambiente HML em si estar
+  fora do ar. Confirmar se o flag ainda existe antes de insistir em qualquer
+  operação contra HML.
 
