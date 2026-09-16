@@ -1,0 +1,8 @@
+Ambiente HML indisponível — pausa manual solicitada pelo Thiago em 2026-09-16.
+
+Enquanto este arquivo existir, todo subAgent/Agent Master que dependa de logar na
+plataforma (Beyond/Beyond Banking/Keycloak HML) ou de conectar no SQL Server HML
+encerra o ciclo sem tentar nada, sem gastar chamada ao Claude. Status Watchers (só
+leitura) continuam rodando normalmente.
+
+Remover este arquivo assim que o Thiago confirmar que o ambiente HML voltou.

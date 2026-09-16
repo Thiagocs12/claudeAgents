@@ -55,6 +55,17 @@ function Sync-RepoRaizClaudeAgents {
 
 Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 
+# --- Pausa manual por indisponibilidade de ambiente HML (2026-09-16, pedido do Thiago) ---
+# Enquanto C:\Multiplica\claudeAgents\PAUSA-HML.flag existir, este processo depende de logar na
+# plataforma (HML) e por isso não tenta nenhum ciclo — evita gastar tokens/tempo retentando contra
+# um ambiente confirmadamente fora do ar. Removido pelo Thiago (ou por mim a pedido dele) assim que
+# o ambiente for restabelecido.
+if (Test-Path "C:\Multiplica\claudeAgents\PAUSA-HML.flag") {
+    "$(Get-Date -Format 'HH:mm:ss') | [pausado] ambiente HML indisponivel (PAUSA-HML.flag existe) - ciclo nao executado" |
+        Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    exit 0
+}
+
 # Conta do Claude Code dedicada a este subAgent (1º módulo criado neste Supervisor -> contaA
 # "de casa").
 #
