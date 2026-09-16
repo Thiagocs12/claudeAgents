@@ -3,15 +3,16 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida, Ciclo 7 abaixo —
-qual campo exatamente representa "votado/aprovado" no comitê, já que
-`MC_POC_COMITE.resultadoVotacao` nunca é usado na prática em PROD — ver
-`duvidas.md`, `campo-votado-aprovado-ambiguo-comite-votacao-20260915`), branch
-`cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
-pushada — commits locais até o momento: fases `prospect`, `poc` e o grafo estrutural
-da fase `comite` mapeados, incluindo a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)`
-como catálogo fora do padrão `MC_CAD_*` (commit `5edaad0`) e a resolução de
-`idParticipante` como participante fixo — o próprio Thiago (commit `ff6c57c`)).
+`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida, Ciclo 8 abaixo —
+conexão SQL Server inacessível de novo, agora ao tentar mapear a fase `cedente` — ver
+`duvidas.md`, `conexao-sql-server-inacessivel-mapeamento-fase-cedente-20260915),
+branch `cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda
+não pushada — commits locais até o momento: fases `prospect`, `poc` e `comite`
+totalmente mapeadas/implementadas, incluindo a resolução de
+`MC_RAT_RATING_INDICADOR(_ITEM)` como catálogo fora do padrão `MC_CAD_*` (commit
+`5edaad0`), `idParticipante` como participante fixo (commit `ff6c57c`) e o "votado e
+aprovado" do comitê via `valoresFixos` (commit `9de9cf0`, Ciclo 8). Falta mapear só a
+fase `cedente` (última) e escrever os comandos de leitura/INSERT/DELETE em HML.
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -421,4 +422,44 @@ warnings pré-existentes fora do escopo) e `npm run test:safety` (84/84) passam.
 - Nenhum arquivo temporário de investigação ficou para trás neste ciclo (testes de
   conectividade e os `.cjs` de investigação de schema/valores/analista, e as
   respectivas saídas, removidos antes do commit).
+
+### Ciclo 8 (2026-09-15) — Resposta-5 implementada; VPN caiu de novo ao tentar mapear a fase `cedente`
+
+Ao retomar (dúvida `campo-votado-aprovado-ambiguo-comite-votacao-20260915` já com
+`Status: respondida` — Thiago escolheu a opção recomendada, ver Resposta-5 em
+`duvidas.md`), conectividade **não** foi testada antes de implementar a Resposta-5
+(não dependia de rede — é só uma decisão de valores fixos sobre o mapeamento já
+commitado).
+
+Commit `9de9cf0`: `cypress/utils/mapeamentoCedente.js` (novo campo declarativo
+`valoresFixos` em `MC_POC_COMITE` — `{ situacaoVotacao: 'FINALIZADA' }`, propositalmente
+sem `resultadoVotacao` — e em `MC_POC_COMITE_VOTACAO`/`MC_PORTAL_COMITE_VOTACAO` —
+`{ situacaoVoto: 'CONCLUIDO', voto: 'FAVORAVEL' }`) + `clonagemCedente.js` (função pura
+nova `aplicarValoresFixos(nomeTabela, linha, mapeamento)`, sobrescreve só as colunas
+declaradas sobre uma linha vinda de PROD, sem mutar o objeto original) + 3 testes
+novos em `__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, 4 warnings
+pré-existentes fora do escopo) e `npm run test:safety` (87/87) passam.
+
+- **Por que um campo novo (`valoresFixos`) e não reaproveitar `dependeDe`**: a
+  semântica é diferente de todos os tipos de dependência já existentes
+  (`estrutural`/`catalogo`/`participante-fixo`) — não é uma FK a resolver, é uma
+  sobrescrita direta de valor de coluna, sem relação com nenhuma outra tabela. Um
+  campo separado e explícito evita forçar esse conceito dentro do modelo de
+  dependência (que `construirGrafoEstrutural`/resolução de catálogo não devem nem
+  precisam enxergar).
+- Ao tentar prosseguir para o próximo passo pendente (mapear o grafo de FK real da
+  fase `cedente`, última fase, 28 tabelas — script `investigar-schema-cedente.cjs`,
+  mesmo template das fases anteriores), a conexão SQL Server travou de novo (mais de
+  6 minutos sem retorno). Diagnóstico (mesmo teste de TCP puro já usado nos Ciclos
+  4/5): timeout em PROD e HML de novo. **Terceira vez que esse bloqueio de
+  infraestrutura acontece nesta mesma tarefa** — ver
+  `../../docs/conhecimento-geral.md` (seção já existente sobre esse tipo de
+  bloqueio, não precisou de entrada nova, só mais um caso confirmando o padrão).
+  Script `investigar-schema-cedente.cjs` e o teste de TCP temporário removidos antes
+  de terminar o ciclo (nenhum arquivo não commitado ficou para trás — `git status`
+  confirmou working tree limpa).
+- Nova dúvida registrada em `duvidas.md`, **mesmo bloco `## <id>` já existente**
+  (Resposta-5 migrada para `Status-historico-5`, nova pergunta em
+  `Pergunta-6`/`Id-original-da-duvida-6`, `Status` voltou para `pendente`). Tarefa
+  movida para `tarefas/aguardando-resposta/`.
 
