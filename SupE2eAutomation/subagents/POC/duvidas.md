@@ -98,3 +98,66 @@ está tudo ok pra eu tentar novamente? (Nenhum código foi alterado desde o comm
 não parece ser a implementação, e sim o mesmo problema intermitente de login já catalogado.)
 Resposta: Sim, pode tentar de novo — é instabilidade pontual do mesmo tipo já catalogado, não
 precisa mexer no código.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: respondida
+Pergunta: Retomei com a VPN ok (confirmei via `curl` antes de começar) e rodei o autoteste do spec
+de produção de novo. Desta vez o login funcionou (sem repetir o erro de `cy.origin`), mas apareceu
+um **problema novo, não relacionado a rede/VPN/login**: depois do primeiro "Salvar" (com os 3
+campos ainda vazios), o campo "Tipo de Prospect" deveria sair do estado `Mui-disabled` para poder
+selecionar o valor (é o que `aguardarCamposObrigatoriosHabilitados()` espera, implementado na
+retomada anterior). Só que o campo continuou `disabled` mesmo depois de **15 segundos** de espera
+(aumentei o timeout de 4s, o padrão, para 15s como primeira tentativa de correção — commit
+`0138e86`, já pushado). O screenshot de falha mostra os textos "Campo Obrigatório" já visíveis
+embaixo de "Tipo de Prospect" e "Agente Comercial" (ou seja, o clique em "Salvar" registrou e
+disparou a validação normalmente), mas o atributo/classe `disabled` no input não sai. Isso é
+diferente do flake leve já documentado ("às vezes falha por clique cair no campo ainda
+desabilitado") — lá bastava esperar um pouco; aqui nem 15s foram suficientes numa execução run inteira.
+Não cheguei a confirmar se é sempre assim ou intermitente (uma tentativa de investigação adicional
+com um spec de diagnóstico foi interrompida por nova queda de VPN, ver abaixo, antes de conseguir
+amostrar o timing com mais precisão).
+Como devo prosseguir? Alternativas que vejo, mas não quero decidir sozinha sem confirmar: (a)
+aumentar ainda mais o timeout (ex.: 30s+) e tentar de novo; (b) você mesmo abrir a tela
+manualmente em hml e confirmar quanto tempo o campo realmente leva pra habilitar depois do
+"Salvar" (pra eu calibrar um valor realista em vez de ir aumentando às cegas); (c) se isso for uma
+mudança de comportamento da aplicação (regressão), me avisar para eu não insistir tentando ajustar
+timing do lado do teste.
+
+Separadamente, e sem relação com o achado acima: a mesma queda de conectividade com
+`beyond-hml.grupomultiplica.com.br` (`connect ETIMEDOUT 10.101.10.254:443`) já catalogada
+recorreu de novo durante uma investigação adicional (spec de diagnóstico descartável, não
+commitado por estar em `cypress/e2e/features/_scratch/`, que é gitignored) — confirmei com uma
+única checagem via `curl --max-time 15` (sem insistir em sequência): `beyond-hml` deu timeout,
+`keycloak-new-2` respondeu `403` normalmente, mesmo padrão de sempre. Aguardo a mesma confirmação
+de sempre (VPN reconectada, pode retentar) antes de rodar `cypress run` de novo — mas o achado do
+campo desabilitado acima é independente disso e aconteceu numa execução em que a VPN estava
+funcionando (login passou).
+Resposta: Sobre o campo "Tipo de Prospect" travado em `Mui-disabled`: opção (a) — aumente o
+timeout (30s+) e tente de novo.
+
+Sobre a queda de VPN (3ª ocorrência): Thiago confirmou (via Gerente, 2026-09-15) que a VPN
+reconectou de novo — pode retentar o `cypress run` normalmente.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: pendente
+Pergunta: Apliquei a opção (a) sugerida (aumentar `aguardarCamposObrigatoriosHabilitados` de 15s
+para 30s, commit `9054e8b`, já pushado) e rodei o autoteste do spec de produção de novo com VPN
+confirmada ok (`curl` em `beyond-hml` retornou `200` antes de começar, login passou sem erro de
+`cy.origin`). O resultado foi o **mesmo travamento**: o campo "Tipo de Prospect" continua com a
+classe `Mui-disabled` mesmo depois de **30 segundos** de espera —
+`AssertionError: Timed out retrying after 30000ms: expected '<input#mui-19511...Mui-disabled...>'
+not to be 'disabled'`. Vídeo da execução gerado normalmente em
+`cypress/videos/poc-criar-prospect-cedente-cnpj.feature.mp4` (screenshot de falha também salvo),
+disponíveis no clone deste subAgent se quiser conferir visualmente.
+
+Como 15s e agora 30s falharam da mesma forma (campo nunca sai do estado `Mui-disabled` durante
+toda a espera, não é questão de "faltou um pouco mais"), não acredito mais que seja calibração de
+timing do lado do teste — isso bate com a alternativa (c) que eu tinha levantado antes: pode ser
+uma mudança de comportamento da aplicação (regressão em hml) em vez de um flake de timing. Não vou
+insistir aumentando o timeout de novo sem confirmação, como combinado.
+
+Poderia confirmar, olhando o vídeo/screenshot ou abrindo a tela você mesmo em hml: o campo "Tipo de
+Prospect" realmente fica preso desabilitado depois do primeiro "Salvar" agora (regressão), ou há
+algum passo/estado prévio da tela que o teste não está reproduzindo (e que faria o campo habilitar
+normalmente na prática)? Como devo prosseguir?
+Resposta:

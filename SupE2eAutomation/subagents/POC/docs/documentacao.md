@@ -161,3 +161,66 @@ seguidas): dúvida bloqueante registrada em `duvidas.md`, tarefa movida para
 `npx cypress run --spec "cypress/e2e/features/poc/poc-criar-prospect-cedente-cnpj.feature"`
 de novo (nenhum código pendente de escrever) e, se passar, seguir a regra 7 do `AGENTE.md` (push +
 aviso ao Agent Master + mover tarefa para `concluidas/`).
+
+## Retomada (2026-09-15): login ok, mas novo achado — campo obrigatório não sai de `Mui-disabled` mesmo após 15s; nova queda de VPN interrompeu a investigação
+
+Dúvida da VPN/login respondida pelo Thiago ("instabilidade pontual, pode tentar de novo"). Nesta
+retomada, confirmei conectividade com `curl` antes de rodar (`beyond-hml` OK) e o `cypress run` do
+spec de produção passou do login sem repetir o `cy.origin` — mas falhou num ponto novo:
+
+- `aguardarCamposObrigatoriosHabilitados()` (que espera `Tipo de Prospect` sair de `Mui-disabled`
+  depois do primeiro "Salvar") deu timeout com o timeout **padrão** de 4000ms. Aumentei para 15000ms
+  (`inputDoAutocomplete` agora aceita `options` repassadas ao `.find('input', options)`, commit
+  `0138e86`, branch `feature/poc-criar-prospect-cedente-cnpj`, já pushado) — **mesmo assim, 15s não
+  foi suficiente** numa nova execução: o campo continuou `disabled`, ainda que o screenshot de falha
+  mostre "Campo Obrigatório" já visível embaixo de `Tipo de Prospect`/`Agente Comercial` (ou seja, o
+  clique em "Salvar" registrou e dispara a validação normalmente — só o atributo/classe `disabled`
+  do input não sai).
+- Isso é diferente do flake leve já documentado (clique caindo no campo ainda desabilitado logo
+  após o "Salvar", resolvido esperando um pouco) — aqui nem 15s de espera bastaram numa execução
+  inteira. Não é possível ainda dizer se é sempre assim ou intermitente.
+- Tentei uma investigação adicional com um spec de diagnóstico descartável (`cypress/e2e/features/_scratch/diagnostico-campos-habilitam.feature`
+  + `cypress/support/step_definitions/_scratch/diagnosticoCamposHabilitam.js`, gitignored, **não
+  commitado** — ficam no working tree local deste clone para a próxima retomada reaproveitar) que
+  amostra o estado `disabled` do campo em intervalos crescentes após o "Salvar". A primeira
+  tentativa falhou por um `cy.writeFile` que deu timeout em 4000ms (aumentado para 20000ms depois);
+  a segunda tentativa foi interrompida por uma **nova queda de conectividade**
+  (`connect ETIMEDOUT 10.101.10.254:443`, mesmo padrão já catalogado) antes de coletar dados úteis.
+  Confirmado com uma única checagem via `curl` (sem insistir em sequência): `beyond-hml` de novo sem
+  conectar, `keycloak-new-2` respondeu `403` normalmente.
+- Dúvida bloqueante nova registrada em `duvidas.md` (mesmo id da tarefa), cobrindo os dois pontos
+  (o achado do campo desabilitado além de 15s, e a nova recorrência de queda de VPN). Tarefa movida
+  de volta para `tarefas/aguardando-resposta/`. A recorrência de VPN também foi registrada em
+  `../../docs/conhecimento-geral.md` (mesma seção já existente sobre esse sintoma).
+- **Próxima retomada:** depois de resposta do Thiago, se a orientação for calibrar o timeout, rodar
+  o spec de diagnóstico (já commitado localmente como scratch, não versionado) para amostrar o
+  tempo real antes de simplesmente aumentar o número às cegas. Se a VPN precisar ser reconfirmada de
+  novo, seguir o mesmo protocolo já estabelecido (checagem única, aguardar confirmação).
+
+## Retomada (2026-09-15): timeout de 30s (opção a) também não resolveu — campo nunca sai de `Mui-disabled`
+
+Thiago respondeu a dúvida anterior confirmando opção (a): aumentar `aguardarCamposObrigatoriosHabilitados`
+para 30s+ e tentar de novo (também confirmou reconexão da VPN, 3ª ocorrência). Nesta retomada:
+aumentei o timeout de 15000ms para 30000ms (commit `9054e8b`, branch
+`feature/poc-criar-prospect-cedente-cnpj`, já pushado), confirmei VPN ok via `curl` (`beyond-hml`
+respondeu `200`) e rodei o `cypress run` do spec de produção completo.
+
+- **Resultado: mesmo travamento, mesmo com 30s.** Login passou sem erro de `cy.origin`. O teste
+  falhou no mesmo ponto de sempre: `Tipo de Prospect` continua com classe `Mui-disabled` até o
+  timeout estourar (`AssertionError: Timed out retrying after 30000ms: ... not to be 'disabled'`).
+  Vídeo gerado normalmente (`cypress/videos/poc-criar-prospect-cedente-cnpj.feature.mp4`,
+  confirmado presente no disco) + screenshot de falha.
+- **Conclusão desta retomada:** como 15s e 30s falharam da mesma forma exata (nunca chega a
+  habilitar em nenhuma das duas execuções, não é "quase passou"), a hipótese de flake de timing
+  perde força — bate com a alternativa (c) já levantada antes (possível regressão na aplicação em
+  hml, não um problema de calibração do teste). Não insisti aumentando o timeout de novo sem
+  confirmação (evitar ficar tentando às cegas, conforme já orientado). Nova dúvida bloqueante
+  registrada em `duvidas.md` (mesmo id da tarefa) pedindo ao Thiago para confirmar via
+  vídeo/screenshot ou checagem manual em hml se é regressão real ou se falta algum passo/estado
+  prévio que o teste não está reproduzindo. Tarefa movida de volta para
+  `tarefas/aguardando-resposta/`.
+- **Próxima retomada:** aguardar resposta. Se confirmado que é regressão real da aplicação, não há
+  ajuste possível do lado do teste — precisa virar reporte de bug para quem mantém a tela, e a
+  tarefa deste módulo fica bloqueada até isso ser corrigido (ou até surgir uma orientação
+  alternativa, ex.: usar outro fluxo/estado para chegar aos campos habilitados). Se o Thiago
+  identificar um passo prévio faltante, seguir a orientação específica que ele der.
