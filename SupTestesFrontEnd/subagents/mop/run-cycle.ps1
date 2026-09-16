@@ -167,18 +167,31 @@ function Test-DuvidaRespondida {
 }
 
 function Test-TrabalhoPendente {
-    $temPendente = (Get-ChildItem -Path "tarefas/pendentes" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
-    if ($temPendente) { return $true }
-
-    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
-    if ($temExecutando) { return $true }
-
+    # Sincronização determinística da fila de tarefas (movida de instrução do prompt do Claude pra
+    # cá em 2026-09-16, pedido do Thiago: tudo que não exige julgamento deve rodar fora do Claude,
+    # pra não gastar tokens/turnos em operação mecânica). Nenhuma das duas ações abaixo decide nada
+    # — é só regex em duvidas.md e ordenação por timestamp no nome do arquivo.
     $aguardando = Get-ChildItem -Path "tarefas/aguardando-resposta" -File -ErrorAction SilentlyContinue
     foreach ($arquivo in $aguardando) {
         $id = [System.IO.Path]::GetFileNameWithoutExtension($arquivo.Name)
-        if (Test-DuvidaRespondida -DuvidasPath "duvidas.md" -Id $id) { return $true }
+        if (Test-DuvidaRespondida -DuvidasPath "duvidas.md" -Id $id) {
+            Move-Item -Path $arquivo.FullName -Destination "tarefas/pendentes/$($arquivo.Name)" -Force
+            "$(Get-Date -Format 'HH:mm:ss') | [fila] $($arquivo.Name): duvida respondida, movido aguardando-resposta -> pendentes" |
+                Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+        }
     }
-    return $false
+
+    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+    if (-not $temExecutando) {
+        $maisAntiga = Get-ChildItem -Path "tarefas/pendentes" -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+        if ($maisAntiga) {
+            Move-Item -Path $maisAntiga.FullName -Destination "tarefas/executando/$($maisAntiga.Name)" -Force
+            "$(Get-Date -Format 'HH:mm:ss') | [fila] $($maisAntiga.Name): movido pendentes -> executando" |
+                Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+        }
+    }
+
+    return (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
 }
 
 if (-not (Test-TrabalhoPendente)) {
@@ -193,25 +206,23 @@ Você é o SubAgent do módulo "mop" (Sup TestesFrontEnd — QA exploratório, n
 persistente). Leia AGENTE.md nesta pasta e siga suas regras fixas à risca. Execute agora UM único
 ciclo da lógica operacional:
 
-1. Em tarefas/aguardando-resposta/: para cada tarefa cuja dúvida correspondente em duvidas.md já
-   esteja "Status: respondida", mova o arquivo de volta para tarefas/pendentes/.
-2. Se tarefas/executando/ já tiver uma tarefa, RETOME-A: leia a seção "## Execução" já escrita
-   nela para saber onde parou (não recomece do zero, não descarte o que já foi descoberto). Se não
-   houver nenhuma seção "## Execução" ainda, trate como se estivesse começando agora.
-3. Se tarefas/executando/ estiver vazia e houver algo em tarefas/pendentes/, mova a mais antiga
-   (pelo timestamp no nome do arquivo) para tarefas/executando/ e prossiga.
-4. Se não houver nada a fazer nos passos 1-3, encerre o ciclo agora.
-5. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
+1. A fila de tarefas já foi sincronizada deterministicamente antes deste ciclo (dúvida respondida
+   já volta pra tarefas/pendentes/ sozinha, e a tarefa mais antiga já foi movida pra
+   tarefas/executando/ se estava vazia) — há exatamente uma tarefa em tarefas/executando/ agora.
+   RETOME-A: leia a seção "## Execução" já escrita nela para saber onde parou (não recomece do
+   zero, não descarte o que já foi descoberto). Se não houver nenhuma seção "## Execução" ainda,
+   trate como se estivesse começando agora.
+2. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
    inteiro (inclui o ponteiro pro conhecimento já mapeado pelo SupE2eAutomation — leia aquele
    arquivo também antes de explorar do zero).
-6. Tente cumprir o objetivo da tarefa via Cypress (npx cypress run), incrementalmente: escreva um
+3. Tente cumprir o objetivo da tarefa via Cypress (npx cypress run), incrementalmente: escreva um
    passo, rode, observe o resultado, decida o próximo passo. Narre CADA tentativa relevante na
    seção "## Execução" do arquivo da tarefa, no formato "Tentei <ação> → <o que aconteceu>", à
    medida que for acontecendo (não só no final). Nunca inicie processo em segundo plano e encerre
    o ciclo esperando ele terminar — rode tudo de forma síncrona dentro do ciclo. Se o ciclo for
    esgotar antes de terminar, garanta que a seção "## Execução" está atualizada com o que já foi
    descoberto/tentado, para o próximo ciclo continuar de onde parou.
-7. Ao concluir (objetivo cumprido, cumprido parcialmente, ou travado por um problema real da
+4. Ao concluir (objetivo cumprido, cumprido parcialmente, ou travado por um problema real da
    aplicação — isso é RESULTADO, não dúvida): grave vídeo Cypress (cypress/videos/) e copie o
    .mp4 gerado para ../videos/<id-da-tarefa>.mp4; acrescente a seção "## Resultado" (veredito,
    caminho do vídeo, resumo dos achados); atualize docs/documentacao.md com qualquer
@@ -220,8 +231,8 @@ ciclo da lógica operacional:
    tarefas/aguardando-aprovacao/ — NUNCA para tarefas/concluidas/, e NUNCA gere hand-off nenhum
    pro SupE2eAutomation você mesmo (isso só acontece depois de aprovação do Thiago, feito pelo
    Supervisor).
-8. Se travar numa dúvida bloqueante de verdade (precisa de decisão/informação do Thiago pra
-   continuar — não confundir com "encontrei um bug/erro real", que é resultado, passo 7): registre
+5. Se travar numa dúvida bloqueante de verdade (precisa de decisão/informação do Thiago pra
+   continuar — não confundir com "encontrei um bug/erro real", que é resultado, passo 4): registre
    em duvidas.md no formato padrão, mova a tarefa de tarefas/executando/ para
    tarefas/aguardando-resposta/, e encerre o ciclo sem terminar a tarefa. Nunca responda sua
    própria dúvida.

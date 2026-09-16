@@ -109,11 +109,31 @@ $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\$contaEfetiva"
 $env:GH_TOKEN = (Get-Content (Join-Path $PSScriptRoot ".gh-token") -Raw).Trim()
 $env:Path = "$env:Path;$env:LOCALAPPDATA\Programs\gh\bin"
 
+# --- Garantia determinística do PR único reviewAgents -> master (movida de instrução do prompt do
+# Claude pra cá em 2026-09-16, pedido do Thiago: tudo que não exige julgamento deve rodar fora do
+# Claude) --- checar/criar esse PR nunca decide nada (é sempre "existe? não, cria; existe? não mexe"),
+# então roda aqui, em todo ciclo, sem depender de haver algo em fila-merge/ (antes só era conferido
+# quando o Claude chegava a ser chamado — agora é de graça, não tem motivo pra pular).
+function Confirmar-PRUnico {
+    param([string]$Base, [string]$LogPath)
+    try {
+        $existentesJson = gh pr list --base $Base --head reviewAgents --state open --json number 2>$null
+        $existentes = if ($existentesJson) { $existentesJson | ConvertFrom-Json } else { @() }
+    } catch { $existentes = @() }
+    if ($existentes -and $existentes.Count -gt 0) { return }
+    gh pr create --base $Base --head reviewAgents `
+        --title "Integracao continua reviewAgents -> $Base" `
+        --body "PR unico e continuo, criado automaticamente. Reflete cada commit novo pusheado na reviewAgents. Revisao/merge manual do Thiago quando quiser." `
+        *>&1 | Add-Content -Path $LogPath -Encoding utf8
+    "$(Get-Date -Format 'HH:mm:ss') | [pr-unico] nao existia PR aberto reviewAgents->$Base - criado" |
+        Add-Content -Path $LogPath -Encoding utf8
+}
+
+Confirmar-PRUnico -Base "master" -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+
 # Checagem determinística (sem custo de chamada ao Claude): só vale a pena chamar `claude -p` se
-# houver algo pra processar em fila-merge/. A garantia do PR único reviewAgents->master (item 2 da
-# seção 3.3) fica sem checar nos ciclos vazios, mas isso é seguro: uma vez criado ele se mantém
-# (nunca é fechado por esse fluxo), e volta a ser conferido no próximo ciclo que efetivamente rodar
-# o claude. Ver seção "Pré-checagem em PowerShell antes de chamar claude -p" do CLAUDE.md.
+# houver algo pra processar em fila-merge/. Ver seção "Pré-checagem em PowerShell antes de chamar
+# claude -p" do CLAUDE.md.
 function Test-TrabalhoPendente {
     $pendentes = (Get-ChildItem -Path "fila-merge/pendentes" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
     if ($pendentes) { return $true }
@@ -132,19 +152,16 @@ $prompt = @'
 Você é o Agent Master do Sup AutomaçãoUteis. Leia AGENTE.md nesta pasta e siga suas regras fixas à
 risca — em especial (fluxo mudou em 2026-09-14, pedido explícito do Thiago, mesmo padrão do
 SupE2eAutomation): você faz merge direto com push na reviewAgents de cada tarefa aprovada nos
-testes, SEM PR nem aprovação humana por tarefa. Você NUNCA mergeia/dá push direto na master: o
-único ponto de revisão manual do Thiago é um PR unico e continuo reviewAgents para master, que
-voce garante que existe (cria uma vez se faltar, nunca recria) e que reflete sozinho no GitHub
-cada commit novo pusheado na reviewAgents. gh CLI ja autenticado via GH_TOKEN. Execute agora UM
-unico ciclo da logica operacional:
+testes, SEM PR nem aprovação humana por tarefa. Você NUNCA mergeia/dá push direto na master. O PR
+unico e continuo reviewAgents para master (unico ponto de revisao manual do Thiago) ja e
+garantido/criado deterministicamente por PowerShell antes deste ciclo (funcao Confirmar-PRUnico no
+run-cycle.ps1) — voce nao precisa mais checar/criar esse PR, so cuidar da fila-merge abaixo. gh CLI
+ja autenticado via GH_TOKEN, disponivel se precisar dele por outro motivo. Execute agora UM unico
+ciclo da logica operacional:
 
 1. Leia ../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
    inteiro.
-2. Garanta o PR unico: rode gh pr list --base master --head reviewAgents --state open. Se nao
-   existir nenhum aberto, crie um com gh pr create (base master, head reviewAgents, titulo curto
-   tipo Integracao continua reviewAgents para master, corpo com um resumo do que esta pendente de
-   revisao). Se ja existir, nao mexa nele.
-3. Legado: se houver algo em fila-merge/aguardando-aprovacao/ (resquicio do modelo antigo de PR
+2. Legado: se houver algo em fila-merge/aguardando-aprovacao/ (resquicio do modelo antigo de PR
    por tarefa; o unico caso conhecido, PR numero 5 da branch keycloakUser/clonar-usuario-prod-hml,
    ja foi mergeado e movido para concluidos/ - esta pasta deve estar vazia agora, a menos que
    surja outro caso), para cada um rode gh pr view passando a branch do aviso e pedindo os campos
@@ -159,7 +176,7 @@ unico ciclo da logica operacional:
      mexer no aviso.
    - OPEN: não faça nada com esse aviso agora — nenhum aviso novo deve passar por essa pasta daqui
      pra frente.
-4. Para cada aviso em fila-merge/pendentes/ (fluxo normal, novo): no repo/, busque a branch e faça
+3. Para cada aviso em fila-merge/pendentes/ (fluxo normal, novo): no repo/, busque a branch e faça
    um merge de teste LOCAL contra reviewAgents para achar conflito; se houver, resolva com a skill
    /resolve-conflicts e comite a resolução na própria branch da feature antes de mesclar de
    verdade. Atualize repo/.env se necessário (mesma lógica de sempre, nunca invente/deixe em
@@ -170,7 +187,7 @@ unico ciclo da logica operacional:
    fila-merge/concluidos/ (nunca passa por aguardando-aprovacao/ nesse fluxo). Se falhar/não
    resolver conflito: trate como dúvida bloqueante, desfaça o merge local (não deixe a
    reviewAgents local suja), deixe o aviso em fila-merge/pendentes/.
-5. Depois de processar os avisos, sincronize C:\multiplica\cypress-uteis (pasta PESSOAL do Thiago
+4. Depois de processar os avisos, sincronize C:\multiplica\cypress-uteis (pasta PESSOAL do Thiago
    — reaproveitada por decisão dele mesmo, pode ter mudanças não commitadas) sempre para a
    reviewAgents (não há mais branch de PR-por-tarefa pra testar antes de aprovar), rode npm
    install --legacy-peer-deps se necessário (nunca npm ci, o repo nao versiona
@@ -178,11 +195,11 @@ unico ciclo da logica operacional:
    exponha conteúdo de .env/token em docs/documentacao.md, duvidas.md ou no log de saída — só
    confirme que foi sincronizado. Se o pull/checkout falhar (working tree suja, divergência), não
    force nada: registre em duvidas.md.
-6. Registre em docs/documentacao.md tudo que foi feito (merges feitos direto na reviewAgents,
-   conflitos resolvidos, variáveis de .env novas só o nome, estado do PR único pra master, e
-   estado da sincronização da pasta de teste manual). Se o aprendizado valer para qualquer módulo,
-   registre também em ../docs/conhecimento-geral.md (releia antes de escrever).
-7. Nunca responda sua própria dúvida.
+5. Registre em docs/documentacao.md tudo que foi feito (merges feitos direto na reviewAgents,
+   conflitos resolvidos, variáveis de .env novas só o nome, e estado da sincronização da pasta de
+   teste manual). Se o aprendizado valer para qualquer módulo, registre também em
+   ../docs/conhecimento-geral.md (releia antes de escrever).
+6. Nunca responda sua própria dúvida.
 '@
 
 $script:ultimoRateLimit = $null
