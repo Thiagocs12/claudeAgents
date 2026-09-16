@@ -75,6 +75,19 @@ sempre resolver o id dinamicamente a partir do texto do label associado
 (`cy.contains('label', 'TEXTO').invoke('attr', 'for').then((id) => cy.get('#' + id)...)`), nunca
 hardcodar o id. Ver `subagents/mop/docs/documentacao.md` para o caso completo.
 
+## Armadilha: hostname do Keycloak pode variar entre execuções — detectar por path, não por host (2026-09-16)
+
+Descoberto no módulo `mop`, mas vale pra qualquer módulo que detecte "caiu no Keycloak?" comparando
+a URL contra um hostname fixo (`Cypress.env('HML_KEYCLOAK_URL')` ou similar). Numa execução real, o
+login de uma das aplicações foi servido por um host Keycloak **diferente** do esperado (mesmo
+padrão de URL, `/auth/realms/.../protocol/openid-connect/auth`, hostname trocado) — a comparação
+por hostname fixo não reconheceu o host novo e pulou o login inteiro. **Solução:** detectar
+Keycloak pelo padrão do **path** da URL (`new URL(url).pathname.includes('/auth/realms/')`), não
+por hostname fixo, e usar a origin de fato observada (`new URL(url).origin`) no `cy.origin()` em
+vez de um valor fixo de `.env`. Ver `subagents/mop/docs/documentacao.md` para o caso completo
+(inclusive um erro `Parâmetro inválido: redirect_uri` visto num desses hosts alternativos, ainda
+não confirmado como bug real reproduzível ou só um estado transitório).
+
 ## Scheduled Tasks (Windows Task Scheduler)
 
 - `SupTestesFrontEnd-SubAgent-<modulo>`: a cada 5 minutos.

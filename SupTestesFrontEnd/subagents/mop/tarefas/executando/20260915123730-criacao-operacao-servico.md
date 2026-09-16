@@ -212,3 +212,43 @@ criou a operação **nº 88681**, log completo em `cypress-run-89.log`, dump em
   documentado o comportamento e a correção (detecção genérica por path, não por host).
 - Nenhum processo Cypress/node ficou órfão (checado antes de rodar, via
   `Get-CimInstance Win32_Process` filtrando `cypress`+`mop` — nada encontrado).
+
+### Continuação (mesmo ciclo, rodadas 90-92) — correção do login testada, achado novo no Keycloak
+
+- Tentei rodar de novo (rodada 90) com a correção de detecção de Keycloak por path (em vez de
+  hostname fixo) → teste 1 (criação + avançar) **passou de novo** (operação nova, confirma que
+  passos 1-12 continuam reprodutíveis com o fix do Documento aleatório). Teste 2 (Monitor Diário)
+  avançou mais que antes: a detecção reconheceu corretamente o host `lgni.grupomultiplica.com.br`
+  como Keycloak (`foiPraKeycloak: true`, registrado em `cypress/debug-output.txt`) e entrou no
+  `cy.origin()` — mas **falhou dentro dele**: `AssertionError: ... Expected to find element:
+  '#username', but never found it`. Screenshot da falha mostra a página do Keycloak (`lgni...`)
+  exibindo, no lugar do formulário de login, a mensagem **"Parâmetro inválido: redirect_uri"** —
+  ou seja, o próprio Keycloak rejeitou a tentativa de auth antes de mostrar o formulário
+  (`client_id=autenticacao&redirect_uri=https://beyond-hml.grupomultiplica.com.br/` não é aceito
+  nesse host `lgni`, aparentemente). Registrado como achado em `docs/documentacao.md` — **ainda
+  não confirmado como reproduzível** (não sei se `lgni` está sempre com essa configuração
+  incompleta, ou se foi um estado transitório).
+- Tentei rodar mais 2 vezes (rodadas 91 e 92) pra checar reprodutibilidade → **ambas falharam antes
+  de chegar de novo nessa tela**, por flakiness já conhecida e documentada (`cy.origin() failed to
+  create a spec bridge...`, intermitente no handshake, e uma vez também um timeout de
+  `cy.writeFile` dentro de um `cy.origin()`) — nenhuma das duas confirmou nem refutou o erro de
+  `redirect_uri` visto na rodada 90, simplesmente não chegaram lá. Não é regressão da correção
+  desta rodada (a mesma flakiness intermitente já aparecia em rodadas anteriores ao fix, ex.
+  rodadas 62/64/72).
+- **Não é dúvida bloqueante nem resultado final ainda** — passos 1-12 do roteiro estão sólidos e
+  reprodutíveis (achado principal desta reabertura, respondendo à suspeita do Thiago). Passos
+  13-14 seguem pendentes, bloqueados por uma combinação de flakiness intermitente já conhecida do
+  `cy.origin()` + um possível problema real de configuração do Keycloak no host `lgni` (não
+  confirmado com certeza ainda). Deixando a tarefa em `executando/` para o próximo ciclo continuar
+  tentando o teste 2 (a correção de detecção por path já está na spec, não precisa redescobrir) e,
+  se o erro de `redirect_uri` reaparecer de forma consistente, tratar como RESULTADO (bug/config
+  real bloqueando passos 13-14) em vez de continuar tentando indefinidamente.
+- **Pendência ainda não feita (pedido 1 do Thiago, validação em banco):** a evidência de que
+  "Avançar" funcionou de verdade já é mais forte que só o toast (confirmada por uma chamada de API
+  separada, `painelLazy`, mostrando a situação real da operação mudando pra "sucesso"), mas a
+  consulta direta ao banco (reaproveitando `dbClient.cjs` do `SupAutomacaoUteis`, ver correção do
+  Thiago acima) ainda não foi feita. Não bloqueou esta rodada porque o achado principal (não é bug)
+  já mudou o rumo pra passos 13-14, mas fica como pendência a considerar num próximo ciclo, se
+  fizer sentido reforçar a validação antes de finalizar a tarefa.
+- Nenhum processo Cypress/node ficou órfão ao final (checado via `Get-CimInstance Win32_Process`
+  filtrando `cypress`+`mop` — nada encontrado).

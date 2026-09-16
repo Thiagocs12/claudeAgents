@@ -1,0 +1,17 @@
+
+> novo-projeto-cypress@1.0.0 lint
+> eslint .
+
+
+C:\Multiplica\claudeAgents\SupAutomacaoUteis\subagents\cedente\repo\cypress\support\commands\dependencias.js
+  283:7  warning  It is unsafe to chain further commands that rely on the subject after this command. It is best to split the chain, chaining again from `cy.` in a next command line  cypress/unsafe-to-chain-command
+
+C:\Multiplica\claudeAgents\SupAutomacaoUteis\subagents\cedente\repo\cypress\support\commands\estoque.js
+   46:14  warning  It is unsafe to chain further commands that rely on the subject after this command. It is best to split the chain, chaining again from `cy.` in a next command line  cypress/unsafe-to-chain-command
+  160:14  warning  It is unsafe to chain further commands that rely on the subject after this command. It is best to split the chain, chaining again from `cy.` in a next command line  cypress/unsafe-to-chain-command
+
+C:\Multiplica\claudeAgents\SupAutomacaoUteis\subagents\cedente\repo\cypress\support\commands\vinculos.js
+  86:3  warning  Do not assign the return value of a Cypress command  cypress/no-assigning-return-values
+
+✖ 4 problems (0 errors, 4 warnings)
+

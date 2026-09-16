@@ -157,34 +157,13 @@ operação é:
    - Aparecem botões **"Voltar"** / **"Continuar"** — o cabeçalho da tela passa a mostrar o caminho
      completo escolhido (ex.: `AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO -
      BOLETO`), confirmando a seleção. Clicar "Continuar" pra prosseguir.
-   - **Pendente de investigação:** ao clicar "Continuar", o painel do chat pareceu duplicar
-     visualmente e a lista de elementos coletada ficou idêntica à etapa anterior (sem avanço
-     visível pro passo de seleção de conta) — ver `## Execução` da tarefa
-     `20260915123730-criacao-operacao-servico` (estado mais recente) antes de repetir essa
-     investigação do zero.
    - **Armadilha geral (útil pra qualquer botão de texto único nesse wizard):** os rótulos dos
      botões frequentemente têm outro botão cujo texto é um superconjunto (ex. "AQUISICAO" vs
      "AQUISICAO ANCORA"). Sempre usar `cy.contains('button', /^TEXTO_EXATO$/)` em vez de
      `cy.contains('button', 'TEXTO_EXATO')` nessas telas.
-   - **BUG REAL DA APLICAÇÃO (2026-09-15, bloqueia o roteiro no passo 7):** ao clicar em
-     "Continuar" depois de confirmar o produto (ex. BOLETO), a URL muda (`.../operation`,
-     confirmando que o clique foi processado e o roteamento client-side avançou) e o cabeçalho
-     confirma a escolha do produto completo, mas a tela **reinicia visualmente a conversa do
-     wizard** desde a primeira mensagem ("Olá, eu sou o Beyond..."), com o painel "Nova Operação"
-     aparecendo **duplicado verticalmente**, sem nunca chegar à pergunta de seleção de conta.
-     Reproduzido de forma consistente (rodadas 44 e 46), confirmado com instrumentação de rede
-     (nenhuma chamada nova específica após o clique — o endpoint de contas,
-     `GET .../mc-api-gateway-ms/v1/contabancaria/search`, já tinha sido chamado antes, no
-     carregamento inicial da tela) e screenshot de página inteira (`capture: 'fullPage'`, sem
-     conteúdo adicional escondido). Ver `## Resultado` da tarefa
-     `20260915123730-criacao-operacao-servico` para o detalhe completo. **Bloqueia qualquer
-     tentativa de completar os passos 7-14 do roteiro (seleção de conta em diante) até a aplicação
-     corrigir esse comportamento.**
-   - **Achado colateral (bug menor):** a partir desse ponto travado, a aplicação passa a disparar
-     repetidamente uma requisição para um asset de logo no **host errado** (domínio raiz
-     `beyondbanking-hml` em vez do subdomínio `beyondbanking-ope-hml` onde a página está rodando),
-     recebendo 404 todas as vezes — indício de algum componente remontando repetidamente na tela
-     travada.
+   - (Uma investigação antiga concluiu, incorretamente, que "Continuar" travava aqui um bug real —
+     corrigido: era só o chat acumulando mensagens, ver seção "Fluxo completo" abaixo para o
+     caminho certo já validado. Detalhe arquivado em `documentacao-historico.md`.)
 
 ## Armadilha: `cy.intercept()` não funciona dentro do callback do `cy.origin()` (2026-09-15)
 
@@ -249,16 +228,43 @@ partir da confirmação da conta (`Continuar` no par de botões mais recente, us
    - **"Editar"** — `aria-label` direto no `<button>` (não no div pai).
    - **"Excluir"**
 
-## BUG REAL DA APLICAÇÃO (2026-09-16): ícone "Avançar" do dashboard de Operações retorna 400
+## CORREÇÃO (2026-09-16): o 400 do "Avançar" NÃO era bug — era Documento duplicado
 
-Clicar no ícone **"Avançar"** (`div[aria-label="Avançar"] button`) de uma operação recém-criada
-dispara `POST https://beyond-hml.grupomultiplica.com.br/mc-api-gateway-ms/v1/operacao/pre-operacoes/{id}/gerar`,
-que responde **400**. O front-end não trata esse erro (`unhandled promise rejection`, derruba
-qualquer teste Cypress que não esteja ignorando exceções da aplicação; na UI aparece um indicador
-vermelho de erro). **Reproduzido em 2 de 2 tentativas válidas**, em operações diferentes (nº 88675
-e 88676) — não é falha pontual de uma operação específica. Bloqueia qualquer tentativa de avançar
-a operação (e, por consequência, de chegar ao Monitor Diário / etapa "Inclusão OPE") a partir do
-estado em que a operação é criada (Situação "enviado"). Hipótese não confirmada: o endpoint
-`pre-operacoes/{id}/gerar` pode esperar um estado diferente da operação antes de poder ser chamado
-por essa ação — não investigado a fundo, ver `## Resultado` da tarefa
-`20260915123730-criacao-operacao-servico` para o detalhe completo e a recomendação ao Thiago.
+**A conclusão abaixo (BUG REAL) está SUPERADA.** O Thiago suspeitou (2026-09-16) que o 400 era
+causado por reusar o mesmo valor fixo (`12345`) no campo "Documento" em todas as operações de
+teste (88672-88676) — Documento não pode se repetir. Confirmado: trocando o Documento por uma
+hash aleatória de 10 caracteres por execução (`Math.random().toString(36).slice(2, 12)`) e o Valor
+para R$ 100.000,00, o mesmo fluxo de "Avançar" passou a responder **200**
+(`{"id":88681,"dataOperacao":"..."}`), com a situação da operação mudando de "enviado" para
+"sucesso" (confirmado por uma chamada de API separada, `GET .../pre-operacoes/cliente/painelLazy`,
+não só pelo toast local "Operação encaminhada!"). **Passo 12 do roteiro (avançar a operação) fica
+concluído com sucesso** — não é mais um bloqueio. Ver `## Execução` (rodadas 74-89) da tarefa
+`20260915123730-criacao-operacao-servico` para o detalhe completo.
+
+## Armadilha: host do Keycloak do realm `multiplicacapital` (Beyond BackOffice) varia entre execuções (2026-09-16)
+
+A detecção antiga de "caiu no Keycloak?" comparava a URL contra um hostname fixo
+(`ambiente.keycloakUrl`, resolvido de `HML_KEYCLOAK_URL` = `keycloak-new-2.grupomultiplica.com.br`).
+Numa execução real, o login do Beyond BackOffice (realm `multiplicacapital`) foi servido por um
+host **diferente**: `lgni.grupomultiplica.com.br` (mesmo padrão de URL Keycloak,
+`/auth/realms/.../protocol/openid-connect/auth`) — a comparação por hostname fixo não reconheceu
+esse host, pulou o bloco de login inteiro, e o teste travou depois tentando rodar comandos contra
+o app já tendo "passado direto" pela tela de login sem logar
+(`expected to run against origin beyond-hml but the application is at origin lgni...`).
+**Solução:** detectar Keycloak pelo padrão do **path** da URL (`/auth/realms/`), não por hostname
+fixo, e usar a origin de fato observada (`new URL(url).origin`) no `cy.origin()` em vez de sempre
+`ambiente.keycloakUrl`.
+
+**Achado adicional, ainda não confirmado como reproduzível:** numa execução em que o host `lgni`
+foi usado, a própria tela do Keycloak (antes até de mostrar o formulário de login) respondeu com
+o erro **"Parâmetro inválido: redirect_uri"** — sugere que o client `autenticacao` do realm
+`multiplicacapital` pode não ter `https://beyond-hml.grupomultiplica.com.br/` cadastrado como
+`redirect_uri` válido nesse host específico (`lgni`), diferente de `keycloak-new-2` (onde o mesmo
+fluxo funcionou em rodadas anteriores, 80-88). Não confirmado se é uma falha de configuração
+persistente de `lgni` ou um estado transitório (2 tentativas seguintes falharam antes de chegar
+nessa tela, por flakiness já conhecida do `cy.origin()` — ver armadilha abaixo — sem re-observar o
+erro de `redirect_uri` nem confirmá-lo como ausente). Se reaparecer em execuções futuras,
+considerar RESULTADO (bug/config real, bloqueia passos 13-14), não dúvida.
+
+(Texto original, mais detalhado, do bug do 400 antes desta correção — arquivado em
+`documentacao-historico.md`.)
