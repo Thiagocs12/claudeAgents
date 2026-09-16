@@ -202,3 +202,34 @@ versão, app correto: Beyond Banking (`beyondbanking-hml.grupomultiplica.com.br`
   fluxo correto a partir daí, sem travar numa asserção rígida. Vídeo desta rodada (mostra o app já
   na Home) não foi copiado pra `../videos/` ainda — só copio o vídeo da rodada que de fato avançar
   além deste ponto, pra não acumular vídeos parciais sem valor.
+- **Novo ciclo (2026-09-15, continuação):** confirmei host de volta (`curl` 200) e ausência de
+  processo órfão antes de rodar. Rodei a spec ajustada (rodada 34) → **falhou** com
+  `Syntax error, unrecognized expression` no `cy.contains('.MuiCard-root, [class*="card" i], div', 'Beyond Operação Interno')`
+  — achado novo: **`cy.contains(seletor, texto)` com QUALQUER seletor gera internamente um
+  fallback `[type='submit'][value~='TEXTO']`** (pra cobrir `<input type=submit>`), e o operador
+  `~=` do jQuery/Sizzle não suporta um valor de múltiplas palavras (`'Beyond Operação Interno'`),
+  quebrando o parser da expressão inteira — não é específico do seletor `div`, tentei de novo
+  (rodada 35) só com `.MuiCard-root, [class*="card" i]` e deu o **mesmo erro**. Resolvido (rodada
+  36) trocando para `cy.contains('Beyond Operação Interno')` **sem seletor** — passou. Registrado
+  em `docs/documentacao.md` como armadilha geral (útil pra qualquer módulo que use
+  `cy.contains(seletor, texto)` com texto de múltiplas palavras).
+- **Rodada 36 (primeira execução completa sem erro dos passos 1-5):** login → tela de seleção de
+  cliente pulada (sessão já tinha kenerson selecionado) → Home com cedente confirmado → clique em
+  "Beyond Operação Interno" → tela "Operações" (subdomínio `beyondbanking-ope-hml`) → clique em
+  "Criar Operação" → **achado importante:** a tela "Nova Operação" não é um formulário tradicional,
+  é um **wizard conversacional** ("Beyond, assistente virtual do Grupo Multiplica") com uma
+  mensagem inicial "Olá, eu sou o Beyond... Vamos começar sua nova operação?" e um botão **"Olá"**
+  pra iniciar a conversa (screenshot `06-apos-clicar-criar-operacao.png`). Passos 6-9 do roteiro
+  (navegar até o serviço, escolher conta, incluir por digitação, Cad Pessoa) provavelmente
+  acontecem através dessa interface de chat, não de campos de formulário — próximo passo: clicar
+  em "Olá" e mapear as opções que o assistente oferece em seguida.
+- Tentei clicar em "Olá" (rodada 37) → o assistente responde: "Verifiquei que sua última operação
+  foi para o produto - AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - PRODUTO - BOLETO. Manter
+  o produto para esta nova operação?" com botões **"Manter"** e **"Trocar"** (screenshot
+  `07-apos-clicar-ola-no-chat.png`). Nota: o texto tem "PRODUTO" onde seria esperado o nome do
+  produto real (ex. "SERVIÇO") — possível bug de template do assistente (placeholder não
+  substituído) ou o produto da última operação de fato não era "SERVIÇO". Como o roteiro pede
+  explicitamente o caminho AQUISIÇÃO → ANTECIPAÇÃO DE DUPLICATA → DUPLICATA → **SERVIÇO** → BOLETO
+  (passo 6), não vou confiar em "Manter" (ambíguo) — vou clicar em **"Trocar"** pra escolher o
+  caminho explicitamente e garantir que bate com o roteiro. Próximo passo: mapear a tela que
+  aparece após "Trocar".

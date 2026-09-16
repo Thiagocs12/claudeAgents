@@ -107,3 +107,34 @@ inicial: (1) confirmar com `curl --max-time 20` direto no host antes de assumir 
 se confirmado que o host não responde, isso **não é dúvida bloqueante** (não precisa de decisão do
 Thiago) nem resultado final (objetivo não foi tentado por completo) — deixar a tarefa em
 `executando/` com a narrativa atualizada e deixar o próximo ciclo (5 min depois) tentar de novo.
+
+## Armadilha: `cy.contains(seletor, texto)` quebra com texto de múltiplas palavras (2026-09-15)
+
+`cy.contains(seletor, texto)` — com QUALQUER seletor (`.MuiCard-root`, `div`, etc.) — gera
+internamente um seletor de fallback `[type='submit'][value~='TEXTO']` (pra também cobrir
+`<input type=submit>`). O operador `~=` do jQuery/Sizzle só casa uma palavra isolada dentro de um
+atributo separado por espaços — quando `TEXTO` tem múltiplas palavras (ex.: `'Beyond Operação
+Interno'`), a expressão gerada é inválida e todo o comando falha com
+`Error: Syntax error, unrecognized expression: ...`, independente de qual seletor foi passado.
+**Solução:** ao clicar em algo pelo texto (múltiplas palavras), use `cy.contains(texto)` **sem
+seletor** em vez de `cy.contains(seletor, texto)`.
+
+## Fluxo de criação de operação no Beyond Banking (mapeado em 2026-09-15)
+
+Depois do login (`beyondbanking-hml`) e seleção do cedente (ver seção acima), o fluxo pra criar
+operação é:
+
+1. Home (3 cards) → clicar **"Beyond Operação Interno"** (via `cy.contains(texto)`, sem seletor —
+   ver armadilha acima) → navega para subdomínio `beyondbanking-ope-hml.grupomultiplica.com.br`
+   (origem distinta, precisa `cy.origin()`), tela "Operações" com menu lateral (Dashboard, Recibo
+   Pêndencia, Recibo Recompra, Importar XML, Consulta de Títulos, Instrução Bancária Lote,
+   Instruções Bancárias, Emissão de Boletos, Ordem Pagamento, Tour Virtual, Faq, Logout) e botão
+   **"Criar Operação"**.
+2. Clicar "Criar Operação" → tela **"Nova Operação"** — **não é um formulário tradicional, é um
+   wizard conversacional** ("Beyond, assistente virtual do Grupo Multiplica"), com mensagem inicial
+   "Olá, eu sou o Beyond... Vamos começar sua nova operação?" e um botão **"Olá"** pra iniciar a
+   conversa. Os passos seguintes do roteiro de negócio (navegar até o serviço
+   Aquisição → Antecipação de Duplicata → Duplicata → Serviço → Boleto, escolher conta, incluir
+   por digitação, Cad Pessoa) provavelmente acontecem por essa interface de chat — ainda a mapear
+   em detalhe (ver `## Execução` da tarefa `20260915123730-criacao-operacao-servico` para o estado
+   mais atual).

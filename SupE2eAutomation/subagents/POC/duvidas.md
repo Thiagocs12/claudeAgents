@@ -68,3 +68,33 @@ insisti em mais tentativas. A VPN caiu de novo (ou nunca reconectou de fato dess
 aguardar e retentar num próximo ciclo, ou há algo que só você consegue verificar/reconectar dessa
 vez?
 Resposta: Era a VPN de novo — já reconectada, pode continuar normalmente.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: respondida
+Pergunta: Com a VPN ok, consegui rodar o fluxo completo via spec descartável (`_scratch`) e
+confirmar visualmente que ele funciona: após o segundo "Salvar" (com os 3 campos obrigatórios
+preenchidos), o app redireciona para `https://beyond-hml.grupomultiplica.com.br/monitor`, onde a
+tabela "Prospecções" mostra o registro recém-criado (linha com `Agente Comercial` =
+`GERENTE AUTOMAÇÃO`, o valor de teste combinado com você). Não há coluna de CNPJ visível nessa
+listagem, então usei o `Agente Comercial` como evidência de que o Prospect criado aparece na
+tabela — se preferir uma validação diferente (ex.: abrir o registro e conferir o CNPJ), me avise.
+
+Implementei então o código de produção (commit `b804d23` na branch
+`feature/poc-criar-prospect-cedente-cnpj`): `EtapaCriarProspectPorCnpj` + `EsteiraCriarProspectPorCnpj`
++ `MonitorProspectPage` (valida redirecionamento para `/monitor` + linha com o Agente Comercial) +
+feature/step_definitions em `poc/`, reaproveitando o `NovoProspectPage` já existente (mais um
+método novo, `aguardarCamposObrigatoriosHabilitados()`, para evitar um flake de clique em campo
+ainda desabilitado logo após o primeiro "Salvar" que apareceu numa das explorações).
+
+Ao rodar o autoteste (`cypress run` no spec de produção, não mais o scratch), o teste falhou já no
+login, com o sintoma **já catalogado** em `conhecimento-geral.md` (ocorrido antes em `mop` e no
+próprio `shared/login.feature` algumas vezes): `CypressError: cy.origin() failed to create a spec
+bridge to communicate with the specified origin` (ocorre dentro do `cy.session`/`cy.origin` do
+`cy.loginComoPerfil`, antes de qualquer interação com a tela do Beyond). Seguindo o protocolo já
+estabelecido para esse sintoma específico (não insistir em várias tentativas seguidas, registrar
+dúvida e aguardar confirmação antes de tentar de novo), não retentei ainda. Pelo padrão observado
+em ocorrências anteriores, normalmente é resolvido só tentando de novo depois — pode confirmar que
+está tudo ok pra eu tentar novamente? (Nenhum código foi alterado desde o commit `b804d23`; a causa
+não parece ser a implementação, e sim o mesmo problema intermitente de login já catalogado.)
+Resposta: Sim, pode tentar de novo — é instabilidade pontual do mesmo tipo já catalogado, não
+precisa mexer no código.

@@ -117,3 +117,47 @@ recorrência é relevante para qualquer módulo que dependa de `beyond-hml`, nã
 completo (segundo "Salvar") uma vez via scratch para descobrir a tela/rota da listagem de
 cedentes, depois criar `EtapaCriarProspectPorCnpj` + `EsteiraCriarProspectPorCnpj` +
 feature/step_definitions em `poc/`, seguindo o padrão do módulo `mop`.
+
+## Retomada (2026-09-15): descoberta da listagem + implementação de produção, bloqueada no login por flake já catalogado
+
+Com a VPN ok, rodei o fluxo completo (segundo "Salvar") via scratch (`_scratch/explorar-prospect-sucesso.feature`)
+e confirmei visualmente onde o Prospect criado aparece:
+
+- **Redirecionamento:** após o segundo "Salvar" (com os 3 campos obrigatórios preenchidos), o app
+  navega de `/prospeccao/form` para `/monitor` (confirmado pela barra de URL do Test Runner no
+  screenshot automático de falha da exploração — ver adiante sobre por que aquela execução falhou).
+- **Listagem:** em `/monitor`, a seção "Prospecções" (tabela, a última da página) mostra o registro
+  recém-criado. Colunas observadas: ID, Nome, Agente Comercial, Pleito De Limite, Aprovado Limite,
+  Área, Etapa, Tempo, DOC, Data Criação, Chat, Ações. **Não há coluna de CNPJ visível** — a
+  validação de sucesso usa o `Agente Comercial` (`GERENTE AUTOMAÇÃO`, valor de teste reservado para
+  automação) como evidência de que o registro aparece na tabela, em vez de tentar casar pelo CNPJ.
+- **Achado sobre a própria exploração (não é bug do fluxo):** a tentativa de capturar
+  `document.documentElement.outerHTML` inteiro (~19MB) via `cy.writeFile` deu timeout (4000ms) e
+  derrubou o teste scratch depois do fluxo já ter funcionado (a falha ocorre na captura, não no
+  fluxo de negócio) — corrigido na própria exploração capturando só a última `<table>` da página
+  em vez do documento inteiro.
+- **Flake novo observado na etapa de preencher os 3 campos obrigatórios:** logo após o primeiro
+  "Salvar" (que habilita os campos), tentar clicar no autocomplete de "Tipo de Prospect" às vezes
+  falha com `cy.click() failed because this element is disabled` — o `Mui-disabled` não sai
+  instantaneamente. Corrigido no `NovoProspectPage` com um novo método
+  `aguardarCamposObrigatoriosHabilitados()` (`should('not.be.disabled')`) chamado entre o primeiro
+  `salvar()` e o preenchimento dos 3 campos, em vez de um `cy.wait` fixo.
+
+**Implementação de produção** (commit `b804d23`, branch `feature/poc-criar-prospect-cedente-cnpj`):
+`cypress/support/etapas/poc/EtapaCriarProspectPorCnpj.js` (perfil `master`; reaproveita
+`NovoProspectPage` + valida via `MonitorProspectPage`) + `cypress/support/esteiras/poc/EsteiraCriarProspectPorCnpj.js`
++ `cypress/support/pages/poc/MonitorProspectPage.js` (`estaNaTelaDeListagem()` +
+`prospectCriadoApareceNaListagem(agenteComercial)`) + `cypress/e2e/features/poc/poc-criar-prospect-cedente-cnpj.feature`
++ `cypress/support/step_definitions/poc/pocCriarProspectPorCnpj.js`, seguindo exatamente o padrão
+já usado pelo módulo `mop` (Page/Etapa/Esteira/feature fina).
+
+**Bloqueio no autoteste do spec de produção:** `cypress run` falhou já no login
+(`cy.loginComoPerfil` → `cy.session`/`cy.origin`) com o sintoma **já catalogado** em
+`../../docs/conhecimento-geral.md`: `cy.origin() failed to create a spec bridge to communicate with
+the specified origin`. Não é um problema introduzido por este código (nenhuma mudança na fundação
+de login). Seguido o protocolo já estabelecido para esse sintoma (não insistir em várias tentativas
+seguidas): dúvida bloqueante registrada em `duvidas.md`, tarefa movida para
+`tarefas/aguardando-resposta/`. Próxima retomada, assim que confirmado: apenas rodar
+`npx cypress run --spec "cypress/e2e/features/poc/poc-criar-prospect-cedente-cnpj.feature"`
+de novo (nenhum código pendente de escrever) e, se passar, seguir a regra 7 do `AGENTE.md` (push +
+aviso ao Agent Master + mover tarefa para `concluidas/`).

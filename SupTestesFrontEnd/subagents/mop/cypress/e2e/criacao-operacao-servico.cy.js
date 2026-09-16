@@ -134,7 +134,12 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
     // Passo 4-5 do roteiro: card mais proximo de "Beyond Operacao" e "Beyond Operacao Interno".
     // Navega pra um subdominio diferente (origem distinta pro Cypress) - precisa de cy.origin
     // a partir daqui (ja mapeado em ciclo anterior, ver docs/documentacao.md).
-    cy.contains('.MuiCard-root, [class*="card" i], div', 'Beyond Operação Interno').click()
+    // NOVO ACHADO (rodadas 34-35): cy.contains(selector, texto) com QUALQUER seletor gera um
+    // fallback interno `[type='submit'][value~='TEXTO']` (pra cobrir <input type=submit>), e essa
+    // combinacao de ~= com um valor de multiplas palavras quebra o parser do Sizzle/jQuery
+    // ("Syntax error, unrecognized expression"). Solução: cy.contains(texto) sem seletor evita
+    // esse fallback.
+    cy.contains('Beyond Operação Interno').click()
     cy.wait(3000)
     cy.location().then((loc) => {
       cy.writeFile('cypress/debug-output.txt', '\nURL APOS CLICAR BEYOND OPERACAO INTERNO: ' + loc.href + '\n', { flag: 'a+' })
@@ -158,6 +163,113 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
         cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR CRIAR OPERACAO:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
       })
       cy.screenshot('06-apos-clicar-criar-operacao')
+
+      // NOVO ACHADO (rodada 36): "Nova Operacao" e um wizard conversacional ("Beyond, assistente
+      // virtual"), nao um formulario tradicional. Passo 6 do roteiro (navegar ate o servico)
+      // provavelmente acontece clicando em respostas/botoes do chat. Mapeando a proxima etapa.
+      cy.contains('button', 'Olá').click()
+      cy.wait(2500)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR OLA NO CHAT:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('07-apos-clicar-ola-no-chat')
+
+      // NOVO ACHADO (rodada 37): assistente pergunta se mantem o produto da ultima operacao
+      // (texto mostra "PRODUTO" ao inves do nome real - possivel bug de template) ou troca.
+      // Roteiro pede explicitamente AQUISICAO -> ANTECIPACAO DE DUPLICATA -> DUPLICATA -> SERVICO
+      // -> BOLETO (passo 6), entao clicando "Trocar" pra escolher explicitamente em vez de confiar
+      // no "Manter" ambiguo.
+      cy.contains('button', 'Trocar').click()
+      cy.wait(2500)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR TROCAR:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('08-apos-clicar-trocar')
+
+      // NOVO ACHADO (rodada 38): "Trocar" abre uma lista de botoes de produto (COBRANCA SIMPLES,
+      // AQUISICAO, AQUISICAO ANCORA, ...). Passo 6 do roteiro pede especificamente "AQUISICAO"
+      // (o produto base, nao uma variante como "AQUISICAO ANCORA"/"AQUISICAO FIDUCIARIA" etc) -
+      // usando regex de match exato pra nao cair numa variante por substring.
+      cy.contains('button', /^AQUISICAO$/).click()
+      cy.wait(2000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR AQUISICAO:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('09-apos-clicar-aquisicao')
+
+      // NOVO ACHADO (rodada 39): apos AQUISICAO, chat pergunta o tipo de produto do negocio.
+      // Passo 6 do roteiro continua com "ANTECIPACAO DE DUPLICATA".
+      cy.contains('button', /^ANTECIPACAO DE DUPLICATA$/).click()
+      cy.wait(2000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR ANTECIPACAO DE DUPLICATA:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('10-apos-clicar-antecipacao-de-duplicata')
+
+      // NOVO ACHADO (rodada 40): sub-categorias oferecidas: DUPLICATA, DUPLICATA INTERCOMPANY,
+      // DUPLICTA INTERCOMPANY (nota: ha um typo real no app, "DUPLICTA" sem o "A" - documentado
+      // em docs/documentacao.md como achado, nao e erro da nossa spec). Passo 6 do roteiro pede
+      // "DUPLICATA" (a base, nao intercompany).
+      cy.contains('button', /^DUPLICATA$/).click()
+      cy.wait(2000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR DUPLICATA:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('11-apos-clicar-duplicata')
+
+      // NOVO ACHADO (rodada 41): opcoes finais oferecidas sao "PRODUTO" e "SERVICO" - bate com o
+      // passo 6 do roteiro (...DUPLICATA -> SERVICO -> BOLETO). Clicando SERVICO.
+      cy.contains('button', /^SERVICO$/).click()
+      cy.wait(2000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR SERVICO:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('12-apos-clicar-servico')
+
+      // NOVO ACHADO (rodada 42): opcoes finais BOLETO, ESCROW SEM/COM TRAVA, PRE-IMPRESSO,
+      // COMISSARIA, BOLETO ESPECIAL - bate com o ultimo elo do passo 6 do roteiro (...SERVICO ->
+      // BOLETO). Clicando BOLETO (base, nao "BOLETO ESPECIAL").
+      cy.contains('button', /^BOLETO$/).click()
+      cy.wait(2000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR BOLETO:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('13-apos-clicar-boleto')
+
+      // NOVO ACHADO (rodada 43): apos escolher BOLETO, o chat oferece "Voltar"/"Continuar" -
+      // conclui a escolha do produto (passo 6 completo: AQUISICAO -> ANTECIPACAO DE DUPLICATA ->
+      // DUPLICATA -> SERVICO -> BOLETO). Clicando Continuar pra seguir pro passo 7 (selecionar
+      // conta).
+      cy.contains('button', /^Continuar$/).click()
+      cy.wait(2500)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
+          .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR CONTINUAR:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('14-apos-clicar-continuar')
     })
   })
 })

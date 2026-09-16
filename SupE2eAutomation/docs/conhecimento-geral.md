@@ -179,6 +179,13 @@ capacidade ociosa da outra conta.
     retentado no mesmo ciclo), merge local desfeito, aviso mantido em
     `agent-master/fila-merge/pendentes/` — ver `agent-master/duvidas.md`
     (`20260914125955-atualizar-claude-md-fluxo-integracao`).
+  - **Nova reprodução (2026-09-15, módulo `POC`, tarefa `20260915131339-criar-prospect-cedente-cnpj`):**
+    mesmo erro exato (`cy.origin() failed to create a spec bridge...`) no primeiro autoteste do
+    spec de produção recém-criado (`poc-criar-prospect-cedente-cnpj.feature`), logo no
+    `cy.loginComoPerfil` de setup — antes de qualquer interação com a tela. Reforça que o sintoma
+    não é exclusivo do `mop`; qualquer módulo que dependa de `cy.loginComoPerfil` pode encontrá-lo.
+    Seguido o mesmo protocolo (não retentar no mesmo ciclo, dúvida bloqueante registrada em
+    `subagents/POC/duvidas.md`).
 - **Inputs controlados por React (ex.: `input[type="date"]` do Monitor Diário do MOP) não reagem a
   `.val()`/`.type()` do jQuery/Cypress da forma ingênua** — setar o valor sem passar pelo setter
   nativo não dispara o `onChange` do React, então o componente não percebe a mudança. Solução:
