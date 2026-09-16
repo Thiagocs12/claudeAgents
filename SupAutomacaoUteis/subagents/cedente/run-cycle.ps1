@@ -121,18 +121,31 @@ function Test-DuvidaRespondida {
 }
 
 function Test-TrabalhoPendente {
-    $temPendente = (Get-ChildItem -Path "tarefas/pendentes" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
-    if ($temPendente) { return $true }
-
-    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
-    if ($temExecutando) { return $true }
-
+    # Sincronização determinística da fila de tarefas (movida de instrução do prompt do Claude pra
+    # cá em 2026-09-16, pedido do Thiago: tudo que não exige julgamento deve rodar fora do Claude,
+    # pra não gastar tokens/turnos em operação mecânica). Nenhuma das duas ações abaixo decide nada
+    # — é só regex em duvidas.md e ordenação por timestamp no nome do arquivo.
     $aguardando = Get-ChildItem -Path "tarefas/aguardando-resposta" -File -ErrorAction SilentlyContinue
     foreach ($arquivo in $aguardando) {
         $id = [System.IO.Path]::GetFileNameWithoutExtension($arquivo.Name)
-        if (Test-DuvidaRespondida -DuvidasPath "duvidas.md" -Id $id) { return $true }
+        if (Test-DuvidaRespondida -DuvidasPath "duvidas.md" -Id $id) {
+            Move-Item -Path $arquivo.FullName -Destination "tarefas/pendentes/$($arquivo.Name)" -Force
+            "$(Get-Date -Format 'HH:mm:ss') | [fila] $($arquivo.Name): duvida respondida, movido aguardando-resposta -> pendentes" |
+                Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+        }
     }
-    return $false
+
+    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+    if (-not $temExecutando) {
+        $maisAntiga = Get-ChildItem -Path "tarefas/pendentes" -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+        if ($maisAntiga) {
+            Move-Item -Path $maisAntiga.FullName -Destination "tarefas/executando/$($maisAntiga.Name)" -Force
+            "$(Get-Date -Format 'HH:mm:ss') | [fila] $($maisAntiga.Name): movido pendentes -> executando" |
+                Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+        }
+    }
+
+    return (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
 }
 
 if (-not (Test-TrabalhoPendente)) {
@@ -146,21 +159,18 @@ $prompt = @'
 Você é o SubAgent do módulo "cedente" (automação utilitária). Leia AGENTE.md nesta pasta e siga
 suas regras fixas à risca. Execute agora UM único ciclo da lógica operacional:
 
-1. Em tarefas/aguardando-resposta/: para cada tarefa cuja dúvida correspondente em duvidas.md já
-   esteja "Status: respondida", mova o arquivo de volta para tarefas/pendentes/.
-2. Se tarefas/executando/ já tiver uma tarefa, RETOME-A (um ciclo anterior pode ter esgotado antes
-   de terminar, o que é esperado numa tarefa deste tamanho): procure em repo/ uma branch já criada
-   para essa tarefa (nome derivado do id/slug); se existir, dê checkout nela e continue a
-   implementação de onde parou (não recomece do zero, não descarte trabalho já feito); se não
-   houver nenhuma branch/progresso, trate como se estivesse começando agora. Prossiga a partir do
-   passo 5.
-3. Se tarefas/executando/ estiver vazia e houver algo em tarefas/pendentes/, mova a mais antiga
-   (pelo timestamp no nome do arquivo) para tarefas/executando/ e prossiga.
-4. Se não houver nada a fazer nos passos 1-3 (nem retomar, nem iniciar), encerre o ciclo agora.
-5. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
+1. A fila de tarefas já foi sincronizada deterministicamente antes deste ciclo (dúvida respondida
+   já volta pra tarefas/pendentes/ sozinha, e a tarefa mais antiga já foi movida pra
+   tarefas/executando/ se estava vazia) — há exatamente uma tarefa em tarefas/executando/ agora.
+   RETOME-A (um ciclo anterior pode ter esgotado antes de terminar, o que é esperado numa tarefa
+   deste tamanho): procure em repo/ uma branch já criada para essa tarefa (nome derivado do
+   id/slug); se existir, dê checkout nela e continue a implementação de onde parou (não recomece
+   do zero, não descarte trabalho já feito); se não houver nenhuma branch/progresso, trate como se
+   estivesse começando agora.
+2. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
    inteiro.
-6. No repositório em repo/: se está começando a tarefa agora, dê pull na branch reviewAgents e crie
-   uma branch nova para ela; se está retomando (passo 2), não refaça pull/checkout, continue na
+3. No repositório em repo/: se está começando a tarefa agora, dê pull na branch reviewAgents e crie
+   uma branch nova para ela; se está retomando (passo 1), não refaça pull/checkout, continue na
    branch existente. Implemente a tarefa conforme o escopo definido no arquivo da tarefa e a regra
    2 do AGENTE.md (ler e seguir o padrão do README.md/CLAUDE.md do repo, atualizando-os se
    necessário). Reaproveite a infraestrutura já existente (cy.definirAmbiente, cy.obterToken,
@@ -169,16 +179,16 @@ suas regras fixas à risca. Execute agora UM único ciclo da lógica operacional
    partes do zero. Dado o tamanho da tarefa, é esperado e correto dividir em commits incrementais
    (uma etapa do ciclo prospect→cedente por vez) ao longo de vários ciclos — commit o progresso
    parcial funcional antes do ciclo esgotar, nunca deixe só em arquivos não commitados.
-7. Rode um autoteste sobre sua própria implementação antes de considerar concluído (npm run lint,
+4. Rode um autoteste sobre sua própria implementação antes de considerar concluído (npm run lint,
    npm run test:safety, e o cenário/tag da tarefa via npx cypress run --env tags=<tag> quando a
    etapa implementada já permitir um teste fim a fim).
-8. Se concluir com sucesso: siga a regra 7 do AGENTE.md (commit + push da branch, aviso em
+5. Se concluir com sucesso: siga a regra 7 do AGENTE.md (commit + push da branch, aviso em
    ../../agent-master/fila-merge/pendentes/ com a branch e o id da tarefa — o Agent Master faz o
    merge direto na reviewAgents depois de rodar os testes, sem PR por tarefa — atualize
    docs/documentacao.md e, se o aprendizado valer para qualquer módulo, também
    ../../docs/conhecimento-geral.md, mova o arquivo de tarefas/executando/ para
    tarefas/concluidas/).
-9. Se travar numa dúvida bloqueante — inclusive qualquer decisão sobre incluir uma tabela fora do
+6. Se travar numa dúvida bloqueante — inclusive qualquer decisão sobre incluir uma tabela fora do
    escopo já definido na tarefa, ou sobre a ordem/segurança do DELETE em HML: siga a regra 8 do
    AGENTE.md (registre em duvidas.md no formato padrão, mova o arquivo de tarefas/executando/ para
    tarefas/aguardando-resposta/, e encerre o ciclo sem terminar a tarefa). Nunca responda sua

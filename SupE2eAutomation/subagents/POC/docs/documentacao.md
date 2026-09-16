@@ -225,6 +225,27 @@ respondeu `200`) e rodei o `cypress run` do spec de produção completo.
   alternativa, ex.: usar outro fluxo/estado para chegar aos campos habilitados). Se o Thiago
   identificar um passo prévio faltante, seguir a orientação específica que ele der.
 
+## Retomada (2026-09-16): flake de login (`cy.origin`) recorreu de novo na 1ª tentativa, imediatamente após autorização de retry da retomada anterior
+
+VPN confirmada ok antes de começar (`curl` em `beyond-hml` → `200`). Tentei rodar o mesmo spec de
+diagnóstico descartável de novo (sem nenhuma mudança) para coletar a amostra de spinner/requisição
+que continua pendente. **Falhou já na 1ª tentativa desta retomada**, com o mesmo sintoma exato
+(`cy.origin() failed to create a spec bridge...`), antes de qualquer interação com a tela — nenhuma
+amostra nova coletada. Nenhum código de produção alterado (working tree limpo).
+
+Diferente das ocorrências anteriores (falha isolada → retry único → resolvido), o padrão recente é:
+2 falhas consecutivas (retomada de 2026-09-16 anterior) → autorização do Thiago para retry → falha
+de novo nesta retomada. São 3 ocorrências seguidas contando as duas últimas retomadas, cada vez
+mais frequente — não bate mais com "instabilidade pontual e rara". Em vez de tentar uma 4ª vez
+sozinha, registrei nova dúvida em `duvidas.md` perguntando se ainda é para tratar como instabilidade
+pontual (retry simples) ou se a frequência crescente justifica investigar causa raiz do
+`cy.origin`/Keycloak em vez de continuar retentando. Tarefa movida de volta para
+`tarefas/aguardando-resposta/`. Registrado também em `../../docs/conhecimento-geral.md` (padrão
+relevante para qualquer módulo que use `cy.loginComoPerfil`).
+
+**Ainda pendente para a próxima retomada:** nada mudou desde `9054e8b` (timeout ainda em 30s; a
+espera revisada baseada em spinner/rede continua não implementada, bloqueada pela falta de amostra).
+
 ## Retomada (2026-09-16): nova tentativa de coletar evidência (spinner/rede) bloqueada de novo pelo flake de login
 
 Thiago respondeu a dúvida anterior (60s + revisar espera com base em carregamento assíncrono real,

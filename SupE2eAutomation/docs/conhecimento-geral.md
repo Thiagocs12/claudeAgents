@@ -194,6 +194,16 @@ capacidade ociosa da outra conta.
     indicar que o sintoma nem sempre é tão transitório quanto parecia — qualquer módulo que veja
     esse erro se repetir 2x+ seguidas (não só 1x) deve registrar esse detalhe na dúvida em vez de
     assumir que é sempre resolvido só com "tenta de novo uma vez".
+  - **Frequência crescente, 3 ocorrências seguidas contando as 2 últimas retomadas (2026-09-16,
+    módulo `POC`, mesma tarefa):** depois das 2 falhas consecutivas acima e da autorização do
+    Thiago para retry, a tentativa seguinte (1ª desta nova retomada, VPN confirmada ok antes)
+    reproduziu o mesmo erro de novo. Isso desloca o padrão de "instabilidade pontual e rara" para
+    "acontecendo em praticamente toda tentativa recente" — qualquer módulo que perceba esse mesmo
+    aumento de frequência (não só uma recorrência isolada) deve considerar sinalizar isso
+    explicitamente na dúvida (em vez de só pedir autorização de retry de novo), já que pode indicar
+    que vale a pena investigar causa raiz em vez de continuar tratando como transitório. Dúvida
+    registrada em `subagents/POC/duvidas.md` perguntando ao Thiago justamente isso (retry simples
+    vs. investigar causa raiz), ainda sem resposta.
 - **Inputs controlados por React (ex.: `input[type="date"]` do Monitor Diário do MOP) não reagem a
   `.val()`/`.type()` do jQuery/Cypress da forma ingênua** — setar o valor sem passar pelo setter
   nativo não dispara o `onChange` do React, então o componente não percebe a mudança. Solução:

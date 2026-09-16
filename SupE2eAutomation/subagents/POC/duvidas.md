@@ -217,3 +217,35 @@ retomada; o spec de diagnóstico continua igual, gitignorado, no working tree lo
 Vídeo (`cypress/videos/diagnostico-campos-habilitam.feature.mp4`) e screenshot de falha gerados
 normalmente, disponíveis no clone se quiser conferir. Posso tentar de novo?
 Resposta: Sim, pode tentar de novo.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: pendente
+Pergunta: Nesta retomada, confirmei VPN ok antes de começar (`curl --max-time 20` em `beyond-hml`
+retornou `200`) e tentei rodar o spec de diagnóstico descartável de novo (mesma
+`_scratch/diagnostico-campos-habilitam.feature`, sem nenhuma mudança desde a última retomada) para
+finalmente coletar a amostra de spinner/requisição. **A primeira tentativa desta retomada já falhou
+de novo no login**, com o mesmo sintoma exato já catalogado: `CypressError: cy.origin() failed to
+create a spec bridge to communicate with the specified origin` — antes de qualquer interação com a
+tela, então nenhuma amostra nova foi coletada.
+
+O que me preocupa em pedir autorização de novo em vez de simplesmente tentar mais uma vez: esta é
+a primeira tentativa **desta** retomada, mas ela vem imediatamente depois de você já ter
+autorizado "pode tentar de novo" na retomada anterior (que também tinha acabado de falhar 2x
+seguidas antes disso). Ou seja, contando as retomadas mais recentes: 2 falhas consecutivas → sua
+autorização de retry → falha de novo (esta). São 3 ocorrências consecutivas do mesmo sintoma
+contando as duas últimas retomadas, cada uma seguida de uma autorização pontual sua. Isso não
+bate mais com o padrão original de "instabilidade pontual, uma tentativa isolada de vez em quando"
+— parece estar acontecendo em praticamente toda tentativa recente, não intermitentemente.
+
+Nenhum código de produção foi alterado (nada commitado; git status limpo na branch
+`feature/poc-criar-prospect-cedente-cnpj`). Vídeo
+(`cypress/videos/diagnostico-campos-habilitam.feature.mp4`) e screenshot de falha gerados
+normalmente nesta tentativa.
+
+Antes de tentar de novo (o que seria a 4ª tentativa nesse padrão recente), prefiro confirmar: (a)
+ainda é o mesmo tipo de instabilidade pontual e devo simplesmente tentar de novo, ou (b) a
+frequência crescente dessas falhas sugere que vale investigar a causa raiz do `cy.origin`/Keycloak
+em vez de continuar retentando (ex.: algo mudou recentemente no ambiente HML/Keycloak, ou é algo
+que só você/alguém com acesso a infraestrutura consegue diagnosticar)? Não quero ficar consumindo
+ciclos em retries sem sinalizar esse padrão.
+Resposta:
