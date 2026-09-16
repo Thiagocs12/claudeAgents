@@ -1,5 +1,5 @@
 
-◇ injected env (6) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (6) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
 
 1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
@@ -27,17 +27,44 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
 
   Exploracao: criacao de operacao de servico no Beyond Banking
-    √ acessa o Beyond Banking e mapeia a tela inicial / login (189936ms)
-    1) verifica a operacao avancada no Monitor Diario do Beyond BackOffice
+    1) acessa o Beyond Banking e mapeia a tela inicial / login
+    2) verifica a operacao avancada no Monitor Diario do Beyond BackOffice
 
 
-  1 passing (4m)
-  1 failing
+  0 passing (3m)
+  2 failing
 
   1) Exploracao: criacao de operacao de servico no Beyond Banking
+       acessa o Beyond Banking e mapeia a tela inicial / login:
+     CypressError: `cy.writeFile("cypress/debug-output.txt")` timed out after waiting `4000ms`.
+
+https://on.cypress.io/writefile
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:170:7)
+  From Your Spec Code:
+      at Context.eval (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/tests?p=cypress\e2e\criacao-operacao-servico.cy.js:138056:20)
+      at tryCatcher (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:5640:23)
+      at Promise.attempt.Promise.try (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:3138:29)
+      at Object.thenFn (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:137858:66)
+      at Object.then (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:138109:21)
+      at wrapped (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:162876:19)
+      at <unknown> (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:168997:15)
+      at tryCatcher (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:5640:23)
+      at Promise._settlePromiseFromHandler (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:3781:31)
+      at Promise._settlePromise (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:3838:18)
+      at Promise._settlePromiseCtx (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:3875:10)
+      at _drainQueueStep (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:880:12)
+      at _drainQueue (https://beyondbanking-ope-hml.grupomultiplica.com.br/__cypress/runner/cypress_cross_origin_runner.js:869:9)
+
+  2) Exploracao: criacao de operacao de servico no Beyond Banking
        verifica a operacao avancada no Monitor Diario do Beyond BackOffice:
-     AssertionError: Timed out retrying after 4000ms: Expected to find element: `#username`, but never found it.
-      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:593:110)
+     CypressError: `cy.origin()` failed to create a spec bridge to communicate with the specified origin. This can happen when you attempt to create a spec bridge to an insecure (http) frame from a secure (https) frame.
+
+Check your Developer Tools Console for the actual error - it should be printed there.
+
+https://on.cypress.io/origin
+      at cypressErr (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75939:18)
+      at Object.errByPath (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75999:10)
+      at <unknown> (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:124048:80)
 
 
 
@@ -46,13 +73,13 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
   ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
   │ Tests:        2                                                                                │
-  │ Passing:      1                                                                                │
-  │ Failing:      1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      2                                                                                │
   │ Pending:      0                                                                                │
   │ Skipped:      0                                                                                │
-  │ Screenshots:  23                                                                               │
+  │ Screenshots:  11                                                                               │
   │ Video:        true                                                                             │
-  │ Duration:     3 minutes, 50 seconds                                                            │
+  │ Duration:     3 minutes, 8 seconds                                                             │
   │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -63,7 +90,7 @@ Learn more: https://on.cypress.io/cypress-env-migration
      riacao-operacao-servico.cy.js\02-apos-tentativa-login.png                                      
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
      riacao-operacao-servico.cy.js\04-apos-selecionar-kenerson-avancar.png                          
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x797)
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1644)
      riacao-operacao-servico.cy.js\05-tela-operacoes.png                                            
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
      riacao-operacao-servico.cy.js\06-apos-clicar-criar-operacao.png                                
@@ -77,32 +104,9 @@ Learn more: https://on.cypress.io/cypress-env-migration
      riacao-operacao-servico.cy.js\10-apos-clicar-antecipacao-de-duplicata.png                      
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x844)
      riacao-operacao-servico.cy.js\11-apos-clicar-duplicata.png                                     
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1008)
-     riacao-operacao-servico.cy.js\12-apos-clicar-servico.png                                       
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1068)
-     riacao-operacao-servico.cy.js\13-apos-clicar-boleto.png                                        
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1224)
-     riacao-operacao-servico.cy.js\14-apos-clicar-continuar.png                                     
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1336)
-     riacao-operacao-servico.cy.js\15-apos-confirmar-conta.png                                      
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
-     riacao-operacao-servico.cy.js\16-apos-clicar-digitacao.png                                     
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
-     riacao-operacao-servico.cy.js\17-apos-digitar-cpf.png                                          
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
-     riacao-operacao-servico.cy.js\18-apos-buscar-cpf.png                                           
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
-     riacao-operacao-servico.cy.js\19-apos-preencher-titulo.png                                     
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
-     riacao-operacao-servico.cy.js\20-apos-clicar-salvar.png                                        
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
-     riacao-operacao-servico.cy.js\21-apos-gerar-operacao.png                                       
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1448)
-     riacao-operacao-servico.cy.js\22-apos-clicar-confirmar.png                                     
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x987)
-     riacao-operacao-servico.cy.js\23-tabela-operacoes-viewport-largo.png                           
-  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x987)
-     riacao-operacao-servico.cy.js\24-apos-clicar-avancar.png                                       
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
   -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
      riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
      d Banking -- verifica a operacao avancada no Monitor Diario do Beyond BackOffice               
@@ -121,7 +125,7 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
        Spec                                              Tests  Passing  Failing  Pending  Skipped  
   ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-  │ ✖  criacao-operacao-servico.cy.js           03:50        2        1        1        -        - │
+  │ ✖  criacao-operacao-servico.cy.js           03:08        2        -        2        -        - │
   └────────────────────────────────────────────────────────────────────────────────────────────────┘
-    ✖  1 of 1 failed (100%)                     03:50        2        1        1        -        -  
+    ✖  1 of 1 failed (100%)                     03:08        2        -        2        -        -  
 

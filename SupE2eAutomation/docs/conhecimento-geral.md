@@ -510,3 +510,11 @@ capacidade ociosa da outra conta.
   deve conferir manualmente se a rodada **mais recente** em `duvidas.md` está mesmo
   `Status: respondida` antes de agir — não confiar cegamente na movimentação mecânica nesse caso
   específico.
+- **Recorrência (2026-09-16, módulo `POC`, mesma tarefa, retomada seguinte):** o mesmo bug moveu a
+  tarefa de volta para `tarefas/executando/` de novo, com a pergunta mais recente (10ª rodada, sobre
+  insistir em retry de login vs. investigar causa raiz) ainda `Status: pendente`. Confirma que a
+  correção ainda não foi aplicada e que o falso positivo não é um evento isolado — reforça que
+  qualquer módulo com múltiplas rodadas de dúvida sob o mesmo id deve continuar conferindo
+  manualmente a cada retomada, não só na primeira vez que notar o problema. O subAgent `POC` seguiu
+  o mesmo protocolo já estabelecido: não tocou em `repo/`, não rodou Cypress, não respondeu a dúvida
+  sozinho, apenas moveu o arquivo de volta para `tarefas/aguardando-resposta/`.
