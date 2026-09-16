@@ -268,3 +268,41 @@ considerar RESULTADO (bug/config real, bloqueia passos 13-14), não dúvida.
 
 (Texto original, mais detalhado, do bug do 400 antes desta correção — arquivado em
 `documentacao-historico.md`.)
+
+## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
+
+Este módulo agora consegue consultar o banco HML (`beyondhml`) em modo **somente leitura**,
+reaproveitando o padrão de `SupAutomacaoUteis/subagents/cedente/repo/cypress/support/db/dbClient.cjs`
+(`mssql/msnodesqlv8`, `trustedConnection: true` — usa a identidade Windows do processo, não precisa
+de usuário/senha). Dependências `mssql`+`msnodesqlv8` instaladas em `package.json` deste módulo;
+variáveis `HOMOLOG_DB_HOST`/`HOMOLOG_DB_NAME`/`HOMOLOG_DB_PORT` adicionadas ao `.env` local (mesmos
+valores já usados pelo `SupAutomacaoUteis`/cedente — nunca expor o valor aqui, só o nome da
+variável).
+
+**Tabelas relevantes pro fluxo de criação/avanço de operação de serviço** (schema real, confirmado
+via `INFORMATION_SCHEMA`, não documentação externa):
+- `MC_MOP_PRE_OPERACAO`: uma linha por operação criada no Beyond Banking. Coluna `id` = número
+  mostrado na tela (ex. 88681). Colunas relevantes: `situacao` (varchar, ex. `VALIDADO` — vocabulário
+  próprio do banco, não bate literalmente com os textos "enviado"/"sucesso" mostrados na tela),
+  `indVirouOperacao` (bit — `true` só quando o "Avançar" de fato converteu a pré-operação em
+  operação real), `dataVirouOperacao`, `indExcluida`, `indRejeitada`.
+- `MC_MOP_OPERACAO`: só ganha uma linha quando uma pré-operação "vira operação" de fato. Vínculo
+  via `idPreOperacao`. Tem seu próprio `situacao` (valor `CRIADO` observado nas operações
+  confirmadas). Ausência de linha aqui para um `idPreOperacao` = a operação nunca foi confirmada
+  no backend, independente do que a UI mostrou.
+- Scripts avulsos de consulta (somente leitura, nunca escrevem no banco) na raiz deste módulo:
+  `investigar-schema-mop.cjs` (descoberta de tabelas/colunas via `INFORMATION_SCHEMA`) e
+  `validar-operacao-db.cjs <id...>` (consulta pontual de uma ou mais pré-operações/operações por
+  id). Não fazem parte da spec Cypress descartável — são ferramenta de diagnóstico reaproveitável
+  entre tarefas futuras que precisem validar estado real de operação em banco.
+
+**Achado importante:** confirmado que `indVirouOperacao=true` + linha em `MC_MOP_OPERACAO` é o
+sinal confiável de que "Avançar" funcionou de verdade (validado para 3 operações com Documento
+único: 88681, 88682, 88683) — mais forte que o toast da UI ou até a chamada `painelLazy`. Também
+confirmado que as operações com Documento duplicado (88675, 88676, erro 400) realmente nunca
+viraram operação no banco. **Mas há um caso não resolvido**: a operação 88677 foi observada numa
+rodada anterior com "situação sucesso" na tela do dashboard, porém a consulta em banco (rodada 93)
+mostra `indVirouOperacao=false` e nenhuma linha em `MC_MOP_OPERACAO` — divergência entre UI e banco
+ainda não explicada (pode ter sido erro de leitura da tela naquela rodada, ou um cenário real de UI
+mostrando sucesso sem confirmação real no backend). Ver task `20260915123730-criacao-operacao-servico`
+para o detalhe.

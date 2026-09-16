@@ -99,156 +99,66 @@ trabalho do subAgent, isto aqui é o roteiro funcional a seguir):
    preenche automaticamente Nome/Email/CEP/Logradouro/Bairro/Cidade/UF (Telefone fica vazio).
 10. Campos de título por `label[for]` (ids variam por sessão, remapear se preciso): Documento,
     Chave NF-e, Valor, Vencimento (`input[type=date]`, precisa `{ force: true }`), Desconto, Data
-    Limite Desconto. Valor de teste usado até aqui: `12345` (Documento, **repetido em toda
-    operação — ver dúvida em aberto abaixo**), `1000,00` (Valor), `2026-12-31` (Vencimento).
+    Limite Desconto. **Documento deve ser gerado como hash aleatória por execução**
+    (`Math.random().toString(36).slice(2, 12)`) — nunca reusar um valor fixo entre operações
+    (documento não pode se repetir, causa 400 no "Avançar" — ver seção abaixo). Valor de teste:
+    `100000,00` (R$ 100.000,00). Vencimento: `2026-12-31`.
 11. "Salvar" adiciona 1 título na tabela (duplicação é só visual, confirmado). "Gerar Operação"
     abre modal de confirmação — clicar "Confirmar" (mesmo padrão `get+filter(:visible)+contains`)
     fecha o modal, mostra toast "Operação criada com sucesso!" e a operação aparece na tabela do
     dashboard (situação "enviado"). Sempre operar sobre a **primeira linha da tabela** (mais
-    recente), não um número fixo — cada execução cria uma operação nova (nºs 88672-88676 até
-    agora).
-
-**Ponto onde a investigação parou — passo 12 (avançar a operação):** o ícone "Avançar"
-(`div[aria-label="Avançar"] button`, `data-testid="NextPlanIcon"`) dispara
-`POST .../mc-api-gateway-ms/v1/operacao/pre-operacoes/{id}/gerar`, que respondeu **400** em 2 de 2
-tentativas válidas (operações 88675 e 88676) — front-end não trata o erro
-(`unhandled promise rejection`, derruba o teste). Vídeo mais recente (rodada 73, mostra o fluxo
-completo até esse erro): `videos/20260915123730-criacao-operacao-servico.mp4`.
-
-**Achado colateral (bug menor, sem relação com o travamento):** após o passo 6, a aplicação chama
-repetidamente `GET beyondbanking-hml.../static/media/logo...png` (host errado — deveria ser
-`beyondbanking-ope-hml`), sempre 404.
+    recente), não um número fixo — cada execução cria uma operação nova.
+12. Ícone "Avançar" (`div[aria-label="Avançar"] button`, `data-testid="NextPlanIcon"`) dispara
+    `POST .../mc-api-gateway-ms/v1/operacao/pre-operacoes/{id}/gerar` → **200** de forma
+    reprodutível **desde que o Documento do título seja único** (ver achado abaixo). Confirmado em
+    banco (não só toast), ver seção seguinte.
 
 _(A narrativa completa rodada-a-rodada de como cada um desses achados foi descoberto está em
 `20260915123730-criacao-operacao-servico.historico.md`, incluindo a correção do Thiago de
 2026-09-15 sobre a conta pré-selecionada não identificada na primeira tentativa.)_
 
-## Correção do Thiago (2026-09-16) — reabrindo para investigar mais antes de concluir bug
+## Execução — resumo da reabertura (rodadas 74-93, histórico completo arquivado 2026-09-16)
 
-Thiago **não aprovou nem reprovou definitivamente** — quer investigação adicional antes de aceitar
-a conclusão de "bug real" acima:
+> O relato passo a passo desta reabertura (rodadas 74-93, incluindo o texto integral do pedido do
+> Thiago que a motivou) está arquivado, verbatim e sem perda de informação, em
+> `20260915123730-criacao-operacao-servico.historico.md` (mesma pasta, seção "rodadas 74-93"). Só
+> abra esse arquivo se precisar reconstituir o "porquê" de alguma decisão já tomada — o resumo
+> abaixo já é suficiente pra qualquer ciclo retomar a partir daqui.
 
-1. **Não confie só no toast/tela de "sucesso"** — o status real da operação (se ela está de fato
-   apta a ser avançada) **deve ser validado no banco de dados**, não só pela UI. É possível que a
-   tela mostre sucesso sem o registro estar no estado esperado pra "Avançar" funcionar. Antes de
-   concluir que o 400 é um bug de aplicação, confirme no banco qual é o estado real da operação
-   (situação, campos relevantes) depois de criada e depois da tentativa de avançar.
-   - Este módulo (`SupTestesFrontEnd/mop`) não tem hoje um mecanismo de conexão a banco de dados
-     próprio, mas **não precisa criar um do zero nem tratar isso como bloqueio**: o `SupAutomacaoUteis`
-     já tem os dados/mecanismo de conexão prontos, só de consulta (não é preciso escrever nada no
-     banco pra essa validação). Reaproveite o padrão já usado por `cedente`/`keycloakUser`
-     (`cy.executarQuery`/`dbClient.cjs`, ex.:
-     `SupAutomacaoUteis/subagents/cedente/repo/cypress/support/db/dbClient.cjs`) e as variáveis de
-     ambiente de conexão já configuradas lá (`repo/.env` desses módulos — nomes das variáveis, não
-     os valores) para rodar uma consulta **somente leitura** contra a operação criada (ex.: um
-     script Node avulso reaproveitando `dbClient.cjs`, ou uma query direta equivalente) e confirmar
-     o estado real da operação (`MC_MOP_PRE_OPERACAO`/tabela equivalente) antes e depois da
-     tentativa de "Avançar". Ainda assim, **nunca exponha valor de credencial** em
-     `docs/documentacao.md`/`duvidas.md`/log — só o nome da variável. Se mesmo com isso a consulta
-     não for possível (ex.: variável de ambiente realmente ausente, erro de conexão), aí sim
-     registre como dúvida bloqueante específica, mas não pule a validação nem assuma que o erro é
-     definitivamente um bug sem tentar essa consulta primeiro.
-2. **Suspeita de causa raiz:** o roteiro reutilizou o mesmo valor fixo (`12345`) no campo
-   "Documento" em todas as operações de teste (88672 a 88676) — **documento não pode se repetir**.
-   Isso pode ser a causa real do 400 ao "Avançar", não um bug de aplicação. Ajustar a spec para
-   gerar uma **hash aleatória de 10 caracteres** para o campo "Documento" de cada título, garantindo
-   que nunca se repita entre execuções (em vez do valor fixo usado até aqui).
-3. **Valor de teste do título:** usar **R$ 100.000,00** (em vez de R$ 1.000,00 usado até aqui).
+**Pedido do Thiago que motivou a reabertura (2026-09-16):** não confiar só no toast/UI pra concluir
+que o 400 do "Avançar" era bug — validar em banco; suspeita de causa raiz era o campo Documento
+repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100.000,00.
 
-Reabrindo a tarefa (não é aprovação nem reprovação definitiva) — mova de volta para
-`tarefas/pendentes/` e continue a investigação com esses três ajustes antes de reconcluir se o 400
-é de fato um bug real de aplicação ou um efeito do documento duplicado / estado da operação no
-banco.
-
-## Continuação (2026-09-16, rodadas 74-89) — hipótese do Thiago CONFIRMADA: não era bug
-
-**Ajustes 2 e 3 do Thiago já estavam implementados na spec** (Documento agora é uma hash aleatória
-de 10 caracteres gerada por execução — `Math.random().toString(36).slice(2, 12)` — em vez do valor
-fixo `12345`; Valor do título trocado para `R$ 100.000,00`). Rodando a spec ajustada (rodada 89,
-criou a operação **nº 88681**, log completo em `cypress-run-89.log`, dump em
-`cypress/debug-output.txt`):
-
-- Tentei o fluxo completo de criação (passos 1-11) com Documento = hash aleatória (`ex3rdhdnpl` 
-  nesta rodada) e Valor = R$ 100.000,00 → **passou sem erro**, operação 88681 criada com sucesso
-  (situação inicial "enviado").
-- Tentei clicar "Avançar" na operação 88681 → **desta vez respondeu 200** (não 400!):
-  `POST .../mc-api-gateway-ms/v1/operacao/pre-operacoes/88681/gerar` → `{"id":88681,"dataOperacao":"2026-09-16T13:07:14.58..."}`.
-  A tela mostrou o toast **"Operação encaminhada!"** e, mais importante, uma nova consulta ao
-  backend (`GET .../pre-operacoes/cliente/painelLazy`, não é só o toast local) confirmou a
-  **situação da operação mudou de "enviado" para "sucesso"** na tabela do dashboard — dado vindo
-  do servidor, não só otimismo de UI.
-- **Confirma a hipótese do Thiago: o 400 das rodadas 71-73 não era um bug real da aplicação — era
-  causado pelo campo Documento repetido (`12345`) entre as operações de teste.** Com um Documento
-  único por execução, "Avançar" funciona normalmente. Passo 12 do roteiro está **concluído com
-  sucesso** (não é mais bloqueio). Corrigindo a conclusão anterior (rodadas 71-73, arquivada no
-  histórico) — não é mais válida.
-- Nota: no dump da tabela desta mesma rodada, a operação **88677** (de uma rodada anterior, já com
-  o Documento aleatório) também aparece com situação "sucesso" — ou seja, o "Avançar" já vinha
-  funcionando em pelo menos uma rodada anterior a esta (74-88) com o fix, só não tinha sido
-  registrado aqui na narrativa ainda. 88678/88679/88680 aparecem "em análise" (possível próxima
-  etapa do fluxo, ainda não investigada — não é erro).
-- **Validação em banco (pedido 1 do Thiago) — ainda NÃO feita**: a evidência acima já vem do
-  backend (chamada `painelLazy` separada do toast), o que é mais forte que "só confiar no toast",
-  mas ainda não é a consulta direta ao banco que o Thiago pediu explicitamente. Registrando como
-  pendência a fazer no próximo ciclo (script Node avulso reaproveitando
-  `SupAutomacaoUteis/subagents/cedente/repo/cypress/support/db/dbClient.cjs`) — não bloqueou esta
-  rodada porque o achado principal (não é bug) já mudou o rumo da investigação para o passo 13-14.
-- Tentei então o teste 2 (verificação no Monitor Diário do Beyond BackOffice, `beyond-hml`) →
-  **falhou** por um problema de automação (não da aplicação): a URL de login do Beyond BackOffice
-  (realm `multiplicacapital`) veio desta vez servida por um host **diferente** do já mapeado
-  (`lgni.grupomultiplica.com.br`, mesmo padrão de Keycloak `/auth/realms/.../openid-connect/auth`,
-  em vez de `keycloak-new-2.grupomultiplica.com.br` como nas rodadas 80-88) — a spec detectava
-  Keycloak comparando a URL contra um hostname fixo (`ambiente.keycloakUrl`), então não reconheceu
-  esse host novo, pulou o bloco de login inteiro, e travou depois com
-  `CypressError: ... expected to run against origin beyond-hml but the application is at origin
-  lgni...` (timeout 45s). **Corrigido nesta mesma rodada**: detecção trocada para reconhecer
-  Keycloak pelo padrão de path (`/auth/realms/`) em vez de hostname fixo, usando a origin
-  observada de fato para o `cy.origin()` (em vez de sempre `ambiente.keycloakUrl`). Ainda não
-  reexecutei com a correção — próximo passo do próximo ciclo.
-- **Achado a documentar:** o host que serve o Keycloak do realm `multiplicacapital` (Beyond
-  BackOffice) parece variar entre execuções (`keycloak-new-2` em algumas rodadas, `lgni` nesta) —
-  mesma família de instabilidade/variação de host já vista com `beyondbanking-hml` ficando
-  intermitentemente indisponível. Não investigado o porquê (rotation/load balancer?), só
-  documentado o comportamento e a correção (detecção genérica por path, não por host).
-- Nenhum processo Cypress/node ficou órfão (checado antes de rodar, via
-  `Get-CimInstance Win32_Process` filtrando `cypress`+`mop` — nada encontrado).
-
-### Continuação (mesmo ciclo, rodadas 90-92) — correção do login testada, achado novo no Keycloak
-
-- Tentei rodar de novo (rodada 90) com a correção de detecção de Keycloak por path (em vez de
-  hostname fixo) → teste 1 (criação + avançar) **passou de novo** (operação nova, confirma que
-  passos 1-12 continuam reprodutíveis com o fix do Documento aleatório). Teste 2 (Monitor Diário)
-  avançou mais que antes: a detecção reconheceu corretamente o host `lgni.grupomultiplica.com.br`
-  como Keycloak (`foiPraKeycloak: true`, registrado em `cypress/debug-output.txt`) e entrou no
-  `cy.origin()` — mas **falhou dentro dele**: `AssertionError: ... Expected to find element:
-  '#username', but never found it`. Screenshot da falha mostra a página do Keycloak (`lgni...`)
-  exibindo, no lugar do formulário de login, a mensagem **"Parâmetro inválido: redirect_uri"** —
-  ou seja, o próprio Keycloak rejeitou a tentativa de auth antes de mostrar o formulário
-  (`client_id=autenticacao&redirect_uri=https://beyond-hml.grupomultiplica.com.br/` não é aceito
-  nesse host `lgni`, aparentemente). Registrado como achado em `docs/documentacao.md` — **ainda
-  não confirmado como reproduzível** (não sei se `lgni` está sempre com essa configuração
-  incompleta, ou se foi um estado transitório).
-- Tentei rodar mais 2 vezes (rodadas 91 e 92) pra checar reprodutibilidade → **ambas falharam antes
-  de chegar de novo nessa tela**, por flakiness já conhecida e documentada (`cy.origin() failed to
-  create a spec bridge...`, intermitente no handshake, e uma vez também um timeout de
-  `cy.writeFile` dentro de um `cy.origin()`) — nenhuma das duas confirmou nem refutou o erro de
-  `redirect_uri` visto na rodada 90, simplesmente não chegaram lá. Não é regressão da correção
-  desta rodada (a mesma flakiness intermitente já aparecia em rodadas anteriores ao fix, ex.
-  rodadas 62/64/72).
-- **Não é dúvida bloqueante nem resultado final ainda** — passos 1-12 do roteiro estão sólidos e
-  reprodutíveis (achado principal desta reabertura, respondendo à suspeita do Thiago). Passos
-  13-14 seguem pendentes, bloqueados por uma combinação de flakiness intermitente já conhecida do
-  `cy.origin()` + um possível problema real de configuração do Keycloak no host `lgni` (não
-  confirmado com certeza ainda). Deixando a tarefa em `executando/` para o próximo ciclo continuar
-  tentando o teste 2 (a correção de detecção por path já está na spec, não precisa redescobrir) e,
-  se o erro de `redirect_uri` reaparecer de forma consistente, tratar como RESULTADO (bug/config
-  real bloqueando passos 13-14) em vez de continuar tentando indefinidamente.
-- **Pendência ainda não feita (pedido 1 do Thiago, validação em banco):** a evidência de que
-  "Avançar" funcionou de verdade já é mais forte que só o toast (confirmada por uma chamada de API
-  separada, `painelLazy`, mostrando a situação real da operação mudando pra "sucesso"), mas a
-  consulta direta ao banco (reaproveitando `dbClient.cjs` do `SupAutomacaoUteis`, ver correção do
-  Thiago acima) ainda não foi feita. Não bloqueou esta rodada porque o achado principal (não é bug)
-  já mudou o rumo pra passos 13-14, mas fica como pendência a considerar num próximo ciclo, se
-  fizer sentido reforçar a validação antes de finalizar a tarefa.
-- Nenhum processo Cypress/node ficou órfão ao final (checado via `Get-CimInstance Win32_Process`
-  filtrando `cypress`+`mop` — nada encontrado).
+**Confirmado (rodadas 74-93):**
+- **Hipótese do Thiago CONFIRMADA**: o 400 era mesmo efeito do Documento duplicado, não bug de
+  aplicação. Com Documento único (hash aleatória de 10 caracteres por execução) e Valor R$
+  100.000,00, "Avançar" responde 200 de forma reprodutível (confirmado em 3 operações: 88681,
+  88682, 88683). **Passo 12 do roteiro está concluído com sucesso** — corrige a conclusão antiga
+  (bug real), que não é mais válida.
+- **Validação em banco (pedido 1 do Thiago) FEITA** (rodada 93): módulo agora consulta o banco HML
+  (somente leitura, `mssql`/`msnodesqlv8`, reaproveitando o padrão do `SupAutomacaoUteis`/cedente —
+  ver `docs/documentacao.md`, seção "Validação em banco de dados"). Tabelas `MC_MOP_PRE_OPERACAO`/
+  `MC_MOP_OPERACAO` confirmam em banco (não só toast) que: (a) 88675/88676 (Documento duplicado)
+  nunca viraram operação de fato; (b) 88681/88682/88683 (Documento único) viraram operação de fato,
+  com linha criada em `MC_MOP_OPERACAO`.
+- **Achado ainda não resolvido**: a operação 88677 tinha sido registrada (rodada 89) como
+  aparentando "situação sucesso" na tela, mas a validação em banco (rodada 93) mostra que ela
+  **não** virou operação de fato (`indVirouOperacao=false`, sem linha em `MC_MOP_OPERACAO`, mais
+  de 3h depois da criação). Divergência UI-vs-banco não explicada — pode ter sido leitura
+  equivocada da tela na rodada 89, ou um cenário real de sucesso aparente sem confirmação no
+  backend. Não bloqueia a tarefa, mas é uma pendência a esclarecer antes de considerar o passo 12
+  100% validado (ver histórico, rodada 93, pra detalhe).
+- **Passos 13-14 (Monitor Diário do Beyond BackOffice) ainda NÃO concluídos**: bloqueados por uma
+  combinação de (a) flakiness intermitente já conhecida do `cy.origin()` (spec bridge) — 3
+  tentativas seguidas (91, 92, 93) falharam por isso antes de conseguir chegar na tela de login —
+  e (b) um erro visto uma vez (rodada 90), ainda não confirmado como reproduzível: o Keycloak do
+  realm `multiplicacapital`, quando servido pelo host `lgni.grupomultiplica.com.br` (em vez de
+  `keycloak-new-2...`), rejeitou a tentativa de login com "Parâmetro inválido: redirect_uri" antes
+  de mostrar o formulário. A detecção de Keycloak já foi corrigida pra reconhecer qualquer host
+  (por padrão de path, não hostname fixo) — falta confirmar se o erro de `redirect_uri` é
+  reproduzível de forma consistente ou foi um estado transitório.
+- **Próximo passo:** continuar tentando o teste 2 (Monitor Diário) nos próximos ciclos — não é
+  dúvida bloqueante (é a mesma armadilha de instabilidade de `cy.origin()` já documentada, não uma
+  decisão que dependa do Thiago). Se o erro de `redirect_uri` reaparecer de forma consistente numa
+  tentativa que realmente chegue na tela de login, tratar como RESULTADO (bug/config real
+  bloqueando passos 13-14) em vez de continuar tentando indefinidamente.

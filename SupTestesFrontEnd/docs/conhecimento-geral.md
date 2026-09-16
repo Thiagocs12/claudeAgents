@@ -88,6 +88,20 @@ vez de um valor fixo de `.env`. Ver `subagents/mop/docs/documentacao.md` para o 
 (inclusive um erro `Parâmetro inválido: redirect_uri` visto num desses hosts alternativos, ainda
 não confirmado como bug real reproduzível ou só um estado transitório).
 
+## Padrão: validação em banco de dados (somente leitura) a partir de um subAgent (2026-09-16)
+
+Descoberto no módulo `mop`, mas vale pra qualquer módulo deste Supervisor que precise confirmar em
+banco o estado real de algo testado (não confiar só em toast/UI). Reaproveitar o padrão de conexão
+já validado em `SupAutomacaoUteis/subagents/cedente/repo/cypress/support/db/dbClient.cjs`
+(`mssql/msnodesqlv8`, `trustedConnection: true` — usa a identidade Windows do processo, não precisa
+de usuário/senha nas config). Passos: `npm install mssql msnodesqlv8` no módulo, copiar do `.env` do
+módulo doador as variáveis de host/nome do banco/porta relevantes (nunca os valores de
+usuário/senha, que nem são usados por `trustedConnection`), e escrever um script Node avulso
+(fora da spec Cypress descartável) que primeiro consulta `INFORMATION_SCHEMA.TABLES`/`COLUMNS` pra
+confirmar o nome real da tabela antes de assumir um nome — nomes de tabela citados numa tarefa
+podem não bater exatamente com o schema real. Ver `subagents/mop/docs/documentacao.md` para o caso
+completo (tabelas `MC_MOP_PRE_OPERACAO`/`MC_MOP_OPERACAO`).
+
 ## Scheduled Tasks (Windows Task Scheduler)
 
 - `SupTestesFrontEnd-SubAgent-<modulo>`: a cada 5 minutos.
