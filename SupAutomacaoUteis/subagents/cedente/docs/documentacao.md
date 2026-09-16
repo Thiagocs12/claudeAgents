@@ -3,16 +3,19 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida, Ciclo 8 abaixo —
-conexão SQL Server inacessível de novo, agora ao tentar mapear a fase `cedente` — ver
-`duvidas.md`, `conexao-sql-server-inacessivel-mapeamento-fase-cedente-20260915),
+`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida, Ciclo 9 abaixo — 3
+colunas NOT NULL da fase `cedente` sem resolução automática possível — ver
+`duvidas.md`, `tres-dependencias-not-null-nao-resolviveis-fase-cedente-20260915`),
 branch `cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda
-não pushada — commits locais até o momento: fases `prospect`, `poc` e `comite`
-totalmente mapeadas/implementadas, incluindo a resolução de
-`MC_RAT_RATING_INDICADOR(_ITEM)` como catálogo fora do padrão `MC_CAD_*` (commit
-`5edaad0`), `idParticipante` como participante fixo (commit `ff6c57c`) e o "votado e
-aprovado" do comitê via `valoresFixos` (commit `9de9cf0`, Ciclo 8). Falta mapear só a
-fase `cedente` (última) e escrever os comandos de leitura/INSERT/DELETE em HML.
+não pushada — commits locais até o momento: as **4 fases do grafo de FK já estão
+totalmente mapeadas** (`prospect`, `poc`, `comite` e `cedente`), incluindo a resolução
+de `MC_RAT_RATING_INDICADOR(_ITEM)` como catálogo fora do padrão `MC_CAD_*` (commit
+`5edaad0`), `idParticipante` como participante fixo (commit `ff6c57c`), o "votado e
+aprovado" do comitê via `valoresFixos` (commit `9de9cf0`) e o grafo da fase `cedente`,
+25/28 tabelas (commit `765127e`, Ciclo 9 abaixo). Falta: resposta às 3 dúvidas do
+Ciclo 9 (destrava as 3 tabelas/colunas pendentes) e escrever os comandos de
+leitura/INSERT/DELETE em HML (nenhum `commands/*.js`/`.feature` novo ainda — só a
+lógica pura de grafo/classificação existe até aqui).
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -462,4 +465,65 @@ pré-existentes fora do escopo) e `npm run test:safety` (87/87) passam.
   (Resposta-5 migrada para `Status-historico-5`, nova pergunta em
   `Pergunta-6`/`Id-original-da-duvida-6`, `Status` voltou para `pendente`). Tarefa
   movida para `tarefas/aguardando-resposta/`.
+
+### Ciclo 9 (2026-09-15) — VPN ok; grafo real da fase `cedente` (última fase) mapeado; 3 novas dúvidas
+
+Ao retomar (dúvida de VPN, `Status-historico-6` em `duvidas.md`, já respondida),
+teste de conectividade TCP puro repetido contra `PROD_DB_HOST:PROD_DB_PORT` e
+`HOMOLOG_DB_HOST:HOMOLOG_DB_PORT`: **OK nos dois** (~150ms) — rede normalizada.
+
+Commit `765127e` (local, ainda não pushado): `cypress/utils/mapeamentoCedente.js`
+(`MAPEAMENTO_CEDENTE_CEDENTE`, 25 tabelas) + `clonagemCedente.js`
+(`TABELAS_POR_FASE[FASE_CEDENTE]` corrigida) + 5 testes novos em
+`__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, 4 warnings
+pré-existentes fora do escopo) e `npm run test:safety` (92/92) passam.
+
+- **Investigação real** (mesmo template dos ciclos anteriores — `INFORMATION_SCHEMA.COLUMNS`
+  + `sys.foreign_keys`, script `investigar-schema-cedente.cjs` temporário em `repo/`,
+  removido antes do commit): as 28 tabelas da fase `cedente` citadas na tarefa + a
+  checagem de existência de `MC_CED_ATA_VOTACAO` (citada só em `duvidas.md`, Resposta-4,
+  não na tarefa original).
+- **3 tabelas citadas na tarefa não existem de fato no schema**: `MC_CED_GERENTE_FOCO_HIST`,
+  `MC_CED_GERENTE_FOCO_LOG` e `MC_CED_FIRMAS_PODERES_REGRA_VALIDADE` — a tarefa assumia
+  que eram satélites de `MC_CED_GERENTE_FOCO`/`MC_CED_FIRMAS_PODERES_REGRA`, mas
+  `INFORMATION_SCHEMA.TABLES` não retorna nenhuma das três. Não é decisão de escopo, só
+  constatação — removidas de `TABELAS_POR_FASE[FASE_CEDENTE]`, ficando 25 tabelas reais
+  de 28 citadas.
+- **Colunas NOT NULL sem FK física, mas resolvidas por precedente forte (sem dúvida
+  nova)**: `MC_CED_FORMULARIO_GARANTIA.idConsultoriaEspecializada`/`.idGarantiaCategoria`
+  não têm constraint no schema real, mas são exatamente o mesmo nome+semântica usado
+  com FK física de verdade em dezenas de outras tabelas do mesmo módulo (ex.
+  `MC_CED_GARANTIA.idGarantiaCategoria -> MC_CAD_GARANTIA_CATEGORIA`) — diferente das
+  colunas "sem FK física, não presumidas" dos ciclos anteriores (que tinham mais de um
+  alvo plausível), aqui não há ambiguidade real sobre o alvo; resolvidas como `catalogo`
+  sem precisar de decisão nova do Thiago.
+- **3 dúvidas bloqueantes novas, todas sobre colunas NOT NULL sem resolução automática
+  possível** (registradas em `duvidas.md`, mesmo bloco `## <id>` já existente,
+  `Pergunta-7`/`Id-original-da-duvida-7`, cobrindo as três num único bloco — mesmo
+  padrão do Ciclo 3, que também bundlou 2 tabelas relacionadas numa única pergunta):
+  1. `MC_CED_ATA_VOTACAO.idCedenteAta` (NOT NULL) -> `MC_CED_ATA`, tabela de
+     documentação explicitamente fora de escopo. A tabela `MC_CED_ATA_VOTACAO` em si
+     não estava na lista original da fase `cedente` — só foi citada por nome na
+     Resposta-4 (para o tratamento de `idParticipante`), mas o schema real revelou essa
+     dependência estrutural incompatível com a exclusão de documentação. Tabela
+     deixada de fora de `TABELAS_POR_FASE`/`MAPEAMENTO_CEDENTE_CEDENTE` até a resposta.
+  2. `MC_CED_CEDENTE_VINCULADO.idCedenteVinculado` (NOT NULL) aponta pra OUTRO
+     `MC_CED_CEDENTE` (cedente relacionado, não o que está sendo clonado) — incompatível
+     à primeira vista com a regra "um cedente por execução"; não decidido sozinho como
+     tratar (pular a linha se o vinculado não existir em HML? clonar em cascata? nunca
+     copiar esta tabela?).
+  3. `MC_CED_LOGIN.idLogin` (NOT NULL) aponta pra `MC_LOGIN`, tabela fora do padrão
+     `MC_CAD_*`, possivelmente com dado de autenticação/credencial do cedente no portal
+     — mesma categoria do precedente `MC_RAT_RATING_INDICADOR` (tabela nova fora do
+     padrão), mas potencialmente mais sensível; conteúdo de `MC_LOGIN` não investigado
+     a fundo de propósito, para não arriscar expor dado sensível sem autorização.
+  Tarefa movida para `tarefas/aguardando-resposta/`. **Com este ciclo, o grafo de FK
+  real das 4 fases (prospect/POC/comitê/cedente) está totalmente mapeado** — as 3
+  dúvidas pendentes não bloqueiam o restante do grafo, só essas 3 tabelas/colunas
+  específicas; o próximo passo depois delas é escrever os comandos de
+  leitura/INSERT/DELETE em HML (ainda não iniciado).
+- Nenhum arquivo temporário de investigação ficou para trás neste ciclo
+  (`investigar-schema-cedente.cjs`, `verificar-tabelas.cjs`, `parse-schema-cedente.cjs`
+  e as respectivas saídas removidos antes do commit; `git status` confirmou working
+  tree limpa).
 
