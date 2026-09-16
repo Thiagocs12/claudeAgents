@@ -1,0 +1,100 @@
+
+◇ injected env (6) from .env // tip: ⌘ override existing { override: true }
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (criacao-operacao-servico.cy.js)                                       │
+  │ Searched:       cypress/e2e/**/*.cy.js                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  criacao-operacao-servico.cy.js                                                  (1 of 1)
+
+
+  Exploracao: criacao de operacao de servico no Beyond Banking
+    1) acessa o Beyond Banking e mapeia a tela inicial / login
+
+
+  0 passing (58s)
+  1 failing
+
+  1) Exploracao: criacao de operacao de servico no Beyond Banking
+       acessa o Beyond Banking e mapeia a tela inicial / login:
+     ReferenceError: gerarDocumentoAleatorio is not defined
+
+Variables must either be defined within the `cy.origin()` command or passed in using the args option.
+
+Using `require()` or `import()` within the `cy.origin()` callback is not supported. Use `Cypress.require()` to include dependencies instead, but note that it currently requires enabling the `experimentalOriginDependencies` flag.
+
+https://on.cypress.io/origin
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:176:7)
+      at runnable.fn (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:146647:19)
+      at callFn (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:166027:21)
+      at Runnable.run (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:166014:7)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:172116:30)
+      at PassThroughHandlerContext.finallyHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:4045:23)
+      at PassThroughHandlerContext.tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise._settlePromiseFromHandler (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1492:31)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  4                                                                                │
+  │ Video:        true                                                                             │
+  │ Duration:     58 seconds                                                                       │
+  │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\02-apos-tentativa-login.png                                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\04-apos-selecionar-kenerson-avancar.png                          
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1184)
+     riacao-operacao-servico.cy.js\05-tela-operacoes.png                                            
+
+
+  (Video)
+
+  -  Video output: C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\videos\criacao-operacao-servico.cy.js.mp4
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  criacao-operacao-servico.cy.js           00:58        1        -        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:58        1        -        1        -        -  
+

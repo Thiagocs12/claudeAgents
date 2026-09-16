@@ -59,177 +59,103 @@ trabalho do subAgent, isto aqui é o roteiro funcional a seguir):
   Beyond BackOffice (Monitor Diário), útil pro passo 13-14. Os passos 1-12 (Beyond Banking) são
   território totalmente novo, sem mapeamento prévio.
 
-## Execução
+## Execução — resumo (histórico completo arquivado em economia de tokens, 2026-09-16)
 
-Retomada em 2026-09-15 (novo ciclo): a tarefa duplicada em `tarefas/aguardando-resposta/` (versão
-antiga, que explorava "Nova Operação" dentro do Beyond BackOffice — app errado) foi descartada por
-decisão do Thiago (ver `duvidas.md`). Reiniciando do zero seguindo o roteiro de 14 passos desta
-versão, app correto: Beyond Banking (`beyondbanking-hml.grupomultiplica.com.br`).
+> O relato passo a passo original (rodadas 1-73) está arquivado, verbatim e sem perda de
+> informação, em `20260915123730-criacao-operacao-servico.historico.md` (mesma pasta) — só abra
+> esse arquivo se precisar reconstituir o "porquê" de alguma decisão já tomada. Este resumo abaixo
+> é suficiente para qualquer ciclo retomar a tarefa a partir daqui.
 
-- Tentei acessar `https://beyondbanking-hml.grupomultiplica.com.br/` → redirecionou para um
-  Keycloak com realm próprio (`beyondbanking-hml`, distinto do realm usado pelo Beyond BackOffice),
-  com tela de login customizada (visual "Beyond", campos "Login/E-mail" e "Senha", botão "ENTRAR")
-  — mas os seletores padrão do Keycloak (`#username`, `#password`, `#kc-login`) continuam
-  funcionando por baixo do tema customizado, então o mesmo fluxo de login via `cy.origin()` já
-  usado para o Beyond BackOffice funcionou aqui também, sem precisar de tratamento diferente.
-- Tentei tirar um screenshot (`cy.screenshot()`) logo após o `cy.visit()` inicial, antes do
-  redirect pro Keycloak assentar → o runner do Cypress quebrou com
-  `TypeError: Cannot destructure property 'duration' of 'props' as it is undefined` (erro interno
-  do `cypress_runner.js`, não da aplicação testada — reproduzido de forma consistente em 2
-   tentativas). Retirando esse `cy.screenshot()` específico (mantendo os outros) o teste passou
-  normal — parece ser um bug do runner do Cypress 15.20.1 ao tirar screenshot muito cedo numa tela
-  com fundo animado (gradiente/pontos em movimento) logo após a navegação. Registrado em
-  `docs/documentacao.md` como armadilha a evitar.
-- Após login, a Home do Beyond Banking mostra 3 cards: "Beyond Comex — Operações Exportação",
-  "Beyond Operação Interno — Operações Brasil", "Beyond Portal — Portal Fornecedores". Nenhum
-  card chamado exatamente "Beyond Operação" (passo 4 do roteiro) — o mais próximo é "Beyond
-  Operação Interno". Vou seguir por ele como a interpretação mais provável do passo 4 e continuar a
-  exploração; se não for o caminho certo, volto e registro aqui.
-- Tentei clicar no card "Beyond Operação Interno" → navegou para um **subdomínio diferente**
-  (`https://beyondbanking-ope-hml.grupomultiplica.com.br/`, origem distinta pro Cypress — precisou
-  de `cy.origin()` a partir daqui, senão o comando seguinte falha com "command was expected to run
-  against origin X but the application is at origin Y"). Caiu direto numa tela "Operações" com
-  filtros, cards de resumo (Operações/Títulos/Valor a Receber) e um botão **"Criar Operação"**
-  visível — bate com o passo 5 do roteiro. Cedente mostrado no topo da tela: **"SO LARANJA
-  COMERCIO DE CITR..."** (nome truncado) — não é o cedente "kenerson" pedido no passo 2. Existe um
-  ícone de "casa"/home ao lado do nome do cedente no topo, ainda não explorado — hipótese: é o
-  seletor pra trocar de cedente. Próximo passo: explorar esse seletor antes de clicar em "Criar
-  Operação", pra resolver os passos 2-3 do roteiro (selecionar cedente kenerson, cadastro
-  master) antes de avançar.
-- Tentei clicar no ícone de "casa" ao lado do nome do cedente (hipótese de seletor de cedente) →
-  navegou de volta pro domínio raiz, para `https://beyondbanking-hml.grupomultiplica.com.br/clients`
-  (rota `/clients` — provável tela de seleção de cedentes, bate com os passos 2-3 do roteiro).
-  Confirmado via aba de rede do Cypress (`GET /clients` 200), mas o `cy.screenshot()` logo em
-  seguida (ainda dentro da mesma origem cross-origin anterior, tela em branco com o logo/spinner
-  animado do Beyond carregando) **reproduziu de novo a armadilha já documentada**
-  (`TypeError: Cannot destructure property 'duration' of 'props'...`) — confirma que o gatilho é
-  genérico (qualquer tela com logo/spinner animado logo após navegação, não só a tela de login).
-- **Novo ciclo (retomada 2026-09-15, tarde):** ao rodar de novo do zero (login limpo, sem sessão
-  anterior), a aplicação **redirecionou direto para `/clients` logo após o login** — sem passar
-  pela Home com os 3 cards nem precisar clicar em "Beyond Operação Interno"/ícone de casa. A tela
-  é "Seleção de cliente" ("Automacao, Qual cliente deseja acessar?"), com um dropdown "Selecione
-  aqui" e botão "Avançar" (screenshot `02-apos-tentativa-login.png`). **Isso resolve os passos 2-3
-  do roteiro diretamente e de forma mais simples** — parece que o app só mostra a Home/cards depois
-  que um cliente já foi selecionado na sessão; o caminho anterior (Home → card → ícone de casa →
-  `/clients`) era uma volta desnecessária só porque a sessão de exploração anterior já tinha um
-  cliente pré-selecionado. Reescrevi a spec para focar direto neste fluxo: abrir o dropdown e
-  localizar "kenerson". Próximo passo: rodar e ver as opções do dropdown.
-- **Retomada 2026-09-15, noite:** ao iniciar o ciclo, encontrei processos `Cypress.exe`/`node.exe`
-  órfãos desta pasta ainda vivos (rodada anterior parece ter sido interrompida sem esperar o
-  `npx cypress run` terminar — o log da rodada anterior, `cypress-run-29.log`, estava incompleto).
-  Matei os processos manualmente antes de continuar (regra 5 do `AGENTE.md`).
-- Tentei digitar "kenerson" no dropdown de seleção de cliente e escolher a opção → apareceu **só
-  uma opção**: "07.019.231/0001-96 - KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDA". Não
-  existe uma escolha explícita de "cadastro master" nessa tela — parece que o cedente kenerson só
-  tem um cadastro/CNPJ associado ao usuário `automacao`, então o passo 3 do roteiro ("cadastro
-  master") não exige ação adicional aqui; a tela oferece um único caminho.
-- Tentei clicar em "Avançar" após selecionar kenerson → voltou para a Home (`/`, mesmo domínio
-  raiz) mostrando os mesmos 3 cards de antes ("Beyond Comex", "Beyond Operação Interno", "Beyond
-  Portal"), agora com "KENERSON INDUSTRIA E COME..." no topo confirmando o cedente selecionado
-  (screenshot `04-apos-selecionar-kenerson-avancar.png`). Confirma a hipótese anterior: a Home só
-  mostra os cards depois de um cedente selecionado.
-- Escrevi o próximo trecho da spec: clicar no card "Beyond Operação Interno" (interpretação mais
-  provável do passo 4 "Beyond Operação" do roteiro — não existe card com esse texto exato), usar
-  `cy.origin()` pro subdomínio `beyondbanking-ope-hml...` e localizar/clicar em "Criar Operação"
-  (passo 5), mapeando os elementos da tela em cada etapa.
-- Tentei rodar essa versão da spec (2x seguidas) → **falhou logo no primeiro `cy.visit()`** (antes
-  de chegar no trecho novo) com `ESOCKETTIMEDOUT` — o host `beyondbanking-hml.grupomultiplica.com.br`
-  parou de responder. Investiguei fora do Cypress com `curl` direto: 4 tentativas ao longo de
-  ~2 minutos (incluindo com `--retry`/backoff de 15s) deram todas `HTTP_CODE=000` (timeout de
-  conexão, sem resposta alguma), enquanto o Keycloak (`keycloak-new-2...`) respondeu normalmente
-  (403 em <1s) no mesmo intervalo — ou seja, não é problema de rede/DNS geral daqui, é
-  especificamente o host `beyondbanking-hml` que parou de responder.
-- **Importante:** a rodada anterior (run-30, poucos minutos antes) tinha funcionado normalmente até
-  a Home pós-seleção de cedente (screenshot `04-apos-selecionar-kenerson-avancar.png`) — ou seja,
-  o ambiente caiu **entre** essa rodada e as tentativas seguintes, não é um problema permanente
-  nem ligado à spec nova. Não travei em dúvida (não precisa de decisão do Thiago, só de o ambiente
-  voltar) nem é resultado final do teste (objetivo não foi tentado por completo) — deixando a
-  tarefa em `executando/` com a narrativa atualizada para o próximo ciclo (5 min) retomar
-  rodando a spec já escrita (trecho do passo 4-5 ainda não validado) assim que o host responder de
-  novo. Nenhum processo Cypress/node ficou órfão desta vez (rodadas 31 e 32 terminaram sozinhas,
-  falha capturada pelo próprio Cypress).
-- **Novo ciclo (2026-09-15, continuação):** antes de tentar `npx cypress run` de novo, confirmei
-  fora do Cypress se o host já tinha voltado — 3 tentativas de `curl --max-time 20` seguidas
-  (~45s de intervalo total) contra `beyondbanking-hml.grupomultiplica.com.br` deram todas
-  `HTTP_CODE=000` (timeout de conexão), enquanto o Keycloak (`keycloak-new-2...`) respondeu
-  normalmente (403 em <1s) nas mesmas condições — confirma que o host específico ainda está fora
-  do ar, mesma armadilha já documentada em `docs/documentacao.md`. Não rodei `npx cypress run`
-  desta vez (sem sentido gastar o ciclo contra um host confirmadamente down). Verifiquei também se
-  havia processo Cypress/node órfão desta pasta (regra 5 do `AGENTE.md`) — havia um `node.exe`
-  vivo na máquina, mas sua `CommandLine` (`investigar-schema-comite.cjs`) não pertence a este
-  módulo/pasta, então não foi tocado. Isso não é dúvida bloqueante nem resultado final — deixando a
-  tarefa em `executando/` para o próximo ciclo (5 min) tentar de novo, sem alterar a spec já escrita
-  (trecho do passo 4-5 do roteiro, ainda não validado).
-- **Novo ciclo (2026-09-15, continuação):** antes de rodar `npx cypress run`, confirmei de novo fora
-  do Cypress se o host já tinha voltado — 3 tentativas de `curl --max-time 20` seguidas contra
-  `beyondbanking-hml.grupomultiplica.com.br` deram novamente todas `HTTP_CODE=000` (timeout de
-  conexão, ~20s cada). Não rodei `npx cypress run` — sem sentido gastar o ciclo contra um host ainda
-  confirmadamente down. Checagem de processo órfão (regra 5): só encontrado um `node.exe`
-  (`investigar-schema-comite.cjs`), que não pertence a este módulo/pasta — nada para matar. Não é
-  dúvida bloqueante nem resultado final — deixando a tarefa em `executando/` para o próximo ciclo
-  (5 min) tentar de novo, sem alterar a spec já escrita (trecho do passo 4-5 do roteiro, ainda não
-  validado).
-- **Novo ciclo (2026-09-15, continuação):** checagem de processo órfão (regra 5) via
-  `Get-CimInstance Win32_Process` filtrando `CommandLine` por `cypress`+`mop` — nenhum processo
-  encontrado, nada para matar. Confirmei de novo fora do Cypress se o host já tinha voltado:
-  `curl -v --max-time 20` contra `beyondbanking-hml.grupomultiplica.com.br` resolveu o IP
-  (`10.101.10.254`) mas deu `Connection timed out after 20008 milliseconds` (mesma falha das
-  tentativas anteriores — DNS ok, TCP não conecta). Como controle, testei o host do Keycloak
-  (`HML_KEYCLOAK_URL` do `.env`, sem expor valor completo/credencial) — respondeu `403` em 0.06s,
-  confirmando que a rede geral e o Keycloak estão OK, é o host `beyondbanking-hml` especificamente
-  que segue fora do ar (mesma armadilha documentada em `docs/documentacao.md`). Conectividade geral
-  também confirmada OK via `https://www.google.com` (200). Não rodei `npx cypress run` — sem
-  sentido gastar o ciclo contra um host ainda confirmadamente down. Não é dúvida bloqueante nem
-  resultado final — deixando a tarefa em `executando/` para o próximo ciclo (5 min) tentar de novo,
-  sem alterar a spec já escrita (trecho do passo 4-5 do roteiro, ainda não validado).
-- **Novo ciclo (2026-09-15, continuação):** antes de rodar, confirmei que o host voltou —
-  `curl --max-time 20` contra `beyondbanking-hml.grupomultiplica.com.br` respondeu `HTTP_CODE=200`
-  (controle: Keycloak respondeu `302` no mesmo teste). Checagem de processo órfão (regra 5): só
-  encontrados os próprios processos `bash.exe`/`powershell.exe` da checagem em si, nenhum
-  `cypress`/`node` órfão de fato — nada para matar. Rodei `npx cypress run` (`cypress-run-33.log`,
-  `timeout: 300000`) → falhou em 47s, mas de um jeito **diferente** de `ESOCKETTIMEDOUT`: desta
-  vez a aplicação **pulou a tela "Seleção de cliente" inteiramente** e caiu direto na Home já com
-  "KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDA" selecionado no topo (mostrando os 3
-  cards: "Beyond Comex", "Beyond Operação Interno", "Beyond Portal") — a asserção
-  `cy.get('body').should('contain.text', 'Seleção de cliente')` (linha 91 da spec) deu timeout
-  porque esse texto nunca apareceu. Hipótese: o Electron do Cypress reaproveita o mesmo perfil de
-  browser (cookies/localStorage) entre invocações separadas de `cypress run` neste projeto — como
-  uma rodada anterior já tinha selecionado "kenerson" com sucesso, o servidor lembrou a seleção via
-  sessão/cookie e não pediu de novo. Isso na prática **resolve os passos 2-3 do roteiro de forma
-  ainda mais direta** (nem precisa da tela de seleção), mas a spec precisa aceitar os dois casos
-  (tela de seleção OU Home já com cedente selecionado) pra não quebrar dependendo do estado do
-  perfil do browser. Ajustando a spec pra detectar qual dos dois cenários aconteceu e seguir o
-  fluxo correto a partir daí, sem travar numa asserção rígida. Vídeo desta rodada (mostra o app já
-  na Home) não foi copiado pra `../videos/` ainda — só copio o vídeo da rodada que de fato avançar
-  além deste ponto, pra não acumular vídeos parciais sem valor.
-- **Novo ciclo (2026-09-15, continuação):** confirmei host de volta (`curl` 200) e ausência de
-  processo órfão antes de rodar. Rodei a spec ajustada (rodada 34) → **falhou** com
-  `Syntax error, unrecognized expression` no `cy.contains('.MuiCard-root, [class*="card" i], div', 'Beyond Operação Interno')`
-  — achado novo: **`cy.contains(seletor, texto)` com QUALQUER seletor gera internamente um
-  fallback `[type='submit'][value~='TEXTO']`** (pra cobrir `<input type=submit>`), e o operador
-  `~=` do jQuery/Sizzle não suporta um valor de múltiplas palavras (`'Beyond Operação Interno'`),
-  quebrando o parser da expressão inteira — não é específico do seletor `div`, tentei de novo
-  (rodada 35) só com `.MuiCard-root, [class*="card" i]` e deu o **mesmo erro**. Resolvido (rodada
-  36) trocando para `cy.contains('Beyond Operação Interno')` **sem seletor** — passou. Registrado
-  em `docs/documentacao.md` como armadilha geral (útil pra qualquer módulo que use
-  `cy.contains(seletor, texto)` com texto de múltiplas palavras).
-- **Rodada 36 (primeira execução completa sem erro dos passos 1-5):** login → tela de seleção de
-  cliente pulada (sessão já tinha kenerson selecionado) → Home com cedente confirmado → clique em
-  "Beyond Operação Interno" → tela "Operações" (subdomínio `beyondbanking-ope-hml`) → clique em
-  "Criar Operação" → **achado importante:** a tela "Nova Operação" não é um formulário tradicional,
-  é um **wizard conversacional** ("Beyond, assistente virtual do Grupo Multiplica") com uma
-  mensagem inicial "Olá, eu sou o Beyond... Vamos começar sua nova operação?" e um botão **"Olá"**
-  pra iniciar a conversa (screenshot `06-apos-clicar-criar-operacao.png`). Passos 6-9 do roteiro
-  (navegar até o serviço, escolher conta, incluir por digitação, Cad Pessoa) provavelmente
-  acontecem através dessa interface de chat, não de campos de formulário — próximo passo: clicar
-  em "Olá" e mapear as opções que o assistente oferece em seguida.
-- Tentei clicar em "Olá" (rodada 37) → o assistente responde: "Verifiquei que sua última operação
-  foi para o produto - AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - PRODUTO - BOLETO. Manter
-  o produto para esta nova operação?" com botões **"Manter"** e **"Trocar"** (screenshot
-  `07-apos-clicar-ola-no-chat.png`). Nota: o texto tem "PRODUTO" onde seria esperado o nome do
-  produto real (ex. "SERVIÇO") — possível bug de template do assistente (placeholder não
-  substituído) ou o produto da última operação de fato não era "SERVIÇO". Como o roteiro pede
-  explicitamente o caminho AQUISIÇÃO → ANTECIPAÇÃO DE DUPLICATA → DUPLICATA → **SERVIÇO** → BOLETO
-  (passo 6), não vou confiar em "Manter" (ambíguo) — vou clicar em **"Trocar"** pra escolher o
-  caminho explicitamente e garantir que bate com o roteiro. Próximo passo: mapear a tela que
-  aparece após "Trocar".
+**Fluxo provado e reprodutível (passos 1-11 do roteiro), com seletores/padrões validados:**
+
+1. Login no Beyond Banking via Keycloak (`cy.origin()`, mesmo mecanismo do Beyond BackOffice,
+   realm próprio `beyondbanking-hml`) — às vezes falha intermitentemente com
+   `cy.origin() failed to create a spec bridge...` (ambiental, não é regressão na spec — só rodar
+   de novo).
+2-3. Cedente **kenerson** (CNPJ 07.019.231/0001-96) tem um único cadastro associado ao usuário
+   `automacao` — não existe escolha explícita de "cadastro master" na tela de seleção de cliente
+   (`/clients`); a sessão pode pular essa tela se já houver cliente selecionado (aceitar os dois
+   cenários na spec).
+4-5. Card correto é **"Beyond Operação Interno"** (não existe card com o texto exato "Beyond
+   Operação"). Leva pro subdomínio `beyondbanking-ope-hml.grupomultiplica.com.br` (precisa de novo
+   `cy.origin()`). Botão "Criar Operação" abre um **wizard conversacional** (chat "Beyond,
+   assistente virtual"), não um formulário tradicional.
+6. Navegação do produto pelo chat: clicar exatamente (regex `/^TEXTO$/`, nunca substring) em
+   AQUISICAO → ANTECIPACAO DE DUPLICATA → DUPLICATA (cuidado: existe uma opção com typo real no
+   app, "DUPLICTA", não confundir) → SERVICO → BOLETO → "Continuar".
+7. Depois de confirmar o produto, o chat **acumula mensagens** (não substitui) e já mostra a conta
+   pré-selecionada (ITAU, Agência 6200, Conta 01013-7) — satisfaz "conta qualquer" do passo 7. O
+   painel aparece **duplicado verticalmente no DOM** (2 cópias reais do componente, é só
+   renderização — mesmo estado por baixo, confirmado preenchendo campos e vendo os dois lados
+   atualizarem juntos). Por causa disso, **nunca usar `cy.contains(seletor, texto)` puro nem
+   `.last()`/`.filter(':visible')` encadeado depois de um `cy.contains` que já colapsou pra 1
+   elemento** — o padrão que funciona é
+   `cy.get(tag).filter(':visible').contains(regex)` (filtra visibilidade ANTES de localizar pelo
+   texto).
+8. Clicar "Digitação" (não "Upload de arquivo") → vira formulário tradicional "Adicionar Títulos".
+9. Campo CNPJ/CPF não tem `placeholder`/`name` (rótulo MUI flutuante) — localizar via
+   `cy.contains('label', 'CNPJ/CPF').invoke('attr', 'for')` → `cy.get('#' + id)`. Digitar CPF de
+   teste `11144477735` e clicar a lupa (`svg[data-testid="SearchIcon"]` → `closest('button')`) —
+   preenche automaticamente Nome/Email/CEP/Logradouro/Bairro/Cidade/UF (Telefone fica vazio).
+10. Campos de título por `label[for]` (ids variam por sessão, remapear se preciso): Documento,
+    Chave NF-e, Valor, Vencimento (`input[type=date]`, precisa `{ force: true }`), Desconto, Data
+    Limite Desconto. Valor de teste usado até aqui: `12345` (Documento, **repetido em toda
+    operação — ver dúvida em aberto abaixo**), `1000,00` (Valor), `2026-12-31` (Vencimento).
+11. "Salvar" adiciona 1 título na tabela (duplicação é só visual, confirmado). "Gerar Operação"
+    abre modal de confirmação — clicar "Confirmar" (mesmo padrão `get+filter(:visible)+contains`)
+    fecha o modal, mostra toast "Operação criada com sucesso!" e a operação aparece na tabela do
+    dashboard (situação "enviado"). Sempre operar sobre a **primeira linha da tabela** (mais
+    recente), não um número fixo — cada execução cria uma operação nova (nºs 88672-88676 até
+    agora).
+
+**Ponto onde a investigação parou — passo 12 (avançar a operação):** o ícone "Avançar"
+(`div[aria-label="Avançar"] button`, `data-testid="NextPlanIcon"`) dispara
+`POST .../mc-api-gateway-ms/v1/operacao/pre-operacoes/{id}/gerar`, que respondeu **400** em 2 de 2
+tentativas válidas (operações 88675 e 88676) — front-end não trata o erro
+(`unhandled promise rejection`, derruba o teste). Vídeo mais recente (rodada 73, mostra o fluxo
+completo até esse erro): `videos/20260915123730-criacao-operacao-servico.mp4`.
+
+**Achado colateral (bug menor, sem relação com o travamento):** após o passo 6, a aplicação chama
+repetidamente `GET beyondbanking-hml.../static/media/logo...png` (host errado — deveria ser
+`beyondbanking-ope-hml`), sempre 404.
+
+_(A narrativa completa rodada-a-rodada de como cada um desses achados foi descoberto está em
+`20260915123730-criacao-operacao-servico.historico.md`, incluindo a correção do Thiago de
+2026-09-15 sobre a conta pré-selecionada não identificada na primeira tentativa.)_
+
+## Correção do Thiago (2026-09-16) — reabrindo para investigar mais antes de concluir bug
+
+Thiago **não aprovou nem reprovou definitivamente** — quer investigação adicional antes de aceitar
+a conclusão de "bug real" acima:
+
+1. **Não confie só no toast/tela de "sucesso"** — o status real da operação (se ela está de fato
+   apta a ser avançada) **deve ser validado no banco de dados**, não só pela UI. É possível que a
+   tela mostre sucesso sem o registro estar no estado esperado pra "Avançar" funcionar. Antes de
+   concluir que o 400 é um bug de aplicação, confirme no banco qual é o estado real da operação
+   (situação, campos relevantes) depois de criada e depois da tentativa de avançar.
+   - Este módulo (`SupTestesFrontEnd/mop`) não tem hoje um mecanismo de conexão a banco de dados
+     próprio, mas **não precisa criar um do zero nem tratar isso como bloqueio**: o `SupAutomacaoUteis`
+     já tem os dados/mecanismo de conexão prontos, só de consulta (não é preciso escrever nada no
+     banco pra essa validação). Reaproveite o padrão já usado por `cedente`/`keycloakUser`
+     (`cy.executarQuery`/`dbClient.cjs`, ex.:
+     `SupAutomacaoUteis/subagents/cedente/repo/cypress/support/db/dbClient.cjs`) e as variáveis de
+     ambiente de conexão já configuradas lá (`repo/.env` desses módulos — nomes das variáveis, não
+     os valores) para rodar uma consulta **somente leitura** contra a operação criada (ex.: um
+     script Node avulso reaproveitando `dbClient.cjs`, ou uma query direta equivalente) e confirmar
+     o estado real da operação (`MC_MOP_PRE_OPERACAO`/tabela equivalente) antes e depois da
+     tentativa de "Avançar". Ainda assim, **nunca exponha valor de credencial** em
+     `docs/documentacao.md`/`duvidas.md`/log — só o nome da variável. Se mesmo com isso a consulta
+     não for possível (ex.: variável de ambiente realmente ausente, erro de conexão), aí sim
+     registre como dúvida bloqueante específica, mas não pule a validação nem assuma que o erro é
+     definitivamente um bug sem tentar essa consulta primeiro.
+2. **Suspeita de causa raiz:** o roteiro reutilizou o mesmo valor fixo (`12345`) no campo
+   "Documento" em todas as operações de teste (88672 a 88676) — **documento não pode se repetir**.
+   Isso pode ser a causa real do 400 ao "Avançar", não um bug de aplicação. Ajustar a spec para
+   gerar uma **hash aleatória de 10 caracteres** para o campo "Documento" de cada título, garantindo
+   que nunca se repita entre execuções (em vez do valor fixo usado até aqui).
+3. **Valor de teste do título:** usar **R$ 100.000,00** (em vez de R$ 1.000,00 usado até aqui).
+
+Reabrindo a tarefa (não é aprovação nem reprovação definitiva) — mova de volta para
+`tarefas/pendentes/` e continue a investigação com esses três ajustes antes de reconcluir se o 400
+é de fato um bug real de aplicação ou um efeito do documento duplicado / estado da operação no
+banco.

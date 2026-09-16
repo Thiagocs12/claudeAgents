@@ -6,6 +6,55 @@
 $ErrorActionPreference = "Continue"
 Set-Location -Path $PSScriptRoot
 
+# --- Sincronização automática do repo raiz (claudeAgents) — só pull, nunca commit/push aqui ---
+# O .git deste repo (raiz C:\Multiplica\claudeAgents) é compartilhado por todos os
+# Supervisores/agentes/Status Watchers rodando nesta máquina (mesmo working tree, mesmo remoto
+# Thiagocs12/claudeAgents) — ver CONHECIMENTO-SUPERVISORES.md, seção "git add/git commit no repo
+# raiz". Serializado via Mutex nomeado global pra nunca mexer no índice/HEAD ao mesmo tempo que
+# outro processo concorrente (resolve a race condition documentada lá). Usa fetch+merge (nunca
+# rebase) e aborta e loga se houver conflito, em vez de deixar o repo compartilhado preso num
+# estado de merge pela metade. Este Status Watcher só chama sem -PermitirCommitEPush — é somente
+# leitura, nunca commita nem dá push (regra fixa do módulo).
+function Sync-RepoRaizClaudeAgents {
+    param(
+        [string]$LogPath,
+        [switch]$PermitirCommitEPush,
+        [string]$MensagemCommit
+    )
+    $mutex = New-Object System.Threading.Mutex($false, "Global\ClaudeAgentsGitSync")
+    try {
+        $mutex.WaitOne(120000) | Out-Null
+        Push-Location "C:\Multiplica\claudeAgents"
+        try {
+            git fetch origin main *>&1 | Add-Content -Path $LogPath -Encoding utf8
+            $atras = git rev-list HEAD..origin/main --count 2>$null
+            if ($atras -and [int]$atras -gt 0) {
+                git merge --no-edit origin/main *>&1 | Add-Content -Path $LogPath -Encoding utf8
+                if ($LASTEXITCODE -ne 0) {
+                    "$(Get-Date -Format 'HH:mm:ss') | [git-sync] merge com origin/main falhou (possivel conflito) - abortando merge, sem mexer mais no repo raiz neste ciclo" |
+                        Add-Content -Path $LogPath -Encoding utf8
+                    git merge --abort *>&1 | Out-Null
+                    return
+                }
+            }
+            if ($PermitirCommitEPush) {
+                git add -A
+                $temStaged = -not [string]::IsNullOrWhiteSpace((git diff --cached --name-only))
+                if ($temStaged) {
+                    git commit -m $MensagemCommit *>&1 | Add-Content -Path $LogPath -Encoding utf8
+                    git push origin main *>&1 | Add-Content -Path $LogPath -Encoding utf8
+                }
+            }
+        } finally {
+            Pop-Location
+        }
+    } finally {
+        $mutex.ReleaseMutex()
+    }
+}
+
+Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+
 # Reaproveita a conta do subAgent "geral" (contaA "de casa") — decisão do Thiago em 2026-09-14,
 # ciente da concorrência de rate-limit com os subAgents que também usam essa conta.
 #

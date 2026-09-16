@@ -52,6 +52,29 @@ usar `ScheduleWakeup`/esperar processo em background, e todo `run-cycle.ps1` nov
 função `Stop-ProcessosCypressOrfaos` (referência: `subagents/mop/run-cycle.ps1`) que mata, no
 início e no fim do ciclo, qualquer processo Cypress/node remanescente daquela pasta.
 
+## Armadilha: `cy.intercept()` não funciona dentro do callback do `cy.origin()` (2026-09-15)
+
+Descoberto no módulo `mop`, mas vale pra qualquer módulo que use `cy.origin()` (fluxos com
+subdomínios/origens distintas). Registrar um `cy.intercept(...)` **de dentro** do callback passado
+a `cy.origin(...)` falha com `CypressError: cy.intercept() use is not supported in the cy.origin()
+callback`. Solução: registrar o(s) `cy.intercept()` no escopo top-level do teste, **antes** de
+qualquer `cy.origin()` — continua válido e captura requisições feitas depois, dentro das origens
+visitadas via `cy.origin()` (não precisa re-registrar por origem). Pra ler o que foi capturado
+depois de um bloco `cy.origin()`, não dá pra referenciar a variável externa de dentro do callback
+(contexto serializado/isolado) — escreva o resultado só depois que o `cy.origin()` retornar, no
+escopo top-level. Ver `subagents/mop/docs/documentacao.md` para o detalhe completo.
+
+## Armadilha: ids `mui-NN` (React `useId()`) não são estáveis entre execuções (2026-09-16)
+
+Descoberto no módulo `mop`, mas vale pra qualquer módulo cujo app use Material UI (MUI): quando um
+input não tem `name`/`placeholder`/`aria-label` nativo e só um `<label for="mui-XX">` flutuante, o
+número `XX` é gerado pelo React (`useId()`) e depende de quantos outros componentes com id
+auto-gerado já montaram antes na mesma execução — **muda de rodada pra rodada**, não é estável.
+Hardcodar `#mui-29` funciona por coincidência em algumas execuções e quebra em outras. Solução:
+sempre resolver o id dinamicamente a partir do texto do label associado
+(`cy.contains('label', 'TEXTO').invoke('attr', 'for').then((id) => cy.get('#' + id)...)`), nunca
+hardcodar o id. Ver `subagents/mop/docs/documentacao.md` para o caso completo.
+
 ## Scheduled Tasks (Windows Task Scheduler)
 
 - `SupTestesFrontEnd-SubAgent-<modulo>`: a cada 5 minutos.

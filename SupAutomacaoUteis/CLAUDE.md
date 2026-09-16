@@ -167,6 +167,13 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     etc.), redirecione a saída para um arquivo e leia/relate só o resumo relevante (passed/failed,
     a mensagem de erro específica, últimas linhas) — nunca despeje a saída bruta inteira de volta
     no seu contexto nem a copie pra `docs/documentacao.md`/`duvidas.md` sem necessidade.
+12. Arquive quando grande (economia de tokens): se `docs/documentacao.md`, `duvidas.md`, ou a
+    narrativa de uma tarefa ultrapassar ~200-250 linhas, mova o conteúdo histórico/resolvido/
+    superado para um arquivo companheiro na mesma pasta (`<nome-original>-historico.md`), mantendo
+    no arquivo principal só um resumo compacto do que ainda é operacionalmente relevante + um
+    ponteiro pro arquivo de histórico. Nunca apague informação ao arquivar — é sempre mover, nunca
+    descartar. Esses arquivos são relidos INTEIROS a cada ciclo (regra 1) — deixá-los crescer sem
+    limite é o maior custo de token deste sistema.
 ```
 
 ### 3.2 Lógica que a Scheduled Task de cada subAgent deve seguir a cada execução

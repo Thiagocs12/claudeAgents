@@ -60,6 +60,15 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    só confirme que o login foi feito, nunca o valor usado. O `.env` desta pasta já tem as
    credenciais necessárias (mesmas do `SupE2eAutomation`, reaproveitadas) — nunca versione nem
    copie o conteúdo dele pra outro lugar.
+10. **Arquive quando grande (economia de tokens):** se `docs/documentacao.md`, `duvidas.md`, ou a
+    narrativa (`## Execução`) de uma tarefa ultrapassar ~200-250 linhas, mova o conteúdo
+    histórico/resolvido/superado (rodadas antigas já sintetizadas, dúvidas já respondidas há muito
+    tempo, texto duplicado) para um arquivo companheiro na mesma pasta
+    (`<nome-original>-historico.md`), mantendo no arquivo principal só um resumo compacto do que
+    ainda é operacionalmente relevante (seletores/padrões provados, ponto exato onde a investigação
+    está, decisões já tomadas) + um ponteiro pro arquivo de histórico. **Nunca apague informação ao
+    arquivar — é sempre mover, nunca descartar.** Esses arquivos são relidos INTEIROS a cada ciclo
+    (regra 1) — deixá-los crescer sem limite é o maior custo de token deste sistema.
 
 ## Escopo deste módulo
 

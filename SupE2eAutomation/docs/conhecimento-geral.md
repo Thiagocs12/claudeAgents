@@ -186,6 +186,14 @@ capacidade ociosa da outra conta.
     não é exclusivo do `mop`; qualquer módulo que dependa de `cy.loginComoPerfil` pode encontrá-lo.
     Seguido o mesmo protocolo (não retentar no mesmo ciclo, dúvida bloqueante registrada em
     `subagents/POC/duvidas.md`).
+  - **Nova reprodução, agora 2x seguidas na mesma retomada (2026-09-16, módulo `POC`, mesma
+    tarefa):** com VPN confirmada ok antes de cada tentativa, o mesmo erro exato ocorreu em duas
+    execuções consecutivas do mesmo spec de diagnóstico (não só uma, como em todas as ocorrências
+    anteriores catalogadas acima). Diferente do padrão observado até aqui (uma falha isolada,
+    resolvida com um único retry após confirmação do Thiago), essa recorrência consecutiva pode
+    indicar que o sintoma nem sempre é tão transitório quanto parecia — qualquer módulo que veja
+    esse erro se repetir 2x+ seguidas (não só 1x) deve registrar esse detalhe na dúvida em vez de
+    assumir que é sempre resolvido só com "tenta de novo uma vez".
 - **Inputs controlados por React (ex.: `input[type="date"]` do Monitor Diário do MOP) não reagem a
   `.val()`/`.type()` do jQuery/Cypress da forma ingênua** — setar o valor sem passar pelo setter
   nativo não dispara o `onChange` do React, então o componente não percebe a mudança. Solução:
@@ -245,6 +253,15 @@ capacidade ociosa da outra conta.
   Qualquer módulo que reencontrar esse sintoma deve tratar cada ocorrência como um evento novo a
   confirmar com o Thiago, não assumir que uma resposta anterior de "já deve estar ok" cobre
   recorrências futuras.
+- **Terceira recorrência (2026-09-15, módulo `POC`, mesma tarefa, retomada seguinte à confirmação de
+  login OK):** depois de um ciclo em que login/navegação funcionaram normalmente (sem repetir nem
+  o `cy.origin` nem o `ETIMEDOUT`), a mesma queda (`connect ETIMEDOUT 10.101.10.254:443`) voltou a
+  acontecer durante uma investigação adicional na retomada seguinte, de novo confirmada com uma
+  única checagem via `curl` (sem sequência de tentativas). Reforça que essa VPN/rede é instável de
+  forma recorrente e intermitente nesta máquina (não é um evento isolado que, uma vez resolvido,
+  fica resolvido) — todo módulo que dependa de `beyond-hml` deve continuar tratando cada nova
+  ocorrência como um evento a confirmar, mesmo depois de várias reconexões bem-sucedidas
+  anteriores.
 
 ## Git — branch nova pode não aparecer sem `fetch`
 

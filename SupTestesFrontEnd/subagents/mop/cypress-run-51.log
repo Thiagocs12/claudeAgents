@@ -1,0 +1,96 @@
+
+◇ injected env (6) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (criacao-operacao-servico.cy.js)                                       │
+  │ Searched:       cypress/e2e/**/*.cy.js                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  criacao-operacao-servico.cy.js                                                  (1 of 1)
+
+
+  Exploracao: criacao de operacao de servico no Beyond Banking
+    √ acessa o Beyond Banking e mapeia a tela inicial / login (96294ms)
+
+
+  1 passing (2m)
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      1                                                                                │
+  │ Failing:      0                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  13                                                                               │
+  │ Video:        true                                                                             │
+  │ Duration:     1 minute, 38 seconds                                                             │
+  │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\02-apos-tentativa-login.png                                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\04-apos-selecionar-kenerson-avancar.png                          
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1104)
+     riacao-operacao-servico.cy.js\05-tela-operacoes.png                                            
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\06-apos-clicar-criar-operacao.png                                
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\07-apos-clicar-ola-no-chat.png                                   
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x768)
+     riacao-operacao-servico.cy.js\08-apos-clicar-trocar.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x828)
+     riacao-operacao-servico.cy.js\09-apos-clicar-aquisicao.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x784)
+     riacao-operacao-servico.cy.js\10-apos-clicar-antecipacao-de-duplicata.png                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x844)
+     riacao-operacao-servico.cy.js\11-apos-clicar-duplicata.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1008)
+     riacao-operacao-servico.cy.js\12-apos-clicar-servico.png                                       
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1068)
+     riacao-operacao-servico.cy.js\13-apos-clicar-boleto.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1224)
+     riacao-operacao-servico.cy.js\14-apos-clicar-continuar.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1336)
+     riacao-operacao-servico.cy.js\15-apos-confirmar-conta.png                                      
+
+
+  (Video)
+
+  -  Video output: C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\videos\criacao-operacao-servico.cy.js.mp4
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✔  criacao-operacao-servico.cy.js           01:38        1        1        -        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✔  All specs passed!                        01:38        1        1        -        -        -  
+

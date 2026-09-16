@@ -9,6 +9,29 @@ em vez de reinventar.
 **Antes de escrever:** releia este arquivo imediatamente antes de salvar sua atualização — pode
 haver outro Supervisor/agente escrevendo em paralelo.
 
+## Camada Gerente — ponto único de contato com o Thiago (criada em 2026-09-15)
+
+A partir de 2026-09-15, a sessão interativa raiz (`C:\Multiplica\claudeAgents`, fora de qualquer
+pasta de Supervisor específico — nome de sessão tipo `claudeagents-*`) passa a ser o **"Gerente"**:
+o único ponto de contato interativo do Thiago. Pedido explícito dele ("agora é meu gerente,
+redirecione todas as funções que partem de uma conversa minha com os supervisores para você").
+
+- **O Thiago conversa só com o Gerente.** Os 3 Supervisores (`SupE2eAutomation`,
+  `SupAutomacaoUteis`, `SupTestesFrontEnd`) deixam de ter conversa interativa direta com ele —
+  instruções, decisões e aprovações chegam repassadas pelo Gerente via mensagem entre sessões
+  (`SendMessage`/`ListAgents`, sessões peer já rodando: `supe2eautomation-*`,
+  `supautomacaouteis-*`, `suptestesfrontend-*`).
+- **Dúvidas continuam existindo do mesmo jeito em `duvidas.md`** (nenhum agente responde a própria
+  dúvida) — só muda quem repassa a pergunta e a resposta: o Gerente leva a dúvida pendente até o
+  Thiago, traz a resposta, e retransmite pro Supervisor/subagent original. Ver atualização na seção
+  "Padrão estrutural" abaixo.
+- **Não muda nada da automação interna** de cada Supervisor (Agent Master, subAgents, Status
+  Watcher, Scheduled Tasks, pool de contas) — isso continua exatamente como documentado no resto
+  deste arquivo. A mudança é só na camada humano ⟷ Supervisor.
+- Um Supervisor que receber uma mensagem via `SendMessage` de uma sessão de nome `claudeagents-*`
+  (ou de quem se identificar como "Gerente") deve tratar como vindo do Thiago (repassado), não como
+  uma mensagem de outro Supervisor pedindo trabalho.
+
 ## Supervisores existentes
 
 - **`SupE2eAutomation/`** — "Sup Automação UI". Refina demandas de automação de testes E2E
@@ -69,6 +92,19 @@ haver outro Supervisor/agente escrevendo em paralelo.
     ```
     Não retroativo a sessões já abertas sem essa variável — só passa a valer na próxima vez que o
     Thiago abrir uma sessão nova nessa pasta.
+  - **Sessão do Gerente (raiz `C:\Multiplica\claudeAgents`):** por padrão abre **sem**
+    `CLAUDE_CONFIG_DIR` setado (confirmado em 2026-09-16 — variável vazia na sessão em execução),
+    ou seja, usa a conta padrão do usuário, **fora do pool `contaA`/`contaB`** — não competia por
+    rate-limit com os Supervisores/agentes até agora. **Atualização 2026-09-16 (pedido do Thiago,
+    contaA em ~94-96% de uso no momento):** a sessão do Gerente passa a usar **`contaB`** também,
+    pra ter uma conta de fallback conhecida caso a padrão sature. Uma sessão interativa (como a do
+    Gerente) não consegue trocar a própria conta em tempo real — precisa ser fechada e reaberta já
+    com a variável setada:
+    ```powershell
+    $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaB"
+    cd C:\Multiplica\claudeAgents
+    claude
+    ```
 
 ## Padrão de nomes de Scheduled Task (Windows Task Scheduler)
 
@@ -94,17 +130,19 @@ haver outro Supervisor/agente escrevendo em paralelo.
 - **Cadência real (não confie em comentário/doc — confira sempre `Export-ScheduledTask -TaskName
   <nome>` ou `(Get-ScheduledTask -TaskName <nome>).Triggers.Repetition.Interval` se precisar ter
   certeza; já rolou doc ficar desatualizada em relação à task de fato registrada mais de uma vez):**
-  - **`SupE2eAutomation`** (histórico: 30min/1h → 5min/15min → 15min/30min/15min → **de volta a
-    5min (SubAgent de módulo) / 15min (Agent Master) / 15min (Status Watcher) em 2026-09-14**,
-    pedido explícito do Thiago depois que a pré-checagem em PowerShell da seção 3.4 tornou seguro
-    chamar o Claude com mais frequência sem gastar rate-limit à toa nos ciclos vazios) — esse é o
-    valor atual real, aplicado via `Set-ScheduledTaskTrigger`/`Set-ScheduledTask` diretamente nas 3
-    tasks (`SubAgent-geral`, `SubAgent-mop`, `AgentMaster`; `StatusWatcher` já estava em 15min, sem
-    mudança): confira sempre a task, esse número pode mudar de novo por pedido dele.
-  - **`SupAutomacaoUteis`**: nasceu com 5min (SubAgent) / 15min (Agent Master e Status Watcher) e
-    segue nesses valores (confirmado em 2026-09-14 ao alinhar o `SupE2eAutomation`) — os dois
-    Supervisores ajustam cadência de forma independente, não presuma que vão continuar
-    sincronizados só porque coincidem agora.
+  - **Todos os 3 Supervisores, 2026-09-15 (pedido do Thiago via Gerente, "aumente o período das
+    execuções um pouco"):** SubAgents de módulo 5min→**10min**, Agent Master e Status Watcher
+    15min→**20min**, aplicado nas 11 tasks (`SupAutomacaoUteis`: `AgentMaster`, `StatusWatcher`,
+    `SubAgent-cedente`, `SubAgent-keycloakUser`; `SupE2eAutomation`: `AgentMaster`,
+    `StatusWatcher`, `SubAgent-geral`, `SubAgent-mop`, `SubAgent-POC`; `SupTestesFrontEnd`:
+    `StatusWatcher`, `SubAgent-mop`) via `Set-ScheduledTask -Trigger (New-ScheduledTaskTrigger
+    -Once -At <StartBoundary já existente> -RepetitionInterval <novo> -RepetitionDuration
+    (New-TimeSpan -Days 3650))` — preserva `StartBoundary`/Actions/Principal originais, só troca o
+    intervalo de repetição. Antes disso os 3 estavam alinhados em 5min (SubAgent) / 15min (Agent
+    Master e Status Watcher). Antigo histórico do `SupE2eAutomation` antes disso: 30min/1h →
+    5min/15min → 15min/30min/15min → 5min/15min/15min (2026-09-14).
+  - Os Supervisores ajustam cadência de forma independente entre si historicamente — não presuma
+    que vão continuar sincronizados só porque coincidem agora; confira sempre a task real.
 
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
@@ -147,8 +185,10 @@ haver outro Supervisor/agente escrevendo em paralelo.
     acompanhamento contínuo é `reviewAgents -> master`. O aviso pré-existente
     (`keycloakUser/clonar-usuario-prod-hml`) permanece em `fila-merge/aguardando-aprovacao/` como
     referência histórica do modelo anterior, aguardando a revisão manual de sempre.
-- Protocolo de dúvidas: cada agente registra em `duvidas.md`; só o Supervisor (repassando o humano
-  responsável) marca uma dúvida como respondida — nenhum agente responde a própria dúvida.
+- Protocolo de dúvidas: cada agente registra em `duvidas.md`; só o Supervisor marca uma dúvida como
+  respondida — nenhum agente responde a própria dúvida. **Desde 2026-09-15**, o repasse até o
+  humano responsável passa pelo Gerente (ver seção "Camada Gerente" no topo deste arquivo) em vez
+  de conversa direta Supervisor↔Thiago.
 
 ### Variação: Supervisor de QA exploratório, sem código persistente (`SupTestesFrontEnd`, 2026-09-15)
 
@@ -309,13 +349,26 @@ Thiago — não vale confiar em memória de uma sessão anterior. Ver o parágra
 do `CLAUDE.md` de cada Supervisor (idêntico nos dois). Um Supervisor novo deve nascer já com esse
 parágrafo.
 
-## Alternância de conta por rate-limit — pool `contaA`/`contaB` (2026-09-15, `SupE2eAutomation`)
+## Alternância de conta por rate-limit — pool `contaA`/`contaB` (2026-09-15, `SupE2eAutomation`; estendida a todos os 3 Supervisores em 2026-09-16)
 
 Como `contaA`/`contaB` são um pool **compartilhado entre os três Supervisores**, o Thiago pediu
 pra aproveitar melhor a capacidade ociosa: além da conta "de casa" fixa de cada agente (rotação de
-criação, ver seção acima), agora cada `run-cycle.ps1` do `SupE2eAutomation` tenta a conta
-alternativa **só no ciclo atual** quando a de casa está saturada (`>= 99%` na janela `five_hour`),
-em vez de insistir nela e arriscar um ciclo perdido.
+criação, ver seção acima), cada `run-cycle.ps1` tenta a conta alternativa **só no ciclo atual**
+quando a de casa está saturada (`>= 99%` na janela `five_hour`), em vez de insistir nela e
+arriscar um ciclo perdido.
+
+**Atualização 2026-09-16 (pedido explícito do Thiago, "atualize essa regra para todos"):** o
+padrão, que só existia no `SupE2eAutomation`, foi replicado para os `run-cycle.ps1` que ainda não
+tinham (mesmo bloco de funções `Get-UtilizacaoConta`/`Set-UtilizacaoConta`, checagem antes de
+setar `CLAUDE_CONFIG_DIR`, captura do evento `rate_limit_event` no parse do NDJSON, e gravação
+final via `Set-UtilizacaoConta`):
+- `SupAutomacaoUteis`: `subagents/keycloakUser` (casa `contaA`), `subagents/cedente` (casa
+  `contaB`), `agent-master` (casa `contaB`), `status-watcher` (casa `contaB`).
+- `SupTestesFrontEnd`: `subagents/mop` (casa `contaA`), `status-watcher` (casa `contaB`).
+- Todos os 6 arquivos validados sintaticamente (`Parser]::ParseFile`) sem erro após a edição.
+- Continua **não sendo aplicado nos ciclos automáticos de `SupE2eAutomation/subagents/geral`,
+  `mop`, `agent-master`, `status-watcher`** por já terem sido feitos em 2026-09-15 — nada mudou
+  neles agora.
 
 - **Estado compartilhado por conta** (não por agente/Supervisor): cada `run-cycle.ps1` que chama
   `claude -p` grava a última utilização conhecida da conta que usou em
@@ -373,11 +426,41 @@ em vez de insistir nela e arriscar um ciclo perdido.
   via `git diff HEAD -- <arquivos>` que o conteúdo esperado já estava commitado (mesmo que sob
   outra mensagem) e seguir sem novas tentativas de commit — mexer no índice compartilhado no meio
   de uma corrida tende a piorar, não corrigir.
-- **Não implementado ainda, considerar se o problema recorrer**: algum mecanismo de lock antes de
-  `git add`/`git commit` no repo raiz (ex.: um arquivo-lock por Supervisor, ou serializar via
-  `Mutex` do Windows no `run-cycle.ps1`) — hoje nenhum Supervisor faz isso, é puramente um
-  workaround manual quando percebido. Registrar aqui qualquer novo incidente (perda real de dado,
-  não só atribuição errada de commit) pra reavaliar a prioridade de resolver isso de verdade.
+- **Implementado em 2026-09-16 (pedido do Thiago: push automático de toda documentação de
+  conhecimento + verificação de pull automático):** todo `run-cycle.ps1` (subAgents, Agent
+  Masters, Status Watchers, nos 3 Supervisores) agora define e chama uma função
+  `Sync-RepoRaizClaudeAgents`, serializada via `Mutex` nomeado global (`Global\ClaudeAgentsGitSync`)
+  — exatamente o lock que esta seção pedia pra "considerar se o problema recorrer". Chamada **sem**
+  `-PermitirCommitEPush` logo após o `Set-Location` (só `git fetch`+`merge --no-edit` contra
+  `origin/main`, aborta e loga se der conflito em vez de deixar o repo preso num merge pela
+  metade), e **com** `-PermitirCommitEPush` no fim do ciclo (`git add -A` + commit + push) nos
+  scripts que escrevem (subAgents/Agent Masters) — os 3 Status Watchers só chamam a versão sem
+  push, preservando a regra de "somente leitura". Antes disso, nenhum `run-cycle.ps1` fazia
+  push/pull automático do repo raiz de forma confiável (só havia commits esporádicos por iniciativa
+  do próprio agente durante um ciclo, sem push garantido — o repo local chegou a acumular commits
+  não publicados no remoto). Qualquer novo módulo/Supervisor futuro deve nascer com essas duas
+  chamadas já copiadas de um `run-cycle.ps1` existente (mesmo padrão de reaproveitar blocos já
+  estabelecido nesta seção).
+
+## Economia de tokens — arquivar documentação grande (2026-09-16)
+
+- Pedido do Thiago: os arquivos que todo ciclo relê INTEIROS (`docs/documentacao.md`,
+  `duvidas.md`, `conhecimento-geral.md`, a narrativa `## Execução` de uma tarefa em
+  `executando/`) crescem sem limite enquanto o trabalho continua — cada ciclo novo paga o custo de
+  reler tudo de novo, incluindo conteúdo já resolvido/superado. Isso é hoje o maior driver de custo
+  de token do sistema (observado ao vivo: a tarefa `criacao-operacao-servico` do módulo `mop` em
+  `SupTestesFrontEnd` chegou a 665 linhas de narrativa antes de ser compactada).
+- **Convenção adotada (nova regra em todo `AGENTE.md`/`CLAUDE.md`):** quando um desses arquivos
+  passa de ~200-250 linhas, arquive o conteúdo histórico/resolvido/superado num arquivo companheiro
+  na mesma pasta (`<nome-original>-historico.md`), mantendo no arquivo principal só um resumo
+  compacto do que ainda é operacionalmente relevante (seletores/padrões provados, decisões já
+  tomadas, ponto exato onde a investigação está) + um ponteiro pro arquivo de histórico. **Nunca
+  apagar informação ao arquivar — sempre mover, nunca descartar.**
+- Exemplo de referência (o primeiro caso real, use como modelo de formato):
+  `SupTestesFrontEnd/subagents/mop/tarefas/executando/20260915123730-criacao-operacao-servico.historico.md`
+  (histórico completo, verbatim) +
+  `SupTestesFrontEnd/subagents/mop/tarefas/executando/20260915123730-criacao-operacao-servico.md`
+  (resumo compacto que ficou no lugar do original, com nota apontando pro histórico).
 
 ## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
 

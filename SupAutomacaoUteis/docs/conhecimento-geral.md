@@ -351,3 +351,63 @@ declarar uma tabela satélite como parte do grafo de dependência em qualquer m�
 confirmar a existência real via `INFORMATION_SCHEMA.TABLES` (não só assumir a partir
 do nome de uma tabela "irmã" já confirmada), para não deixar entradas mortas no
 mapeamento nem gastar tempo tentando copiar algo que não existe.
+
+## Alterações não commitadas encontradas ao retomar uma tarefa: revisar contra o `AGENTE.md` antes de commitar, não só rodar o autoteste (2026-09-16, módulo `cedente`)
+
+Ao retomar a tarefa `20260915130215-clonar-cedente-completo-prod-hml` (branch
+`cedente/clonar-cedente-completo-prod-hml`), a working tree já tinha alterações não
+commitadas de um ciclo anterior implementando as 3 decisões da Resposta-7
+(`duvidas.md`) — mas uma delas (item 1, incluir `MC_CED_ATA`/`MC_CED_ATA_VOTACAO` no
+escopo) tinha sido decidida sozinha por aquele ciclo, contrariando a própria instrução
+do Thiago na Resposta-7 ("se não for viável baixar o documento real, registre isso
+como nova dúvida... não decida sozinho entre as alternativas restantes") e a regra 8
+do `AGENTE.md` ("nunca decida sozinho incluir uma tabela fora do escopo já definido na
+tarefa") — a tarefa original já listava `MC_CED_ATA` nominalmente entre as tabelas de
+documentação excluídas. Nenhum teste novo cobria essa parte específica (sinal
+adicional de que o trabalho estava incompleto, não só sem commit).
+
+**Lição para qualquer módulo**: encontrar uma branch com alterações não commitadas ao
+retomar uma tarefa (esperado, regra 5 do `AGENTE.md` — um ciclo anterior pode ter
+esgotado o orçamento no meio do trabalho) não significa que esse trabalho deva ser
+aceito/commitado como está. Antes de continuar/commitar, revise o `git diff` contra as
+regras do próprio `AGENTE.md` (decisões de escopo não autorizadas, dados sensíveis
+tratados sem confirmação, mudança de lógica "apaga e refaz" etc.) — não só rodar
+lint/`test:safety` e assumir que "passa nos testes" equivale a "está autorizado". Se
+uma parte do diff violar uma regra de decisão autônoma, reverta só essa parte
+(mantendo o que já era uma decisão legitimamente confirmada) e trate a parte revertida
+como se a dúvida ainda estivesse em aberto — registrando uma dúvida nova se a
+investigação já feita trouxe informação relevante que muda a pergunta original.
+
+## Criar registro em HML via SQL direto (não API REST): colunas de auditoria NOT NULL não são preenchidas sozinhas (2026-09-16, módulo `cedente`)
+
+Todos os domínios "clássicos" deste repo (Produtos/Esteiras/Vínculos/Grupos e
+Permissões) criam registros em HML via **API REST** (`mc-cadastro-ms`,
+`criarItensInexistentesPorNivel` em `commands/sincronizacaoNivel.js`) — o servidor da
+API preenche sozinho colunas de auditoria como `dataCadastro`/`dataUltimaAlteracao`/
+`usuarioCadastro`/`usuarioUltimaAlteracao`, por isso essas 4 colunas sempre aparecem
+na lista de "chaves ignoradas" ao montar o corpo do `POST` (nunca são enviadas, o
+servidor decide o valor).
+
+O módulo `cedente` é o primeiro a criar registros em HML via **SQL direto**
+(`dbClient.cjs`/`cy.executarQuery`), por não haver endpoint REST mapeado para as
+~122 tabelas do seu grafo. Ao tentar o primeiro `INSERT` real (resolvedor de
+catálogo, ver `subagents/cedente/docs/documentacao.md`, Ciclo 14), descobriu-se que
+**nada preenche essas colunas automaticamente num `INSERT` direto** — são NOT NULL
+em praticamente todas as tabelas verificadas (38/38 tabelas de catálogo do domínio
+cedente) e o SQL Server rejeita o `INSERT` com erro real (`Cannot insert the value
+NULL into column '...'`) se elas não vierem com um valor explícito.
+
+**Lição para qualquer módulo futuro que criar registro via SQL direto em vez de API
+REST**: a lista de "colunas de auditoria a ignorar" que funciona para os domínios
+baseados em API (não enviar essas colunas no corpo) **não é o mesmo comportamento**
+para um `INSERT` SQL direto — lá, "ignorar" significa "o servidor preenche"; aqui,
+"ignorar" sem fornecer valor quebra o `INSERT` se a coluna for NOT NULL. Antes de
+escrever o primeiro `INSERT` de um módulo novo nesse estilo, confira
+`INFORMATION_SCHEMA.COLUMNS` para essas colunas na tabela de destino — se
+NOT NULL, é preciso decidir (com o Thiago, regra 8 do `AGENTE.md` — decisão que se
+propaga para todo `INSERT` do módulo, não só uma tabela) que valor fixo usar para
+"usuário"/"data" de um registro criado por automação (não decidir sozinho um valor
+inventado, mesmo que pareça inócuo — ver
+`subagents/cedente/duvidas.md`, `Pergunta-9`, para o precedente real encontrado nos
+próprios dados: colunas de usuário são `varchar` livre, não FK, e já existe pelo
+menos um valor literal `"sistema"` usado para registros gerados automaticamente).

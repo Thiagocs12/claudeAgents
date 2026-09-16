@@ -4,6 +4,7 @@
 // versão anterior desta spec explorava o app errado e foi descartada por decisão do Thiago.
 
 const ambiente = {
+  appBaseUrl: Cypress.env('HML_APP_BASE_URL'),
   beyondBankingUrl: Cypress.env('HML_BEYOND_BANKING_URL'),
   // Descoberto nesta exploracao: "Beyond Operação Interno" navega pra um subdominio separado
   // (origem distinta pro Cypress) - registrado em .env e em docs/documentacao.md.
@@ -32,15 +33,37 @@ function anexarCapturaDeErros(win) {
 describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
   it('acessa o Beyond Banking e mapeia a tela inicial / login', () => {
     const chamadasFalhas = []
+    const todasAsChamadas = []
     cy.intercept({ url: '**', middleware: true }, (req) => {
       req.on('response', (res) => {
         if (res.statusCode >= 400) {
           chamadasFalhas.push(`${res.statusCode} ${req.method} ${req.url}`)
         }
+        todasAsChamadas.push(`${res.statusCode} ${req.method} ${req.url}`)
+        // Correcao do Thiago (2026-09-16): capturar o corpo da resposta do endpoint que retorna
+        // 400 ao "Avancar", pra tentar ver a mensagem de erro real sem precisar de acesso a banco.
+        if (/pre-operacoes\/.*\/gerar/.test(req.url)) {
+          cy.writeFile(
+            'cypress/debug-output.txt',
+            `\nRESPOSTA DO ENDPOINT /gerar (status ${res.statusCode}):\nURL: ${req.url}\nBODY REQUEST: ${JSON.stringify(req.body)}\nBODY RESPONSE: ${JSON.stringify(res.body)}\n`,
+            { flag: 'a+' }
+          )
+        }
       })
     })
 
     cy.on('window:before:load', anexarCapturaDeErros)
+    // Correcao do Thiago (2026-09-16): nas rodadas 71/73 o 400 do endpoint /gerar virava uma
+    // unhandled promise rejection que derrubava o teste antes de conseguirmos capturar o corpo da
+    // resposta / continuar observando a tela. Ignorando so essa rejeicao especifica (escopo local
+    // deste teste, nao no support/e2e.js compartilhado) pra deixar o teste seguir e coletar mais
+    // evidencia apos o erro.
+    cy.on('uncaught:exception', (err) => {
+      if (err.message.includes('Request failed with status code 400')) {
+        return false
+      }
+      return true
+    })
 
     cy.visit(ambiente.beyondBankingUrl, { onBeforeLoad: anexarCapturaDeErros })
     cy.wait(3000)
@@ -261,15 +284,375 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
       // conclui a escolha do produto (passo 6 completo: AQUISICAO -> ANTECIPACAO DE DUPLICATA ->
       // DUPLICATA -> SERVICO -> BOLETO). Clicando Continuar pra seguir pro passo 7 (selecionar
       // conta).
+      // INVESTIGACAO (rodada 45): rodada 44 mostrou que apos "Continuar" a lista de elementos
+      // textuais ficou identica a de antes do clique (sem elemento novo), e o screenshot mostrou o
+      // painel "Nova Operacao" duplicado verticalmente. Instrumentando com screenshot fullPage e
+      // log de rede (registrado no intercept top-level, fora do cy.origin - cy.intercept() nao e
+      // suportado dentro do callback do cy.origin) pra confirmar se o clique sequer disparou uma
+      // chamada ao backend.
       cy.contains('button', /^Continuar$/).click()
-      cy.wait(2500)
+      cy.wait(5000)
       cy.get('body', { timeout: 15000 }).then(($body) => {
         const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], input, [role="menuitem"], li, [role="option"]')]
           .map((el) => (el.tagName === 'INPUT' ? `INPUT[name=${el.getAttribute('name')},placeholder=${el.getAttribute('placeholder')}]` : el.textContent.trim()))
           .filter((t) => t && t.length > 0 && t.length < 150)
         cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR CONTINUAR:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
       })
-      cy.screenshot('14-apos-clicar-continuar')
+      cy.screenshot('14-apos-clicar-continuar', { capture: 'fullPage' })
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS CLICAR CONTINUAR: ' + loc.href + '\n', { flag: 'a+' })
+      })
+
+      // INVESTIGACAO (retomada apos correcao do Thiago): a captura anterior so olhava tags
+      // especificas (button/label/li/etc) - se a conta pre-selecionada estiver renderizada num
+      // div/span/Card sem estar dentro dessas tags, o scraper anterior nao pegaria. Dump do
+      // ultimo bloco de mensagem do chat (o mais recente, nao os duplicados anteriores) em texto
+      // bruto pra achar qualquer coisa relacionada a conta bancaria.
+      cy.get('body').then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO COMPLETO DO BODY APOS CONTINUAR:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      // Tambem lista qualquer elemento clicavel (cursor pointer) que nao seja button/a, e
+      // qualquer coisa com classe/atributo que sugira "conta"/"banc"/"agencia".
+      cy.get('body').then(($body) => {
+        const candidatos = [...$body.find('*')]
+          .filter((el) => {
+            const cls = (el.className && typeof el.className === 'string') ? el.className.toLowerCase() : ''
+            const txt = el.textContent || ''
+            return (cls.includes('card') || cls.includes('conta') || cls.includes('account') || cls.includes('banc'))
+              && txt.trim().length > 0 && txt.trim().length < 300
+          })
+          .map((el) => `<${el.tagName.toLowerCase()} class="${el.className}"> ${el.textContent.trim().slice(0, 200)}`)
+        cy.writeFile('cypress/debug-output.txt', '\nCANDIDATOS A ELEMENTO DE CONTA (por classe):\n' + JSON.stringify([...new Set(candidatos)], null, 2), { flag: 'a+' })
+      })
+
+      // ACHADO (retomada apos correcao do Thiago, rodada 48): o dump de texto bruto do body
+      // revelou que o chat ja tinha avancado, apos o clique anterior em "Continuar", para uma nova
+      // mensagem: "Sua conta de recebimento e: ITAU - Agencia: 6200 - Conta: 01013-7. Deseja
+      // continuar?" com seu proprio par Voltar/Continuar. O scraper por tag nao capturava esse
+      // texto puro, e o dedup via Set escondia que havia um SEGUNDO par Voltar/Continuar mais
+      // recente (o do produto e o da conta tem o mesmo texto). O "painel duplicado" nao e bug -
+      // e o historico normal do chat acumulando mensagens. Passo 7 do roteiro (selecionar
+      // qualquer conta) fica satisfeito pela conta pre-selecionada (ITAU) - clicando no
+      // "Continuar" MAIS RECENTE (.last()) para confirmar a conta e avancar ao passo 8.
+      cy.get('body').should(($body) => {
+        expect($body.text()).to.include('Sua conta de recebimento')
+      })
+      // ACHADO (rodadas 49-50): `cy.contains('button', regex)` sempre retorna so o PRIMEIRO
+      // elemento que bate no DOM (mesmo encadeando .filter/.last depois, o subject ja chegou com
+      // 1 unico elemento) - com o painel duplicado no DOM, esse primeiro "Continuar" e o de uma
+      // copia oculta (`display:none`), entao nem `.last()` nem `.filter(':visible')` sozinhos
+      // resolvem. Corrigido: `cy.get('button')` pega TODOS os botoes primeiro, filtra os
+      // visiveis, e so DEPOIS localiza pelo texto - assim considera todas as copias antes de
+      // filtrar.
+      cy.get('button').filter(':visible').contains(/^Continuar$/).click()
+      cy.wait(3000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO COMPLETO DO BODY APOS CONFIRMAR CONTA:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('15-apos-confirmar-conta', { capture: 'fullPage' })
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS CONFIRMAR CONTA: ' + loc.href + '\n', { flag: 'a+' })
+      })
+
+      // Passo 8 do roteiro: incluir "por digitacao" (nao por upload de arquivo). Achado (rodada
+      // 51): apos confirmar a conta, o chat pergunta "Certo. Qual o tipo de entrada voce vai
+      // utilizar nesta operacao?" com botoes Voltar / Upload de arquivo / Digitacao. Usando o
+      // mesmo padrao get+filter(:visible)+contains para pegar o botao certo entre as copias.
+      cy.get('body').should(($body) => {
+        expect($body.text()).to.include('Qual o tipo de entrada')
+      })
+      cy.get('button').filter(':visible').contains(/^Digitação$/).click()
+      cy.wait(3000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO COMPLETO DO BODY APOS CLICAR DIGITACAO:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('16-apos-clicar-digitacao', { capture: 'fullPage' })
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS CLICAR DIGITACAO: ' + loc.href + '\n', { flag: 'a+' })
+      })
+
+      // NOVO ACHADO (rodada 52): a partir daqui e um formulario tradicional ("Adicionar Titulos"),
+      // nao mais o wizard de chat. Passo 9 do roteiro (Cad Pessoa via CPF). O placeholder
+      // "CNPJ/CPF" visto na tela nao bate com input[placeholder=...] (rodada 53 nao achou) -
+      // provavelmente e um label flutuante do MUI, nao o atributo placeholder nativo. Dump de
+      // todos os inputs (name/placeholder/aria-label/id) da area "Adicionar Titulos" pra achar o
+      // seletor certo sem arriscar outro clique as cegas.
+      cy.get('body').then(($body) => {
+        const inputs = [...$body.find('input')].map((el) => ({
+          name: el.getAttribute('name'),
+          placeholder: el.getAttribute('placeholder'),
+          ariaLabel: el.getAttribute('aria-label'),
+          id: el.id,
+          type: el.getAttribute('type'),
+        }))
+        cy.writeFile('cypress/debug-output.txt', '\nINPUTS NA TELA ADICIONAR TITULOS:\n' + JSON.stringify(inputs, null, 2), { flag: 'a+' })
+      })
+
+      // ACHADO (rodada 54): nenhum input tem name/placeholder/aria-label - os rotulos vistos na
+      // tela sao <label> flutuantes do MUI (com atributo `for` apontando pro id do input, tipo
+      // "mui-XX"). Localizando o input do CNPJ/CPF pelo label associado em vez de placeholder.
+      cy.contains('label', 'CNPJ/CPF').invoke('attr', 'for').then((inputId) => {
+        cy.writeFile('cypress/debug-output.txt', '\nID DO INPUT CNPJ/CPF: ' + inputId + '\n', { flag: 'a+' })
+        cy.get('#' + inputId).type('11144477735')
+      })
+      cy.screenshot('17-apos-digitar-cpf')
+      // ACHADO (rodada 55): input identificado por label->for (id "mui-17"), mascara aplicou
+      // "111.444.777-35" automaticamente. O botao de busca e um MuiIconButton com svg
+      // data-testid="SearchIcon", dentro de um MuiInputAdornment irmao do input (mesmo
+      // MuiInputBase-root pai). Clicando nele (Cad Pessoa, passo 9 do roteiro) pra consultar o
+      // CPF de teste digitado.
+      cy.get('svg[data-testid="SearchIcon"]').closest('button').click()
+      cy.wait(3000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS CLICAR BUSCAR CPF:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('18-apos-buscar-cpf', { capture: 'fullPage' })
+      // ACHADO (rodada 56): a busca preencheu automaticamente Nome, Email, CEP, Logradouro,
+      // Bairro, Cidade, UF a partir do CPF de teste (111.444.777-35) - a screenshot confirma
+      // (Telefone continuou vazio, o cadastro nao tinha telefone). $body.text() nao capturou os
+      // valores preenchidos porque textContent de <input> nao inclui o atributo `value` - por
+      // isso o dump de texto bruto ficou "vazio" mesmo com os campos preenchidos (nao e bug, e
+      // limitacao da tecnica de dump). Passo 9 do roteiro concluido (Cad Pessoa/sacado).
+      // Passo 10: preencher os demais campos do titulo (Documento, Valor, Vencimento). Mapeando
+      // todos os labels->for da tela pra montar os seletores certos antes de digitar.
+      cy.get('body').then(($body) => {
+        const labels = [...$body.find('label[for]')].map((el) => ({ texto: el.textContent.trim(), for: el.getAttribute('for') }))
+        cy.writeFile('cypress/debug-output.txt', '\nLABELS->FOR NA TELA ADICIONAR TITULOS:\n' + JSON.stringify(labels, null, 2), { flag: 'a+' })
+      })
+
+      // ACHADO (rodada 57): so existe 1 conjunto de labels Documento/Chave NF-e/Valor/
+      // Vencimento/Desconto/Data Limite Desconto - a "segunda fileira" vista na screenshot 16/18
+      // e a mesma armadilha ja conhecida de painel duplicado (copia oculta/fantasma), nao 2
+      // titulos reais. Preenchendo passo 10 do roteiro: Documento e Valor e Vencimento (campos com
+      // orientacao clara do roteiro); Chave NF-e/Desconto/Data Limite Desconto ficam em branco
+      // (opcionais, sem orientacao especifica).
+      // ACHADO/CORRECAO (rodada 66): os ids `mui-NN` sao gerados sequencialmente pelo React
+      // (`useId`) e MUDAM de execucao pra execucao dependendo de quantos outros componentes com id
+      // auto-gerado ja montaram antes na mesma sessao - hardcoded `#mui-29` etc (rodadas 57-65)
+      // funcionou por coincidencia em algumas rodadas e quebrou nesta (`#mui-32` nunca encontrado,
+      // porque desta vez Documento saiu como mui-34). Corrigido pra sempre resolver o id certo a
+      // partir do texto do label (mesmo padrao ja usado pro campo CNPJ/CPF), nunca hardcoded.
+      // ACHADO (rodada 75): funcoes definidas no escopo top-level do arquivo (fora do cy.origin())
+      // nao sao acessiveis de dentro do callback - mesma restricao ja documentada pra variaveis
+      // (contexto serializado/isolado). Gerando o valor inline em vez de chamar
+      // gerarDocumentoAleatorio() (que so serve de referencia/comentario aqui).
+      const documentoGerado = Math.random().toString(36).slice(2, 12)
+      cy.writeFile('cypress/debug-output.txt', '\nDOCUMENTO GERADO PARA ESTA EXECUCAO (hash aleatoria, correcao do Thiago): ' + documentoGerado + '\n', { flag: 'a+' })
+      cy.contains('label', 'Documento').invoke('attr', 'for').then((id) => cy.get('#' + id).type(documentoGerado))
+      // Correcao do Thiago (2026-09-16): valor de teste alterado de R$ 1.000,00 para R$ 100.000,00.
+      cy.contains('label', /^Valor$/).invoke('attr', 'for').then((id) => cy.get('#' + id).type('100000,00'))
+      cy.contains('label', 'Vencimento').invoke('attr', 'for').then((id) => cy.get('#' + id).type('2026-12-31', { force: true }))
+      cy.screenshot('19-apos-preencher-titulo', { capture: 'fullPage' })
+      cy.get('body').then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS PREENCHER TITULO:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+
+      // ACHADO (rodada 59): preencher os campos (Documento/Valor/Vencimento) atualizou as DUAS
+      // copias visuais do painel ao mesmo tempo (mesmo valor "12345"/"1.000,00"/"31/12/2026" nos
+      // dois blocos da screenshot) - confirma que a "duplicacao" e so um artefato visual de
+      // renderizacao (2 montagens do mesmo componente compartilhando o mesmo estado por baixo),
+      // nao 2 titulos de fato distintos nem um travamento. Clicando "Salvar" pra confirmar o
+      // titulo (ultimo pedaco do passo 10) antes de tentar "Gerar Operacao" (passo 11).
+      cy.get('button').filter(':visible').contains(/^Salvar$/).click()
+      cy.wait(3000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS CLICAR SALVAR:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('20-apos-clicar-salvar', { capture: 'fullPage' })
+
+      // ACHADO (rodada 61): "Salvar" adicionou UM titulo (nao 2) numa tabela real (CNPJ/CPF,
+      // Documento, Valor, Vencimento, Desconto, Data Limite Desconto, Chave NF-e, Acoes) -
+      // confirma de vez que a "duplicacao" era so renderizacao, nao dado duplicado. O botao
+      // "Gerar Operacao" (antes desabilitado/cinza) ficou habilitado. Passo 10 do roteiro
+      // concluido. Clicando "Gerar Operacao" (passo 11).
+      cy.get('button').filter(':visible').contains(/^Gerar Operação$/).click()
+      cy.wait(4000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS CLICAR GERAR OPERACAO:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('21-apos-gerar-operacao', { capture: 'fullPage' })
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS GERAR OPERACAO: ' + loc.href + '\n', { flag: 'a+' })
+      })
+
+      // ACHADO (rodada 61->novo ciclo): "Gerar Operacao" abriu um modal de confirmacao ("Confirma
+      // a geracao da operacao para os titulos digitados? Cancelar / Confirmar"), sem a
+      // duplicacao visual de antes. Passo 11 do roteiro ainda nao concluido - falta confirmar.
+      cy.get('button').filter(':visible').contains(/^Confirmar$/).click()
+      cy.wait(5000)
+      cy.get('body', { timeout: 20000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS CLICAR CONFIRMAR:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('22-apos-clicar-confirmar', { capture: 'fullPage' })
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS CLICAR CONFIRMAR: ' + loc.href + '\n', { flag: 'a+' })
+      })
+
+      // ACHADO (rodada 65): "Confirmar" fechou o modal, voltou pro dashboard "Operacoes" e
+      // mostrou o toast "Operacao criada com sucesso!" com uma nova linha na tabela (Operacao
+      // no 88672, Situacao "enviado"). Passo 11 do roteiro CONCLUIDO. Passo 12: localizar a
+      // coluna "Acoes" dessa linha (tabela cortada na screenshot anterior, viewport padrao) -
+      // aumentando o viewport e tirando fullPage screenshot antes de tentar clicar as cegas.
+      cy.viewport(1920, 1080)
+      // CORRIGIDO (rodada 76): a asserção original tinha o número de operação "88672" hardcoded
+      // (residuo de uma rodada de exploração antiga) — quebra em qualquer execução que gere um
+      // número diferente (esperado, já que cada rodada cria uma operação nova). Verificando de
+      // forma genérica que a tabela de operações tem ao menos 1 linha, em vez de um número fixo.
+      cy.get('table tbody tr', { timeout: 15000 }).should('have.length.at.least', 1)
+      cy.screenshot('23-tabela-operacoes-viewport-largo', { capture: 'fullPage' })
+      // A tabela lista todas as operacoes ja criadas nesta exploracao (88672, 88673, 88674, ...),
+      // mais recente primeiro. Em vez de fixar um numero, opera-se sempre sobre a PRIMEIRA linha
+      // (a operacao que este proprio teste acabou de criar), pra passo 12 sempre avancar a
+      // operacao certa mesmo em rodadas futuras que criem numeros novos.
+      cy.get('table tbody tr').first().then(($tr) => {
+        const numeroOperacao = $tr.find('td').first().text().trim()
+        const acoes = [...$tr.find('button, a, svg, [role="button"]')].map((el) => ({
+          tag: el.tagName.toLowerCase(),
+          testid: el.getAttribute('data-testid'),
+          title: el.getAttribute('title'),
+          ariaLabel: el.getAttribute('aria-label'),
+          texto: el.textContent.trim(),
+        }))
+        cy.writeFile('cypress/debug-output.txt', '\nNUMERO DA OPERACAO RECEM-CRIADA (1a linha da tabela): ' + numeroOperacao + '\n', { flag: 'a+' })
+        // Persistido em arquivo separado (nao so no debug-output.txt) para o 2o teste desta spec
+        // (verificacao no Monitor Diario do Beyond BackOffice, passos 13-14 do roteiro) ler qual
+        // numero de operacao procurar - cada rodada cria um numero novo.
+        cy.writeFile('cypress/ultima-operacao.json', JSON.stringify({ numeroOperacao }))
+        cy.writeFile('cypress/debug-output.txt', '\nACOES NA LINHA DA OPERACAO RECEM-CRIADA:\n' + JSON.stringify(acoes, null, 2), { flag: 'a+' })
+        // ACHADO (validado nesta rodada): a coluna Acoes tem 5 icones - "Documentos",
+        // "Arquivo Aceite" (aparece desabilitado, classe Mui-disabled), "Avancar"
+        // (data-testid NextPlanIcon, habilitado), "Editar" (aria-label direto no botao), e
+        // "Excluir" - cada um dentro de um <div aria-label="..."> que envolve o <button>. O
+        // "Avancar" do passo 12 do roteiro e esse icone com aria-label="Avancar" no div pai.
+        const ultimaTd = $tr.find('td').last()
+        cy.writeFile('cypress/debug-output.txt', '\nHTML DA COLUNA ACOES (operacao recem-criada):\n' + ultimaTd.prop('outerHTML'), { flag: 'a+' })
+      })
+
+      // Passo 12 do roteiro: avancar a operacao recem-criada a partir do dashboard de Operacoes,
+      // clicando no icone "Avancar" (div[aria-label="Avançar"] > button, com data-testid
+      // NextPlanIcon). Confirma antes que o botao nao esta desabilitado (o icone "Arquivo Aceite"
+      // vizinho aparece desabilitado por padrao - nao confundir os dois).
+      cy.get('table tbody tr').first().find('div[aria-label="Avançar"]').should('not.have.class', 'Mui-disabled')
+      cy.get('table tbody tr').first().find('div[aria-label="Avançar"] button').filter(':visible').click()
+      cy.wait(3000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS CLICAR AVANCAR:\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+      })
+      cy.screenshot('24-apos-clicar-avancar', { capture: 'fullPage' })
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS CLICAR AVANCAR: ' + loc.href + '\n', { flag: 'a+' })
+      })
+    })
+
+    cy.then(() => {
+      cy.writeFile('cypress/debug-output.txt', '\nTODAS AS CHAMADAS DE REDE DO TESTE (ate aqui):\n' + JSON.stringify(todasAsChamadas, null, 2), { flag: 'a+' })
+    })
+  })
+
+  // Passos 13-14 do roteiro: verificar no Beyond BackOffice (app diferente, ver
+  // docs/documentacao.md) que a operacao avancada aparece no Monitor Diario com a etapa
+  // "Inclusao OPE" concluida. Le o numero da operacao gravado pelo teste anterior (cada rodada
+  // cria uma operacao nova). Reaproveita a navegacao ja mapeada pelo SupE2eAutomation
+  // (Home -> "Beyond BackOffice" -> "Comercial" -> Monitor Diario), mas essa tela em si (Monitor
+  // Diario, busca, tabela) ainda precisa ser mapeada aqui de fato - a extensao abaixo e a primeira
+  // tentativa.
+  it('verifica a operacao avancada no Monitor Diario do Beyond BackOffice', () => {
+    cy.readFile('cypress/ultima-operacao.json').then(({ numeroOperacao }) => {
+      cy.writeFile('cypress/debug-output.txt', '\n\n=== TESTE 2: MONITOR DIARIO === NUMERO DE OPERACAO A PROCURAR: ' + numeroOperacao + '\n', { flag: 'a+' })
+
+      // INVESTIGACAO (rodada 83): rodadas 82-83 pararam com a pagina em branco em beyond-hml
+      // (sem erro Cypress, so timeout esperando "Beyond BackOffice"). Capturando rede + erros JS
+      // (mesmo padrao ja usado no teste 1) pra distinguir SPA lenta de verdade travada/erro.
+      const chamadasTeste2 = []
+      cy.intercept({ url: '**', middleware: true }, (req) => {
+        req.on('response', (res) => {
+          chamadasTeste2.push(`${res.statusCode} ${req.method} ${req.url}`)
+        })
+      })
+      cy.on('window:before:load', anexarCapturaDeErros)
+
+      cy.visit(ambiente.appBaseUrl, { onBeforeLoad: anexarCapturaDeErros })
+      cy.wait(3000)
+      cy.url().then((url) => {
+        const foiPraKeycloak = url.includes(new URL(ambiente.keycloakUrl).origin)
+        if (foiPraKeycloak) {
+          cy.origin(
+            new URL(ambiente.keycloakUrl).origin,
+            { args: { username: ambiente.username, password: ambiente.password, selectors: KEYCLOAK_SELECTORS } },
+            ({ username, password, selectors }) => {
+              cy.get(selectors.username).should('be.visible').clear().type(username, { log: false })
+              cy.get(selectors.password).should('be.visible').clear().type(password, { log: false })
+              cy.get(selectors.submit).should('be.visible').click()
+              // INVESTIGACAO (rodada 81): rodada 80 travou nesta mesma tela (URL nunca saiu do
+              // keycloak-new-2 mesmo apos 20s) - capturando o que aparece na tela apos o clique
+              // (screenshot + texto bruto) pra entender se e erro de credencial, tela extra
+              // (consentimento/2FA), ou apenas lentidao.
+              cy.wait(3000)
+              cy.screenshot('27-apos-submeter-login-beyond-backoffice', { capture: 'fullPage' })
+              cy.get('body').then(($body) => {
+                cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS SUBMETER LOGIN (Beyond BackOffice, dentro do cy.origin):\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
+              })
+            }
+          )
+        }
+      })
+      // ACHADO (rodada 80): o realm do Keycloak usado pelo Beyond BackOffice ("multiplicacapital")
+      // e diferente do realm do Beyond Banking ("beyondbanking-hml", ja mapeado). Com um cy.wait
+      // fixo de 4000ms o redirect de volta pro app ainda nao tinha acontecido (comando seguinte
+      // falhou com "expected to run against origin beyond-hml but the application is at origin
+      // keycloak-new-2"). Trocando por um cy.url() com retry/timeout maior, que so segue quando o
+      // redirect de fato sair do dominio do Keycloak.
+      cy.url({ timeout: 20000 }).should('not.include', 'keycloak-new-2')
+      cy.location().then((loc) => {
+        cy.writeFile('cypress/debug-output.txt', '\nURL APOS LOGIN (Beyond BackOffice): ' + loc.href + '\n', { flag: 'a+' })
+      })
+
+      // ACHADO (rodada 82): a screenshot de falha mostrou a pagina totalmente BRANCA em
+      // beyond-hml.grupomultiplica.com.br logo apos o login - a SPA ainda nao tinha montado (nao e
+      // erro, so lentidao de boot). cy.contains('Beyond BackOffice') com timeout default (4s)
+      // nao era suficiente. Aumentando o timeout explicitamente em vez de um cy.wait fixo.
+      // ACHADO (rodada 85): mesmo com timeout de 20s, o body continuou com innerHTML de so 163
+      // chars: `<main></main><script>System.import("@mc/container");</script>...` - a aplicacao e
+      // uma arquitetura de micro-frontend (SystemJS/import-map-overrides) que carrega o container
+      // principal dinamicamente, e o <main> nunca chegou a ganhar filhos dentro da janela de espera
+      // usada ate aqui. CHAMADAS DE REDE ficou vazio nas ultimas tentativas (possivel cache de
+      // disco nao visivel ao cy.intercept, ja que o Electron reaproveita o profile entre rodadas
+      // desta mesma sessao de exploracao) - nao da pra concluir por rede se e boot lento real ou
+      // travamento. Proximo passo: esperar o <main> ganhar conteudo real (em vez de tempo fixo)
+      // antes de procurar o texto, com um timeout bem maior para acomodar o boot do container.
+      cy.get('main', { timeout: 45000 }).should(($main) => {
+        expect($main.children().length, 'main deveria ganhar filhos apos o boot do container').to.be.greaterThan(0)
+      })
+      cy.window().then((win) => {
+        cy.writeFile('cypress/debug-output.txt', '\nTITLE: ' + win.document.title + ' | BODY innerHTML length: ' + win.document.body.innerHTML.length, { flag: 'a+' })
+        cy.writeFile('cypress/debug-output.txt', '\nERROS JS CAPTURADOS (teste 2): ' + JSON.stringify(win.__errosCapturados || []), { flag: 'a+' })
+      })
+      cy.writeFile('cypress/debug-output.txt', '\nCHAMADAS DE REDE (teste 2, apos <main> ganhar filhos):\n' + JSON.stringify(chamadasTeste2, null, 2), { flag: 'a+' })
+      cy.screenshot('27b-antes-de-procurar-beyond-backoffice', { capture: 'fullPage' })
+      cy.contains('Beyond BackOffice', { timeout: 30000 }).click()
+      cy.wait(2000)
+      cy.contains('Comercial').click()
+      cy.wait(3000)
+      cy.get('body', { timeout: 15000 }).then(($body) => {
+        const textos = [...$body.find('label, legend, h1, h2, h3, h4, button, a, [role="button"], [role="menuitem"], li')]
+          .map((el) => el.textContent.trim())
+          .filter((t) => t && t.length > 0 && t.length < 150)
+        cy.writeFile('cypress/debug-output.txt', '\nELEMENTOS APOS CLICAR COMERCIAL:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('25-dashboard-comercial', { capture: 'fullPage' })
+
+      // Drawer lateral so mostra icones - o icone LoopIcon expande revelando o texto dos itens
+      // (achado documentado pelo SupE2eAutomation, docs/documentacao.md deste modulo aponta pra
+      // la). Tentando o mesmo seletor aqui.
+      cy.get('[data-testid="LoopIcon"]').closest('.menu-MuiListItem-root, li, div[role="button"]').click()
+      cy.wait(1500)
+      cy.get('body').then(($body) => {
+        const textos = [...$body.find('*')]
+          .map((el) => el.textContent && el.textContent.trim())
+          .filter((t) => t && t.length > 0 && t.length < 60 && t.toLowerCase().includes('monitor'))
+        cy.writeFile('cypress/debug-output.txt', '\nCANDIDATOS "MONITOR" APOS EXPANDIR DRAWER:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
+      })
+      cy.screenshot('26-apos-expandir-drawer', { capture: 'fullPage' })
     })
   })
 })

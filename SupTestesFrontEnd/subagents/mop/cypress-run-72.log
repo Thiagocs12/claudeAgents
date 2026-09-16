@@ -1,0 +1,95 @@
+
+◇ injected env (6) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (criacao-operacao-servico.cy.js)                                       │
+  │ Searched:       cypress/e2e/**/*.cy.js                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  criacao-operacao-servico.cy.js                                                  (1 of 1)
+
+
+  Exploracao: criacao de operacao de servico no Beyond Banking
+    1) acessa o Beyond Banking e mapeia a tela inicial / login
+
+
+  0 passing (20s)
+  1 failing
+
+  1) Exploracao: criacao de operacao de servico no Beyond Banking
+       acessa o Beyond Banking e mapeia a tela inicial / login:
+     CypressError: `cy.origin()` failed to create a spec bridge to communicate with the specified origin. This can happen when you attempt to create a spec bridge to an insecure (http) frame from a secure (https) frame.
+
+Check your Developer Tools Console for the actual error - it should be printed there.
+
+https://on.cypress.io/origin
+      at cypressErr (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75939:18)
+      at Object.errByPath (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75999:10)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:124048:80)
+  From Your Spec Code:
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:58:11)
+      at getRet (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:146374:19)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        true                                                                             │
+  │ Duration:     20 seconds                                                                       │
+  │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
+
+
+  (Video)
+
+  -  Video output: C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\videos\criacao-operacao-servico.cy.js.mp4
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  criacao-operacao-servico.cy.js           00:20        1        -        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:20        1        -        1        -        -  
+

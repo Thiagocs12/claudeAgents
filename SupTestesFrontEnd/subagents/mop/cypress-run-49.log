@@ -1,0 +1,115 @@
+
+◇ injected env (6) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (criacao-operacao-servico.cy.js)                                       │
+  │ Searched:       cypress/e2e/**/*.cy.js                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  criacao-operacao-servico.cy.js                                                  (1 of 1)
+
+
+  Exploracao: criacao de operacao de servico no Beyond Banking
+    1) acessa o Beyond Banking e mapeia a tela inicial / login
+
+
+  0 passing (2m)
+  1 failing
+
+  1) Exploracao: criacao de operacao de servico no Beyond Banking
+       acessa o Beyond Banking e mapeia a tela inicial / login:
+     CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element is not visible:
+
+`<button class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd" tabindex="0" type="button" value="">...</button>`
+
+This element `<button.MuiButtonBase-root.MuiButton-root.MuiButton-contained.MuiButton-containedPrimary.MuiButton-sizeMedium.MuiButton-containedSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-contained.MuiButton-containedPrimary.MuiButton-sizeMedium.MuiButton-containedSizeMedium.MuiButton-colorPrimary.css-1u2r1cd>` is not visible because its parent `<div.MuiBox-root.css-m90qln>` has CSS property: `display: none`
+
+Fix this problem, or use `{force: true}` to disable error checking.
+
+https://on.cypress.io/element-cannot-be-interacted-with
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:149:7)
+  From Your Spec Code:
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:319:50)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  13                                                                               │
+  │ Video:        true                                                                             │
+  │ Duration:     1 minute, 30 seconds                                                             │
+  │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\02-apos-tentativa-login.png                                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\04-apos-selecionar-kenerson-avancar.png                          
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1104)
+     riacao-operacao-servico.cy.js\05-tela-operacoes.png                                            
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\06-apos-clicar-criar-operacao.png                                
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\07-apos-clicar-ola-no-chat.png                                   
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x768)
+     riacao-operacao-servico.cy.js\08-apos-clicar-trocar.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x828)
+     riacao-operacao-servico.cy.js\09-apos-clicar-aquisicao.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x784)
+     riacao-operacao-servico.cy.js\10-apos-clicar-antecipacao-de-duplicata.png                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x844)
+     riacao-operacao-servico.cy.js\11-apos-clicar-duplicata.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1008)
+     riacao-operacao-servico.cy.js\12-apos-clicar-servico.png                                       
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1068)
+     riacao-operacao-servico.cy.js\13-apos-clicar-boleto.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1224)
+     riacao-operacao-servico.cy.js\14-apos-clicar-continuar.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
+
+
+  (Video)
+
+  -  Video output: C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\videos\criacao-operacao-servico.cy.js.mp4
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  criacao-operacao-servico.cy.js           01:30        1        -        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     01:30        1        -        1        -        -  
+

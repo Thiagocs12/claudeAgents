@@ -224,3 +224,68 @@ respondeu `200`) e rodei o `cypress run` do spec de produção completo.
   tarefa deste módulo fica bloqueada até isso ser corrigido (ou até surgir uma orientação
   alternativa, ex.: usar outro fluxo/estado para chegar aos campos habilitados). Se o Thiago
   identificar um passo prévio faltante, seguir a orientação específica que ele der.
+
+## Retomada (2026-09-16): nova tentativa de coletar evidência (spinner/rede) bloqueada de novo pelo flake de login
+
+Thiago respondeu a dúvida anterior (60s + revisar espera com base em carregamento assíncrono real,
+não tempo fixo cego). Antes de aplicar a mudança de código, confirmei VPN ok (`curl` em
+`beyond-hml` → `200`) e tentei rodar de novo o spec de diagnóstico descartável já estendido
+(`_scratch/diagnostico-campos-habilitam.feature`, captura spinners `.MuiCircularProgress-root`/
+`.MuiBackdrop-root`/`[role="progressbar"]` e requisições em voo via `cy.intercept` a cada amostra)
+para basear a espera revisada em evidência real, não em suposição.
+
+- **Resultado: bloqueada de novo no login**, mesmo sintoma já catalogado
+  (`cy.origin() failed to create a spec bridge...`), antes de qualquer interação com a tela — não
+  há amostra nova de spinner/requisição coletada ainda. Vídeo
+  (`cypress/videos/diagnostico-campos-habilitam.feature.mp4`) e screenshot de falha gerados
+  normalmente.
+- Nenhum código de produção alterado nesta retomada (timeout segue em 30s, `9054e8b`; a revisão da
+  espera baseada em spinner/rede ainda não foi implementada, pois depende da amostra que este
+  diagnóstico deveria coletar).
+- Diferente da ocorrência anterior (2 falhas consecutivas na mesma retomada), esta foi só 1 falha
+  isolada — mas segui o mesmo protocolo (não insistir sem confirmação) e registrei nova dúvida em
+  `duvidas.md` em vez de tentar de novo sozinha. Tarefa movida de volta para
+  `tarefas/aguardando-resposta/`.
+- **Próxima retomada:** assim que autorizado, rodar o spec de diagnóstico de novo para finalmente
+  coletar a amostra de spinner/requisição; usar essa evidência para implementar a espera revisada
+  (não `cy.wait` cego); aumentar `aguardarCamposObrigatoriosHabilitados` para 60s como já pedido;
+  rodar o autoteste do spec de produção. Se o campo continuar preso mesmo assim, parar e deixar
+  vídeo/screenshot prontos, como já orientado pelo Thiago.
+
+## Retomada (2026-09-16): bloqueada antes mesmo de investigar — flake de login (`cy.origin`) 2x seguidas
+
+Thiago respondeu a dúvida anterior: aumentar `aguardarCamposObrigatoriosHabilitados` para 60s e,
+além disso, revisar a espera para depender de carregamento assíncrono real concluído (resposta da
+consulta do CNPJ, spinner, ou qualquer outra renderização pendente) em vez de um tempo fixo cego —
+só então tentar de novo; se travar do mesmo jeito, parar e deixar vídeo/screenshot prontos sem
+insistir mais.
+
+Antes de aplicar a mudança de código, estendi o spec de diagnóstico descartável
+(`_scratch/diagnostico-campos-habilitam.feature`/`diagnosticoCamposHabilitam.js`, gitignorado, não
+commitado) para também capturar, a cada amostra, spinners visíveis (`.MuiCircularProgress-root`,
+`.MuiBackdrop-root`, `[role="progressbar"]`, etc.) e requisições de rede em voo desde a última
+amostra (via `cy.intercept` genérico) — para basear a revisão da espera em evidência real da tela,
+em vez de adivinhar seletor de spinner. Confirmei VPN ok antes (`curl` em `beyond-hml` → `200`).
+
+Rodei o diagnóstico duas vezes seguidas (mesma checagem de VPN antes de cada uma) e as duas
+falharam **no login**, antes de chegar à tela, com o mesmo sintoma já catalogado em
+`../../docs/conhecimento-geral.md`: `CypressError: cy.origin() failed to create a spec bridge...`.
+Diferente das ocorrências anteriores desta mesma tarefa (uma única tentativa bastava para
+reproduzir, e a resposta do Thiago sempre liberava um retry único que então funcionava), desta vez
+o mesmo erro se repetiu **duas vezes seguidas**. Segui o protocolo de não insistir em várias
+tentativas seguidas e parei na segunda falha, sem tentar uma terceira sozinha e sem alterar nenhum
+código de produção (nada commitado nesta retomada — só o spec de diagnóstico gitignorado, que fica
+no working tree local deste clone para a próxima retomada reaproveitar).
+
+Nova dúvida bloqueante registrada em `duvidas.md` (mesmo id da tarefa) perguntando se devo insistir
+uma 3ª vez (fora do padrão já estabelecido) ou se isso merece confirmação antes, já que a
+recorrência consecutiva é diferente do padrão anterior. Tarefa movida de volta para
+`tarefas/aguardando-resposta/`.
+
+**Ainda pendente para a próxima retomada:** nada mudou no código de produção desde `9054e8b`
+(timeout ainda em 30s). Assim que o login voltar a funcionar: (1) rodar o diagnóstico estendido
+para descobrir se existe spinner/requisição específica associada à habilitação dos campos, (2)
+implementar a espera revisada com base nessa evidência (não um `cy.wait` cego), (3) aumentar
+`aguardarCamposObrigatoriosHabilitados` para 60s como pedido, (4) rodar o autoteste do spec de
+produção. Se o campo continuar preso mesmo assim, parar e deixar vídeo/screenshot prontos, como já
+orientado.

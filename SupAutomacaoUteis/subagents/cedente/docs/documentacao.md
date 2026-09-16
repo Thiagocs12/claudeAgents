@@ -3,19 +3,14 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida, Ciclo 9 abaixo — 3
-colunas NOT NULL da fase `cedente` sem resolução automática possível — ver
-`duvidas.md`, `tres-dependencias-not-null-nao-resolviveis-fase-cedente-20260915`),
-branch `cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda
-não pushada — commits locais até o momento: as **4 fases do grafo de FK já estão
-totalmente mapeadas** (`prospect`, `poc`, `comite` e `cedente`), incluindo a resolução
-de `MC_RAT_RATING_INDICADOR(_ITEM)` como catálogo fora do padrão `MC_CAD_*` (commit
-`5edaad0`), `idParticipante` como participante fixo (commit `ff6c57c`), o "votado e
-aprovado" do comitê via `valoresFixos` (commit `9de9cf0`) e o grafo da fase `cedente`,
-25/28 tabelas (commit `765127e`, Ciclo 9 abaixo). Falta: resposta às 3 dúvidas do
-Ciclo 9 (destrava as 3 tabelas/colunas pendentes) e escrever os comandos de
-leitura/INSERT/DELETE em HML (nenhum `commands/*.js`/`.feature` novo ainda — só a
-lógica pura de grafo/classificação existe até aqui).
+`AGENTE.md`). Estado atual: **aguardando-resposta** (Ciclo 14) — o resolvedor
+genérico de dependência de catálogo está implementado e testado fim a fim (caminho
+"já existe"), mas o caminho "criar" está bloqueado por uma dúvida sobre valor fixo
+para colunas de auditoria NOT NULL (ver `duvidas.md`, Pergunta-9) que se propaga para
+todo INSERT deste domínio, não só catálogo. Branch
+`cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
+pushada). Falta: resolver a Pergunta-9, terminar o resolvedor de catálogo (caminho
+"criar"), os comandos de INSERT estrutural e DELETE (apaga-e-refaz).
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -526,4 +521,326 @@ pré-existentes fora do escopo) e `npm run test:safety` (92/92) passam.
   (`investigar-schema-cedente.cjs`, `verificar-tabelas.cjs`, `parse-schema-cedente.cjs`
   e as respectivas saídas removidos antes do commit; `git status` confirmou working
   tree limpa).
+
+### Ciclo 10 (2026-09-16) — itens 2/3 da Resposta-7 implementados; trabalho não commitado de um ciclo anterior corrigido; nova dúvida (item 1)
+
+Ao retomar (tarefa já em `tarefas/executando/`, sem passar por `aguardando-resposta/`
+— a dúvida da Resposta-7 nunca tinha `Status: respondida` completo, item 1 seguia
+pendente de investigação por decisão explícita do próprio Thiago), a branch já tinha
+**alterações não commitadas** de um ciclo anterior (`cypress/support/shared/clonagemCedente.js`
+e `cypress/utils/mapeamentoCedente.js`) implementando os 3 itens da Resposta-7 —
+incluindo o item 1 (`MC_CED_ATA`/`MC_CED_ATA_VOTACAO`), que aquele ciclo decidiu
+incluir no escopo sozinho, sem registrar a nova dúvida que o próprio Thiago pediu
+explicitamente ("se não for viável [baixar o documento real], registre isso como
+nova dúvida... não decida sozinho"). Nenhum teste novo acompanhava essa parte
+(sinal de trabalho incompleto, não só não commitado).
+
+- **Correção**: revertida só a parte do item 1 (remoção de `MC_CED_ATA`/
+  `MC_CED_ATA_VOTACAO` de `TABELAS_POR_FASE[FASE_CEDENTE]`, `MC_CED_ATA` de volta em
+  `TABELAS_FORA_DE_ESCOPO`, remoção das entradas correspondentes em
+  `MAPEAMENTO_CEDENTE_CEDENTE`) — mantidas as partes dos itens 2/3 (já eram decisões
+  confirmadas pelo Thiago, não uma decisão autônoma). Commit `af709f8`:
+  `MC_CED_CEDENTE_VINCULADO.idCedenteVinculado` com dependência tipo novo `cascata`
+  (`TIPO_DEPENDENCIA_CASCATA`, ignorado por `construirGrafoEstrutural`, mesmo padrão
+  de `participante-fixo` — execução da cascata em si ainda não implementada, só a
+  declaração no grafo); `MC_CED_LOGIN` removida inteira de `MAPEAMENTO_CEDENTE_CEDENTE`
+  e movida para `TABELAS_FORA_DE_ESCOPO`. Testes atualizados (2 novos, substituindo o
+  teste antigo que checava as duas colunas como "sem dependência" — agora
+  `MC_CED_CEDENTE_VINCULADO.idCedenteVinculado` tem dependência real, e `MC_CED_LOGIN`
+  nem existe mais no mapeamento). `npm run lint` (0 erros, 4 warnings pré-existentes
+  fora do escopo) e `npm run test:safety` (93/93) passam.
+- **Investigação real do item 1** (mesmo template de scripts temporários já usado nos
+  ciclos anteriores — `INFORMATION_SCHEMA.COLUMNS` contra PROD para `MC_CED_ATA`,
+  script `.cjs` removido antes do commit): a premissa da Resposta-7 (existe um
+  documento externo, baixável via `mc-documento-ms`/Beyond) **não se confirmou** —
+  `MC_CED_ATA` guarda o conteúdo da ata inline (`textoAtaComite`, texto/HTML com
+  imagem embutida em base64, provavelmente assinatura/carimbo), não como arquivo
+  separado. A única coluna que referencia arquivo de fato (`idArquivo`, nullable, sem
+  FK física) segue vazia na maior parte da amostra. Isso muda a pergunta original
+  ("é viável baixar o documento?") para uma pergunta diferente ("o Thiago quer copiar
+  o conteúdo inteiro da ata como texto inline, sabendo que não há download
+  envolvido?") — registrada como nova dúvida específica em `duvidas.md`
+  (`mc-ced-ata-conteudo-inline-nao-e-documento-externo-20260916`, mesmo bloco `## <id>`
+  já existente, `Pergunta-8`/`Resposta-8`), em vez de decidir sozinho (regra 8 do
+  `AGENTE.md` — a tarefa original lista `MC_CED_ATA` nominalmente entre as tabelas de
+  documentação excluídas). Tarefa movida para `tarefas/aguardando-resposta/`.
+- **Aprendizado registrado em `../../docs/conhecimento-geral.md`**: encontrar
+  alterações não commitadas na branch de uma tarefa retomada não significa que o
+  trabalho deva ser aceito/commitado como está — pode ser uma decisão de escopo tomada
+  sem autorização por um ciclo anterior que ficou sem orçamento antes de seguir o
+  protocolo de dúvida corretamente. Revisar o diff contra as regras do `AGENTE.md`
+  antes de commitar, não só rodar o autoteste.
+- Nenhum arquivo temporário de investigação ficou para trás neste ciclo.
+
+### Ciclo 11 (2026-09-16) — Resposta-8 implementada; grafo de FK das 4 fases completo, sem dúvidas pendentes
+
+Ao retomar (dúvida `mc-ced-ata-conteudo-inline-nao-e-documento-externo-20260916` já
+com `Status: respondida` — Thiago escolheu a opção 1, ver Resposta-8 em `duvidas.md`),
+teste de conectividade TCP puro repetido contra `PROD_DB_HOST:PROD_DB_PORT` e
+`HOMOLOG_DB_HOST:HOMOLOG_DB_PORT`: **OK nos dois** (146ms/179ms). Branch já estava
+limpa (`af709f8`, nada não commitado para revisar desta vez).
+
+Commit `612750b`: `cypress/support/shared/clonagemCedente.js` (`MC_CED_ATA` removida
+de `TABELAS_FORA_DE_ESCOPO`, `MC_CED_ATA`/`MC_CED_ATA_VOTACAO` adicionadas a
+`TABELAS_POR_FASE[FASE_CEDENTE]`) + `cypress/utils/mapeamentoCedente.js` (duas novas
+entradas em `MAPEAMENTO_CEDENTE_CEDENTE`) + 3 testes novos/1 test atualizado em
+`__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, 4 warnings
+pré-existentes fora do escopo) e `npm run test:safety` (94/94) passam.
+
+- **Investigação real** (mesmo template dos ciclos anteriores —
+  `INFORMATION_SCHEMA.COLUMNS` + `sys.foreign_keys` contra PROD, script `.cjs`
+  temporário em `repo/`, removido antes do commit, cobrindo só as 2 tabelas em
+  questão): confirmou a estrutura já levantada no Ciclo 10 (`MC_CED_ATA.textoAtaComite`
+  nullable, `idArquivo` nullable sem FK física) e revelou o campo que faltava para
+  fechar a Resposta-8 — `MC_CED_ATA.situacaoVotacao` (nullable, valores reais em PROD:
+  `FINALIZADA`=134, `NAO_INICIADA`=27, `INICIADA`=14, `REABERTA`=4 — mesmo vocabulário
+  de `MC_POC_COMITE.situacaoVotacao`). `MC_CED_ATA_VOTACAO.idParticipante` (NOT NULL)
+  confirmado sem constraint em `sys.foreign_keys`, igual a `MC_POC_COMITE_VOTACAO`/
+  `MC_PORTAL_COMITE_VOTACAO`; `situacaoVoto`/`voto` com o mesmo vocabulário
+  (`CONCLUIDO`/`FAVORAVEL` entre os valores reais observados).
+- **Implementação**: `MC_CED_ATA` entra na fase `cedente` com `idCedente` (estrutural)
+  + `idConsultoriaEspecializada` (catálogo) + `valoresFixos: { situacaoVotacao:
+  'FINALIZADA' }` (mesmo padrão de `MC_POC_COMITE`, Resposta-5); `textoAtaComite`
+  copiado como está (não é FK, não entra em `dependeDe`), `idArquivo` não resolvido
+  (mesmo precedente de `idArquivoLogo`). `MC_CED_ATA_VOTACAO` entra com `idCedenteAta`
+  (estrutural → `MC_CED_ATA`) + `idConsultoriaEspecializada` (catálogo) +
+  `idParticipante` (tipo `participante-fixo` → `MC_CAD_ANALISTA`, mesmo padrão das
+  votações de comitê) + `valoresFixos: { situacaoVoto: 'CONCLUIDO', voto:
+  'FAVORAVEL' }`.
+- **Com este ciclo, o grafo de FK das 4 fases (prospect/POC/comitê/cedente) está
+  completo e sem nenhuma dúvida pendente em aberto** — próximo passo (não iniciado):
+  escrever os comandos de leitura em PROD (localizar pessoa+prospect pelo CNPJ/CPF via
+  `--env`), busca em HML e INSERT/DELETE, usando o grafo unificado
+  (`construirGrafoEstrutural`/`ordenarTabelasPorDependenciaEstrutural` sobre as 4
+  constantes `MAPEAMENTO_CEDENTE_*` combinadas) — ver "Próximos passos" acima, itens 2
+  e 4, ainda válidos.
+- Nenhum arquivo temporário de investigação ficou para trás neste ciclo (`git status`
+  confirmou working tree limpa após o commit).
+
+### Ciclo 12 (2026-09-16) — primeira etapa executável: resolução de estratégia (só leitura), testada fim a fim contra PROD/HML reais
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `612750b`,
+working tree limpa — nada a revisar de um ciclo anterior desta vez), teste de
+conectividade não foi repetido antes de começar (o passo em si já serve de teste:
+se a rede estivesse fora, a query teria travado/dado timeout, sinal equivalente).
+Com o grafo de FK das 4 fases já completo (Ciclo 11), este ciclo ataca o próximo
+passo pendente listado em "Próximos passos" (item 4): uma etapa só de leitura que
+já permite um autoteste executável fim a fim, sem nenhum risco de escrita.
+
+Commit (branch da tarefa, ainda não pushado): `cypress/support/commands/cedente.js`
+(novo) + `cypress/support/commands/index.js` (registra o novo módulo) +
+`cypress/e2e/features/gerenciamentoDoCedente.feature` (novo, tag `@cedente`) +
+`cypress/support/step_definitions/gerenciamentoDoCedente.js` (novo) +
+`README.md`/`CLAUDE.md` (nova seção "Clonagem de Cedente", regra 2 do `AGENTE.md`).
+`npm run lint` (0 erros, os mesmos 4 warnings pré-existentes fora do escopo) e
+`npm run test:safety` (94/94, sem teste novo — nenhuma lógica pura nova foi
+necessária, `decidirEstrategiaClonagemCedente`/`normalizarDocumento` já existiam e
+já eram testadas) passam.
+
+- **`cy.resolverEstrategiaClonagemCedente(documento)`**: busca em PROD a pessoa
+  (`MC_CAD_PESSOA`, por `cnpjCpf` comparado ignorando máscara via `REPLACE`
+  encadeado — T-SQL não tem regex nativo, e o conjunto de separadores de
+  CPF/CNPJ é fechado: `.`, `-`, `/`) e o prospect vinculado a ela
+  (`MC_PRT_PROSPECT.idPessoa`), checa em HML se já existe um cedente para o
+  mesmo documento (join `MC_CED_CEDENTE.idPessoa = MC_CAD_PESSOA.id`, já que o
+  cedente não guarda CNPJ/CPF próprio — confirmado no Ciclo 1), e devolve o
+  resultado de `decidirEstrategiaClonagemCedente` (lógica pura já existente e já
+  testada, reaproveitada sem alteração) junto com as 3 linhas de origem
+  encontradas (para uso pelo comando de INSERT, ainda não escrito). Nenhuma
+  escrita é feita — só 3 `SELECT`s.
+- **Step `@cedente`** (`gerenciamentoDoCedente.js`), parametrizado via `--env
+  documentoOrigem=...`, mesmo padrão de "parâmetro ausente não quebra o cenário"
+  já usado em `gerenciamentoDeUsuarios.js` (loga e pula em vez de falhar, para
+  não quebrar uma execução da suíte completa sem a tag). O log final expõe só a
+  estratégia resolvida e booleanos (`encontrada`/`não encontrada`), nunca o
+  conteúdo das linhas de pessoa/prospect/cedente (que podem conter dado
+  pessoal) — consistente com a regra 10 do `AGENTE.md` (não expor dado
+  sensível em log/documentação), aplicada aqui por analogia (a regra fala de
+  credencial/segredo, mas o mesmo cuidado vale para PII de pessoa física).
+- **Autoteste real, fim a fim, contra PROD/HML** (rede OK, sem timeout):
+  1. Sem `documentoOrigem` informado → cenário passa, loga aviso, nenhuma query
+     roda (path "pulado").
+  2. `documentoOrigem` claramente inexistente (`99999999999999`) → estratégia
+     `bloqueado-sem-origem`, pessoa/prospect não encontrados, cedente não
+     existente em HML.
+  3. `documentoOrigem` "00000000000191" (escolhido como um CNPJ obviamente
+     fictício para o teste, só dígitos repetidos + sufixo) **na verdade bateu
+     com um registro real** em PROD/HML (provável documento de teste/dummy já
+     cadastrado no ambiente, não descoberto por mim propositalmente) —
+     estratégia resolvida foi `apagar-e-recriar` (pessoa e prospect
+     encontrados em PROD, cedente já existente em HML). Achado sem intenção,
+     registrado aqui só porque documenta que **ambos os ramos da estratégia
+     foram exercitados de verdade** (não só o de "não encontrado") — nenhum
+     dado de pessoa/prospect/cedente foi exposto no log (só os booleanos, como
+     desenhado), e nenhuma escrita foi feita (o comando é só leitura). Não
+     decidi nada sobre esse registro nem tentei investigar quem é — fora do
+     escopo deste ciclo.
+- **Por que nenhuma lógica pura nova foi necessária**: a decisão de estratégia
+  (`decidirEstrategiaClonagemCedente`) e a normalização de documento
+  (`normalizarDocumento`) já existiam desde o Ciclo 1 e já tinham cobertura de
+  `node:test` — este ciclo só precisou de comandos Cypress finos que buscam os
+  3 fatos reais (pessoa/prospect em PROD, cedente em HML) e repassam para essa
+  lógica já testada, sem duplicá-la.
+- **Próximo passo pendente** (não iniciado): os comandos de INSERT (criação em
+  HML, na ordem de `ordenarTabelasPorDependenciaEstrutural` sobre o grafo
+  unificado das 4 fases) e DELETE (ordem inversa, para "apaga e refaz") — a
+  parte de leitura/decisão de estratégia que os alimenta já está pronta e
+  testada (este ciclo).
+- Nenhum arquivo temporário ficou para trás (`git status` confirmou working
+  tree limpa após o commit, incluindo os arquivos de saída de
+  lint/test:safety/cypress run, apagados antes de commitar).
+
+### Ciclo 13 (2026-09-16) — grafo unificado das 4 fases + metadados de chave natural das tabelas de catálogo (só declaração, ainda sem resolvedor)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `2ccd180`,
+working tree limpa), teste de conectividade TCP puro repetido contra
+`PROD_DB_HOST:PROD_DB_PORT`/`HOMOLOG_DB_HOST:HOMOLOG_DB_PORT`: **OK nos dois**
+(124-134ms). Sem dúvida pendente (todas em `duvidas.md` já `Status: respondida`).
+Ataca o próximo passo pendente listado no Ciclo 12 ("os comandos de INSERT
+(criação em HML)... usando o grafo unificado — construirGrafoEstrutural/
+ordenarTabelasPorDependenciaEstrutural sobre as 4 constantes MAPEAMENTO_CEDENTE_*
+combinadas"), começando pela parte que dá pra fazer sem nenhum risco de escrita.
+
+Commit (branch da tarefa, ainda não pushado): `cypress/utils/mapeamentoCedente.js`
+(`MAPEAMENTO_CEDENTE_UNIFICADO`, `METADADOS_CATALOGO_CEDENTE`) +
+`cypress/support/shared/clonagemCedente.js` (`ordenarTabelasParaExclusaoEstrutural`)
++ 3 testes novos/1 test simplificado em `__tests__/clonagemCedente.test.js`.
+`npm run lint` (0 erros, os mesmos 4 warnings pré-existentes fora do escopo) e
+`npm run test:safety` (97/97) passam.
+
+- **`MAPEAMENTO_CEDENTE_UNIFICADO`**: merge por spread dos 4 mapeamentos por fase
+  (confirmado sem colisão de chave — 122 tabelas únicas ao todo) — substitui o
+  spread inline que já existia dentro de um teste (Ciclo 9) por uma constante
+  exportada e reutilizável por qualquer comando futuro (INSERT/DELETE) que precisar
+  do grafo completo, não só pelos testes.
+- **`ordenarTabelasParaExclusaoEstrutural`**: função pura nova em
+  `clonagemCedente.js`, sempre o inverso exato de
+  `ordenarTabelasPorDependenciaEstrutural` (nunca uma ordenação calculada à parte,
+  pra nunca divergir se o grafo mudar) — implementa a regra 12 do `AGENTE.md`
+  ("filhas antes de pais" no DELETE do apaga-e-refaz).
+- **`METADADOS_CATALOGO_CEDENTE`**: investigação real contra PROD
+  (`INFORMATION_SCHEMA.COLUMNS`, script `.cjs` temporário em `repo/`, removido
+  antes do commit) das 42 tabelas de catálogo referenciadas em algum `dependeDe`
+  tipo `catalogo` nas 4 fases — declara, por tabela, se a chave natural (mesma
+  convenção já usada em `commands/sincronizacaoNivel.js`,
+  `campoDescricao || 'descricao'`, e pedida explicitamente pela tarefa) é
+  `descricao` (maioria, 30 tabelas) ou `nome` (`MC_CAD_ANALISTA`,
+  `MC_CAD_FORMULARIO`, `MC_CAD_FUNDO`, `MC_CAD_GERENTE_COMERCIAL`,
+  `MC_CAD_INDICADOR`, `MC_CAD_INSTITUICAO`, `MC_CAD_SOCIO` — 8 tabelas). Isso é
+  leitura de schema, não uma decisão de negócio nova (cada tabela só teve um
+  candidato óbvio de coluna) — diferente das dúvidas bloqueantes já registradas
+  nesta tarefa para colunas NOT NULL sem candidato nenhum.
+- **4 exceções documentadas, propositalmente fora de `METADADOS_CATALOGO_CEDENTE`**
+  (sem coluna única e óbvia — não presumidas, resolver quando a tabela que as
+  referencia for implementada de fato): `MC_CAD_PESSOA` (já tem resolução própria
+  por CNPJ/CPF, `buscarPessoaCedentePorDocumento`; quando referenciada como
+  catálogo comum por outra tabela — ex. `MC_PRT_PROSPECT.idPessoaRelacionada` — vai
+  precisar do mesmo critério de documento, não do genérico descricao/nome, já que
+  nome/razão social não é confiável como chave única de pessoa),
+  `MC_CAD_BLOQUEIO` (não tem descricao/nome, parece registrar ocorrências de
+  bloqueio por entidade, não um catálogo de tipos), `MC_CAD_FORMULARIO_CAMPO` (não
+  tem descricao/nome, só `label` nullable, referenciada por par
+  `idFormulario`+`idCampo`), `MC_CAD_PESSOA_SOCIO` (tabela de associação
+  `idPessoa`+`idSocio`, não é um catálogo de valor único).
+- **Teste de regressão novo** (`METADADOS_CATALOGO_CEDENTE cobre toda tabela de
+  catálogo referenciada...`): varre `MAPEAMENTO_CEDENTE_UNIFICADO` coletando toda
+  tabela-alvo de `dependeDe` tipo `catalogo` e falha se alguma não tiver metadado
+  nem estiver na lista de exceções documentadas — protege contra um ciclo futuro
+  adicionar uma nova dependência de catálogo (ex. ao mapear uma tabela nova) sem
+  declarar (ou documentar a exceção de) sua chave natural.
+- **Ainda NÃO implementado** (não fazer parte deste ciclo por decisão de escopo,
+  não por esquecimento): o resolvedor genérico de catálogo em si (comando Cypress
+  que usa `METADADOS_CATALOGO_CEDENTE` pra buscar em HML por chave natural e criar
+  o registro completo — copiado de PROD, com suas próprias dependências de
+  catálogo resolvidas recursivamente — se não existir). Também não implementado:
+  os comandos de INSERT das tabelas estruturais (usando
+  `MAPEAMENTO_CEDENTE_UNIFICADO`/`ordenarTabelasPorDependenciaEstrutural`) e DELETE
+  (`ordenarTabelasParaExclusaoEstrutural`) propriamente ditos, e a resolução
+  dinâmica de colunas por `INFORMATION_SCHEMA.COLUMNS` menos as colunas de
+  auditoria (já desenhada em "Próximos passos", item 5, mas não codificada).
+  Próximo passo natural: implementar o resolvedor genérico de catálogo primeiro
+  (mais simples, sem o grafo grande de tabelas estruturais), testado fim a fim
+  contra um catálogo real de PROD/HML (mesmo padrão de autoteste do Ciclo 12).
+- Nenhum arquivo temporário de investigação ficou para trás (`investigar-catalogo.cjs`
+  e a saída de lint/test removidos antes do commit; `git status` confirmou working
+  tree limpa).
+
+### Ciclo 14 (2026-09-16) — resolvedor genérico de catálogo implementado e testado; caminho "criar" bloqueado (colunas de auditoria NOT NULL)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `13a6ac1`,
+working tree limpa), teste de conectividade não foi repetido antes de começar (mesmo
+critério do Ciclo 12 — o primeiro `SELECT` já serve de teste). Sem dúvida pendente
+(`duvidas.md` com `Status: respondida`). Ataca o próximo passo pendente do Ciclo 13
+("o resolvedor genérico de dependência de catálogo... testado fim a fim contra um
+catálogo real de PROD/HML").
+
+Commit `e41cdf5`: `cypress/support/shared/clonagemCedente.js`
+(`COLUNAS_AUDITORIA_CEDENTE`, `formatarValorSql`, `montarInsertCatalogo` — funções
+puras) + `cypress/support/commands/catalogoCedente.js` (novo — `cy.resolverIdCatalogoEmHml`
+e os 3 comandos que ele orquestra) + `commands/index.js` (registra o módulo) +
+`cypress/e2e/features/gerenciamentoDoCedente.feature`/`step_definitions/gerenciamentoDoCedente.js`
+(novo cenário `@cedente`, parametrizado via `--env catalogoTabela=...,catalogoIdProducao=...`)
++ 4 testes novos em `__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, os
+mesmos 4 warnings pré-existentes) e `npm run test:safety` (100/100) passam.
+
+- **`cy.resolverIdCatalogoEmHml(tabela, idProducao)`**: busca a linha de origem em
+  PROD (`buscarRegistroCatalogoPorIdEmProd`), procura em HML um registro com a mesma
+  chave natural (`buscarRegistroCatalogoPorChaveNaturalEmHml`, usando
+  `METADADOS_CATALOGO_CEDENTE[tabela].campoChaveNatural`, comparação `LTRIM(RTRIM(...))`
+  tolerante a espaço nas pontas) e, se não encontrar, cria a cópia
+  (`criarRegistroCatalogoEmHml` → `montarInsertCatalogo`, exclui
+  `COLUNAS_AUDITORIA_CEDENTE`, usa `OUTPUT INSERTED.id` para devolver o novo id na
+  mesma instrução). Uma tabela sem entrada em `METADADOS_CATALOGO_CEDENTE` lança erro
+  explícito (nunca decide sozinho tratar uma tabela de catálogo nova/não mapeada).
+- **Testado fim a fim contra PROD/HML reais, caminho "já existe"**: `MC_CAD_SITUACAO`
+  id 1 (PROD, `descricao = "ATIVA"`) resolvido para id 1 (já existente em HML, mesma
+  `descricao`) — confirma que a busca por chave natural funciona mesmo quando o id
+  numérico coincide por acaso (não é o que garante o match, só a `descricao`).
+  Reforçado por uma segunda checagem manual (fora do autoteste, script `.cjs`
+  temporário removido antes do commit): `MC_CAD_SITUACAO` id 8 em PROD
+  (`descricao = "EM DIGITACAO"`) tem id **9** em HML para a mesma `descricao` — os
+  ids numéricos dessa tabela já divergem de fato entre PROD/HML hoje, exatamente o
+  cenário que a busca por chave natural (em vez de por id) existe para resolver.
+- **Caminho "criar" bloqueado — descoberta real, não presumida**: tentar criar em HML
+  um valor de catálogo ausente lá (`MC_CAD_SITUACAO` id 43 PROD, `descricao =
+  "MAJORADO"`) falhou com erro real do SQL Server: `Cannot insert the value NULL into
+  column 'usuarioUltimaAlteracao'... column does not allow nulls`. Investigação
+  (`INFORMATION_SCHEMA.COLUMNS` contra HML, script `.cjs` temporário removido antes do
+  commit) confirmou que isso não é peculiaridade de uma tabela: as 4 colunas de
+  auditoria (`dataCadastro`, `dataUltimaAlteracao`, `usuarioCadastro`,
+  `usuarioUltimaAlteracao`) são **NOT NULL em 38 das 38 tabelas de catálogo
+  verificadas** (praticamente universal no schema do domínio cedente).
+  `usuarioCadastro`/`usuarioUltimaAlteracao` são `varchar`, guardam username de quem
+  criou/alterou (amostra real de `MC_CAD_SITUACAO`: `"henrique"`, `"tiago.roque"`,
+  e também o valor literal `"sistema"` numa linha, aparentando já ser usado hoje para
+  registros gerados automaticamente). **Causa raiz**: todos os outros domínios do
+  repo (Produtos/Esteiras/Vínculos/Grupos e Permissões) criam em HML via API REST
+  (`mc-cadastro-ms`, `criarItensInexistentesPorNivel`), que preenche essas colunas no
+  servidor — o domínio `cedente` usa SQL direto (`dbClient.cjs`) por não haver
+  endpoint REST mapeado para as ~122 tabelas do grafo, então nada preenche essas
+  colunas automaticamente; **todo** INSERT que este domínio fizer (catálogo agora, e
+  as tabelas estruturais quando essa etapa for implementada) vai precisar declarar
+  valores explícitos para elas. Não decidido sozinho (regra 8 do `AGENTE.md` — "qual
+  padrão do projeto seguir", decisão que se propaga para o resto da tarefa, não é uma
+  peculiaridade isolada desta tabela) — dúvida bloqueante registrada em `duvidas.md`
+  (`colunas-auditoria-not-null-insert-direto-sql-catalogo-20260916`, mesmo bloco
+  `## <id>` já existente, `Pergunta-9`), com as opções de valor fixo levantadas
+  (`'sistema'`, uma string mais identificável, ou o nome/login do próprio Thiago).
+  Nenhuma linha ficou de fato criada em HML pela tentativa que falhou (o `INSERT`
+  inteiro não foi efetivado pelo SQL Server ao dar erro de `NOT NULL`) — o caminho
+  "já existe" (achar por chave natural) não é afetado e continua funcionando.
+- **Por que a resposta anterior a este tipo de bloqueio (mesmo padrão de
+  `aplicarValoresFixos`/`valoresFixos`) não se aplica direto aqui**: `valoresFixos`
+  sobrescreve colunas de **negócio** já presentes na linha de PROD com um valor
+  confirmado pelo Thiago (ex. "votado e aprovado") — aqui as colunas nem têm valor
+  de origem utilizável (são preenchidas pelo servidor da API noutros domínios, não
+  fazem parte do "dado de negócio" da linha em si), e a decisão é sobre um valor de
+  **infraestrutura de auditoria**, não sobre replicar/alterar um dado do cedente.
+  Tratamento (campo `valoresFixos` vs. constante de auditoria dedicada) só será
+  definido depois da resposta chegar.
+- Tarefa movida para `tarefas/aguardando-resposta/`. Branch não pushada (regra 8 do
+  `AGENTE.md` — só push ao concluir com sucesso, regra 7).
+- Nenhum arquivo temporário de investigação ficou para trás (`investigar-catalogo-teste.cjs`
+  e as saídas de lint/test/cypress removidas antes do commit; `git status` confirmou
+  working tree limpa).
 

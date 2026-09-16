@@ -4,8 +4,105 @@
 $ErrorActionPreference = "Continue"
 Set-Location -Path $PSScriptRoot
 
-# Conta do Claude Code dedicada a este subAgent (1º módulo criado neste Supervisor -> contaA).
-$env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaA"
+# --- Sincronização automática do repo raiz (claudeAgents) ---
+# O .git deste repo (raiz C:\Multiplica\claudeAgents) é compartilhado por todos os
+# Supervisores/agentes/Status Watchers rodando nesta máquina (mesmo working tree, mesmo remoto
+# Thiagocs12/claudeAgents) — ver CONHECIMENTO-SUPERVISORES.md, seção "git add/git commit no repo
+# raiz". Serializado via Mutex nomeado global pra nunca mexer no índice/HEAD ao mesmo tempo que
+# outro processo concorrente (resolve a race condition documentada lá). Usa fetch+merge (nunca
+# rebase) e aborta e loga se houver conflito, em vez de deixar o repo compartilhado preso num
+# estado de merge pela metade — mais seguro num script não supervisionado que todo mundo
+# compartilha. Chamado sem -PermitirCommitEPush logo após o Set-Location (pull no início, pra não
+# trabalhar sobre estado desatualizado), e com -PermitirCommitEPush no fim do ciclo (publica no
+# remoto toda documentação de conhecimento/tarefas escrita/movida durante o ciclo).
+function Sync-RepoRaizClaudeAgents {
+    param(
+        [string]$LogPath,
+        [switch]$PermitirCommitEPush,
+        [string]$MensagemCommit
+    )
+    $mutex = New-Object System.Threading.Mutex($false, "Global\ClaudeAgentsGitSync")
+    try {
+        $mutex.WaitOne(120000) | Out-Null
+        Push-Location "C:\Multiplica\claudeAgents"
+        try {
+            git fetch origin main *>&1 | Add-Content -Path $LogPath -Encoding utf8
+            $atras = git rev-list HEAD..origin/main --count 2>$null
+            if ($atras -and [int]$atras -gt 0) {
+                git merge --no-edit origin/main *>&1 | Add-Content -Path $LogPath -Encoding utf8
+                if ($LASTEXITCODE -ne 0) {
+                    "$(Get-Date -Format 'HH:mm:ss') | [git-sync] merge com origin/main falhou (possivel conflito) - abortando merge, sem mexer mais no repo raiz neste ciclo" |
+                        Add-Content -Path $LogPath -Encoding utf8
+                    git merge --abort *>&1 | Out-Null
+                    return
+                }
+            }
+            if ($PermitirCommitEPush) {
+                git add -A
+                $temStaged = -not [string]::IsNullOrWhiteSpace((git diff --cached --name-only))
+                if ($temStaged) {
+                    git commit -m $MensagemCommit *>&1 | Add-Content -Path $LogPath -Encoding utf8
+                    git push origin main *>&1 | Add-Content -Path $LogPath -Encoding utf8
+                }
+            }
+        } finally {
+            Pop-Location
+        }
+    } finally {
+        $mutex.ReleaseMutex()
+    }
+}
+
+Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+
+# Conta do Claude Code dedicada a este subAgent (1º módulo criado neste Supervisor -> contaA
+# "de casa").
+#
+# --- Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15; estendida aos 3
+# Supervisores em 2026-09-16) ---
+# Cada conta grava sua última utilização conhecida (janela five_hour) em
+# %USERPROFILE%\.claude-accounts\<conta>\ultima-utilizacao.json a cada ciclo que a usa, de
+# qualquer agente/Supervisor (pool compartilhado contaA/contaB). Antes de começar, se a conta "de
+# casa" deste agente estiver >=99% nessa janela (e o reset ainda não passou), tenta a conta
+# alternativa. Não persiste a troca: no próximo ciclo, tenta a conta de casa de novo primeiro. Ver
+# CONHECIMENTO-SUPERVISORES.md.
+function Get-UtilizacaoConta {
+    param([string]$Conta)
+    $caminho = "$env:USERPROFILE\.claude-accounts\$Conta\ultima-utilizacao.json"
+    if (-not (Test-Path $caminho)) { return $null }
+    try {
+        $dado = Get-Content $caminho -Raw | ConvertFrom-Json
+        if ($dado.resetsAt -and ([DateTimeOffset]::FromUnixTimeSeconds($dado.resetsAt).UtcDateTime -lt (Get-Date).ToUniversalTime())) {
+            return $null
+        }
+        return [double]$dado.five_hour_utilization
+    } catch { return $null }
+}
+
+function Set-UtilizacaoConta {
+    param([string]$Conta, [double]$Utilizacao, [long]$ResetsAt)
+    $pasta = "$env:USERPROFILE\.claude-accounts\$Conta"
+    if (-not (Test-Path $pasta)) { New-Item -ItemType Directory -Force -Path $pasta | Out-Null }
+    @{ five_hour_utilization = $Utilizacao; resetsAt = $ResetsAt; atualizado_em = (Get-Date).ToUniversalTime().ToString("o") } |
+        ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
+}
+
+$contaDeCasa = "contaA"
+$contaAlternativa = "contaB"
+$contaEfetiva = $contaDeCasa
+$utilDeCasa = Get-UtilizacaoConta -Conta $contaDeCasa
+if ($null -ne $utilDeCasa -and $utilDeCasa -ge 0.99) {
+    $utilAlternativa = Get-UtilizacaoConta -Conta $contaAlternativa
+    if ($null -eq $utilAlternativa -or $utilAlternativa -lt 0.99) {
+        $contaEfetiva = $contaAlternativa
+        "$(Get-Date -Format 'HH:mm:ss') | [alternancia] $contaDeCasa em $([math]::Round($utilDeCasa*100,1))% (five_hour) - usando $contaAlternativa neste ciclo" |
+            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    } else {
+        "$(Get-Date -Format 'HH:mm:ss') | [alternancia] $contaDeCasa e $contaAlternativa ambas >=99% (five_hour) - seguindo com $contaDeCasa mesmo assim" |
+            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    }
+}
+$env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\$contaEfetiva"
 
 # Rede de segurança determinística (não depende do LLM se comportar): mata qualquer processo
 # Cypress/node remanescente desta pasta, órfão de um ciclo anterior que tenha travado/backgrounded
@@ -133,6 +230,8 @@ Nunca trabalhe em mais de uma tarefa ativa por vez. Nunca exponha credencial/sen
 docs/documentacao.md, duvidas.md, log, ou no relatório.
 '@
 
+$script:ultimoRateLimit = $null
+
 $prompt | claude -p --permission-mode bypassPermissions --output-format stream-json --verbose 2>&1 |
     ForEach-Object {
         $linha = $_.ToString()
@@ -167,13 +266,28 @@ $prompt | claude -p --permission-mode bypassPermissions --output-format stream-j
                     }
                 }
                 "result" { $texto = "[ciclo encerrado] $($evt.subtype) duracao=$($evt.duration_ms)ms custo=`$$($evt.total_cost_usd)" }
+                "rate_limit_event" {
+                    $fh = $evt.rate_limit_info.unifiedWindows.five_hour
+                    if ($fh) {
+                        $script:ultimoRateLimit = @{ utilization = $fh.utilization; resetsAt = $fh.resetsAt }
+                        $texto = "[rate-limit] conta=$contaEfetiva five_hour=$([math]::Round($fh.utilization*100,1))%"
+                    }
+                }
             }
         } catch {}
         if (-not $texto) { $texto = $linha }
         "$ts | $texto" | Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     }
 
+if ($script:ultimoRateLimit) {
+    Set-UtilizacaoConta -Conta $contaEfetiva -Utilizacao $script:ultimoRateLimit.utilization -ResetsAt $script:ultimoRateLimit.resetsAt
+}
+
 # Segunda passada da rede de segurança: garante que este ciclo não deixa nenhum processo
 # Cypress/node vivo pra trás, mesmo que o `claude -p` acima tenha tentado rodar algo em
 # background e encerrado sem esperar.
 Stop-ProcessosCypressOrfaos -Pasta $PSScriptRoot -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+
+# Publica no remoto tudo que este ciclo escreveu/moveu no repo raiz (docs, duvidas, tarefas) — ver
+# função Sync-RepoRaizClaudeAgents definida no início deste script.
+Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt") -PermitirCommitEPush -MensagemCommit "mop (TestesFrontEnd): sincroniza estado do ciclo (auto, $(Get-Date -Format 'yyyy-MM-dd HH:mm'))"

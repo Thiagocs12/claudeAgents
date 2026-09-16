@@ -63,6 +63,14 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     redirecione a saída para um arquivo e leia/relate só o resumo relevante — nunca despeje a saída
     bruta inteira de volta no seu contexto nem a copie pra `docs/documentacao.md`/`duvidas.md` sem
     necessidade.
+14. **Arquive quando grande (economia de tokens):** se `docs/documentacao.md`, `duvidas.md`, ou a
+    narrativa de uma tarefa ultrapassar ~200-250 linhas, mova o conteúdo histórico/resolvido/
+    superado (entradas antigas já sintetizadas, dúvidas já respondidas há muito tempo, texto
+    duplicado) para um arquivo companheiro na mesma pasta (`<nome-original>-historico.md`),
+    mantendo no arquivo principal só um resumo compacto do que ainda é operacionalmente relevante
+    + um ponteiro pro arquivo de histórico. **Nunca apague informação ao arquivar — é sempre mover,
+    nunca descartar.** Esses arquivos são relidos INTEIROS a cada ciclo (regra 1) — deixá-los
+    crescer sem limite é o maior custo de token deste sistema.
 
 ## Escopo deste módulo
 

@@ -204,6 +204,13 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    dúvida como respondida.
 9. Nunca exponha credencial/senha em `docs/documentacao.md`, `duvidas.md`, log, ou no relatório —
    só confirme que o login foi feito, nunca o valor usado.
+10. Arquive quando grande (economia de tokens): se `docs/documentacao.md`, `duvidas.md`, ou a
+    narrativa (`## Execução`) de uma tarefa ultrapassar ~200-250 linhas, mova o conteúdo
+    histórico/resolvido/superado para um arquivo companheiro na mesma pasta
+    (`<nome-original>-historico.md`), mantendo no arquivo principal só um resumo compacto do que
+    ainda é operacionalmente relevante + um ponteiro pro arquivo de histórico. Nunca apague
+    informação ao arquivar — é sempre mover, nunca descartar. Esses arquivos são relidos INTEIROS a
+    cada ciclo (regra 1) — deixá-los crescer sem limite é o maior custo de token deste sistema.
 ```
 
 ### 3.2 Lógica que a Scheduled Task de cada subAgent deve seguir a cada execução
