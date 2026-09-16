@@ -310,3 +310,35 @@ implementar a espera revisada com base nessa evidência (não um `cy.wait` cego)
 `aguardarCamposObrigatoriosHabilitados` para 60s como pedido, (4) rodar o autoteste do spec de
 produção. Se o campo continuar preso mesmo assim, parar e deixar vídeo/screenshot prontos, como já
 orientado.
+
+## Retomada (2026-09-16): ciclo interrompido antes de fazer qualquer trabalho — bug na sincronização mecânica moveu a tarefa pra `executando/` com a dúvida real ainda pendente
+
+A última dúvida registrada em `duvidas.md` (sobre insistir numa 4ª tentativa de login vs.
+investigar causa raiz do `cy.origin`) **continua sem resposta** (`Status: pendente`, `Resposta:`
+vazio). Mesmo assim, esta retomada encontrou a tarefa já em `tarefas/executando/` (movida
+automaticamente pela pré-checagem mecânica em PowerShell, ver commit `41eafa6` no repo raiz que
+moveu essa lógica do prompt do Claude pro `run-cycle.ps1`).
+
+**Causa raiz identificada:** a função `Test-DuvidaRespondida` em `run-cycle.ps1` divide
+`duvidas.md` em blocos por `## ` e, dentro do `foreach`, dá `return` no **primeiro** bloco cujo
+cabeçalho bate com o id da tarefa — mas como esta tarefa já teve **9 rodadas de dúvida sob o mesmo
+id** (`20260915131339-criar-prospect-cedente-cnpj`), o primeiro bloco encontrado é sempre o
+mais antigo (a pergunta original sobre os 3 campos obrigatórios, respondida há dias), não o mais
+recente. Resultado: uma vez que a primeira dúvida de um id é respondida, a checagem mecânica passa
+a considerar esse id "respondido" **para sempre**, mesmo que rodadas posteriores (a 2ª, 3ª... 9ª)
+continuem `pendente`. Isso explica por que a tarefa foi movida de `aguardando-resposta/` para
+`pendentes/` e depois para `executando/` sem que o Thiago tivesse respondido a pergunta mais
+recente.
+
+**Ação tomada nesta retomada:** não executei nenhum passo da tarefa (não toquei em `repo/`, não
+rodei `cypress`, não respondi a dúvida sozinha — regra 9 do `AGENTE.md`). Apenas movi o arquivo de
+volta de `tarefas/executando/` para `tarefas/aguardando-resposta/`, desfazendo o efeito do bug, já
+que a pergunta real (a mais recente) segue sem resposta do Thiago. Nenhum código de produção foi
+alterado (`repo/` continua limpo em `9054e8b`, mesma branch `feature/poc-criar-prospect-cedente-cnpj`).
+
+**Não tentei corrigir `run-cycle.ps1` eu mesma** — esse script é um padrão compartilhado, copiado
+em cada subAgent/Agent Master/Status Watcher (ver seção 3.4 do `CLAUDE.md` do Supervisor: "copie o
+bloco de um `run-cycle.ps1` existente"), então um bug nele afeta potencialmente qualquer módulo com
+mais de uma rodada de dúvida sob o mesmo id (padrão comum, não exclusivo do `POC`). Registrado em
+`../../docs/conhecimento-geral.md` para o Supervisor decidir a correção coordenada (provavelmente:
+iterar os blocos em ordem reversa, ou pegar o último match em vez do primeiro).

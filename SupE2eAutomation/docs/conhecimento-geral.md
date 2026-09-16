@@ -480,3 +480,33 @@ capacidade ociosa da outra conta.
   investigar por conta própria o `cy.origin`/`mop-monitor-diario.feature` — este novo sintoma pode
   ser relevante para essa investigação. Qualquer módulo que dependa dessa tela deve considerar que o
   teste pode falhar por qualquer um dos três motivos acima até a causa raiz ser resolvida.
+
+## Bug em `Test-DuvidaRespondida` (run-cycle.ps1): considera um id "respondido" para sempre após a 1ª rodada, ignorando rodadas posteriores ainda pendentes (achado pelo `POC`, 2026-09-16)
+
+- Contexto: o commit `41eafa6` moveu a triagem mecânica da fila (dúvida respondida → volta pra
+  `pendentes/`) do prompt do Claude pro `run-cycle.ps1`, via função `Test-DuvidaRespondida`. Essa
+  função divide `duvidas.md` em blocos por `## ` e, no `foreach`, dá `return` no **primeiro** bloco
+  cujo cabeçalho bate com o id da tarefa.
+- **Problema:** tarefas que passam por várias rodadas de dúvida sob o **mesmo id** (padrão comum
+  neste projeto — ex.: a tarefa `20260915131339-criar-prospect-cedente-cnpj` do módulo `POC` já
+  teve 9 rodadas) sempre têm seu primeiro bloco como o mais antigo. Uma vez que essa 1ª pergunta é
+  respondida, `Test-DuvidaRespondida` retorna `true` **para sempre** para aquele id, mesmo que a
+  2ª, 3ª... 9ª rodada estejam `Status: pendente`. Isso fez a tarefa do `POC` ser movida
+  automaticamente `aguardando-resposta/` → `pendentes/` → `executando/` sem que a pergunta mais
+  recente (real bloqueio) tivesse sido respondida pelo Thiago.
+- **Risco:** qualquer módulo/Agent Master cuja tarefa acumule mais de uma rodada de dúvida sob o
+  mesmo id está sujeito ao mesmo falso positivo — o subAgent pode ser instruído a "retomar" uma
+  tarefa cuja dúvida real continua pendente, arriscando agir sem a resposta do Thiago (evitado no
+  caso do `POC` só porque a regra 9 do `AGENTE.md`/instrução do ciclo exige nunca responder a
+  própria dúvida, então o subAgent notou a inconsistência antes de agir — mas nem todo prompt
+  necessariamente pega esse caso).
+- **Correção sugerida (não aplicada ainda — script compartilhado, copiado em cada
+  subAgent/Agent Master/Status Watcher; melhor coordenar a correção de uma vez em todas as cópias
+  em vez de cada subAgent corrigir a sua isoladamente):** iterar os blocos em ordem reversa (ou usar
+  `Where-Object`/`Select-Object -Last 1` sobre todos os blocos que batem com o id) para checar o
+  `Status:` do bloco **mais recente**, não do primeiro.
+- Até a correção: qualquer agente que encontrar uma tarefa recém-movida para `pendentes/`/
+  `executando/` por essa pré-checagem, numa tarefa com múltiplas rodadas de dúvida sob o mesmo id,
+  deve conferir manualmente se a rodada **mais recente** em `duvidas.md` está mesmo
+  `Status: respondida` antes de agir — não confiar cegamente na movimentação mecânica nesse caso
+  específico.

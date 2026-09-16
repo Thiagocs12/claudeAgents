@@ -573,11 +573,23 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
 
       cy.visit(ambiente.appBaseUrl, { onBeforeLoad: anexarCapturaDeErros })
       cy.wait(3000)
+      // ACHADO (rodada 89): a deteccao antiga comparava a URL contra o host fixo de
+      // ambiente.keycloakUrl (keycloak-new-2...) - nesta rodada o realm "multiplicacapital" (Beyond
+      // BackOffice) foi servido por um host DIFERENTE (`lgni.grupomultiplica.com.br`, mesmo padrao
+      // de URL Keycloak `/auth/realms/.../protocol/openid-connect/auth`), entao `foiPraKeycloak`
+      // avaliou false, o bloco de login foi pulado inteiro, e o teste seguiu tentando comandos
+      // contra o app como se ja estivesse logado - resultando em
+      // "expected to run against origin beyond-hml but the application is at origin lgni...".
+      // Corrigido: detectar Keycloak de forma generica pelo padrao de PATH (`/auth/realms/`), nao
+      // por um hostname fixo - e usar a origin de fato observada na URL para o cy.origin(), em vez
+      // de sempre usar ambiente.keycloakUrl.
       cy.url().then((url) => {
-        const foiPraKeycloak = url.includes(new URL(ambiente.keycloakUrl).origin)
+        const urlObj = new URL(url)
+        const foiPraKeycloak = urlObj.pathname.includes('/auth/realms/')
+        cy.writeFile('cypress/debug-output.txt', '\nHOST DE LOGIN DETECTADO (Beyond BackOffice): ' + urlObj.origin + ' | foiPraKeycloak: ' + foiPraKeycloak + '\n', { flag: 'a+' })
         if (foiPraKeycloak) {
           cy.origin(
-            new URL(ambiente.keycloakUrl).origin,
+            urlObj.origin,
             { args: { username: ambiente.username, password: ambiente.password, selectors: KEYCLOAK_SELECTORS } },
             ({ username, password, selectors }) => {
               cy.get(selectors.username).should('be.visible').clear().type(username, { log: false })
@@ -602,7 +614,11 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
       // falhou com "expected to run against origin beyond-hml but the application is at origin
       // keycloak-new-2"). Trocando por um cy.url() com retry/timeout maior, que so segue quando o
       // redirect de fato sair do dominio do Keycloak.
-      cy.url({ timeout: 20000 }).should('not.include', 'keycloak-new-2')
+      // CORRIGIDO (rodada 89): "not.include('keycloak-new-2')" nao cobre o host alternativo
+      // "lgni" visto nesta rodada - trocando pra checagem generica pelo padrao de path.
+      cy.url({ timeout: 20000 }).should((url) => {
+        expect(url, 'nao deveria mais estar numa tela de login do Keycloak').to.not.match(/\/auth\/realms\//)
+      })
       cy.location().then((loc) => {
         cy.writeFile('cypress/debug-output.txt', '\nURL APOS LOGIN (Beyond BackOffice): ' + loc.href + '\n', { flag: 'a+' })
       })

@@ -159,3 +159,56 @@ Reabrindo a tarefa (não é aprovação nem reprovação definitiva) — mova de
 `tarefas/pendentes/` e continue a investigação com esses três ajustes antes de reconcluir se o 400
 é de fato um bug real de aplicação ou um efeito do documento duplicado / estado da operação no
 banco.
+
+## Continuação (2026-09-16, rodadas 74-89) — hipótese do Thiago CONFIRMADA: não era bug
+
+**Ajustes 2 e 3 do Thiago já estavam implementados na spec** (Documento agora é uma hash aleatória
+de 10 caracteres gerada por execução — `Math.random().toString(36).slice(2, 12)` — em vez do valor
+fixo `12345`; Valor do título trocado para `R$ 100.000,00`). Rodando a spec ajustada (rodada 89,
+criou a operação **nº 88681**, log completo em `cypress-run-89.log`, dump em
+`cypress/debug-output.txt`):
+
+- Tentei o fluxo completo de criação (passos 1-11) com Documento = hash aleatória (`ex3rdhdnpl` 
+  nesta rodada) e Valor = R$ 100.000,00 → **passou sem erro**, operação 88681 criada com sucesso
+  (situação inicial "enviado").
+- Tentei clicar "Avançar" na operação 88681 → **desta vez respondeu 200** (não 400!):
+  `POST .../mc-api-gateway-ms/v1/operacao/pre-operacoes/88681/gerar` → `{"id":88681,"dataOperacao":"2026-09-16T13:07:14.58..."}`.
+  A tela mostrou o toast **"Operação encaminhada!"** e, mais importante, uma nova consulta ao
+  backend (`GET .../pre-operacoes/cliente/painelLazy`, não é só o toast local) confirmou a
+  **situação da operação mudou de "enviado" para "sucesso"** na tabela do dashboard — dado vindo
+  do servidor, não só otimismo de UI.
+- **Confirma a hipótese do Thiago: o 400 das rodadas 71-73 não era um bug real da aplicação — era
+  causado pelo campo Documento repetido (`12345`) entre as operações de teste.** Com um Documento
+  único por execução, "Avançar" funciona normalmente. Passo 12 do roteiro está **concluído com
+  sucesso** (não é mais bloqueio). Corrigindo a conclusão anterior (rodadas 71-73, arquivada no
+  histórico) — não é mais válida.
+- Nota: no dump da tabela desta mesma rodada, a operação **88677** (de uma rodada anterior, já com
+  o Documento aleatório) também aparece com situação "sucesso" — ou seja, o "Avançar" já vinha
+  funcionando em pelo menos uma rodada anterior a esta (74-88) com o fix, só não tinha sido
+  registrado aqui na narrativa ainda. 88678/88679/88680 aparecem "em análise" (possível próxima
+  etapa do fluxo, ainda não investigada — não é erro).
+- **Validação em banco (pedido 1 do Thiago) — ainda NÃO feita**: a evidência acima já vem do
+  backend (chamada `painelLazy` separada do toast), o que é mais forte que "só confiar no toast",
+  mas ainda não é a consulta direta ao banco que o Thiago pediu explicitamente. Registrando como
+  pendência a fazer no próximo ciclo (script Node avulso reaproveitando
+  `SupAutomacaoUteis/subagents/cedente/repo/cypress/support/db/dbClient.cjs`) — não bloqueou esta
+  rodada porque o achado principal (não é bug) já mudou o rumo da investigação para o passo 13-14.
+- Tentei então o teste 2 (verificação no Monitor Diário do Beyond BackOffice, `beyond-hml`) →
+  **falhou** por um problema de automação (não da aplicação): a URL de login do Beyond BackOffice
+  (realm `multiplicacapital`) veio desta vez servida por um host **diferente** do já mapeado
+  (`lgni.grupomultiplica.com.br`, mesmo padrão de Keycloak `/auth/realms/.../openid-connect/auth`,
+  em vez de `keycloak-new-2.grupomultiplica.com.br` como nas rodadas 80-88) — a spec detectava
+  Keycloak comparando a URL contra um hostname fixo (`ambiente.keycloakUrl`), então não reconheceu
+  esse host novo, pulou o bloco de login inteiro, e travou depois com
+  `CypressError: ... expected to run against origin beyond-hml but the application is at origin
+  lgni...` (timeout 45s). **Corrigido nesta mesma rodada**: detecção trocada para reconhecer
+  Keycloak pelo padrão de path (`/auth/realms/`) em vez de hostname fixo, usando a origin
+  observada de fato para o `cy.origin()` (em vez de sempre `ambiente.keycloakUrl`). Ainda não
+  reexecutei com a correção — próximo passo do próximo ciclo.
+- **Achado a documentar:** o host que serve o Keycloak do realm `multiplicacapital` (Beyond
+  BackOffice) parece variar entre execuções (`keycloak-new-2` em algumas rodadas, `lgni` nesta) —
+  mesma família de instabilidade/variação de host já vista com `beyondbanking-hml` ficando
+  intermitentemente indisponível. Não investigado o porquê (rotation/load balancer?), só
+  documentado o comportamento e a correção (detecção genérica por path, não por host).
+- Nenhum processo Cypress/node ficou órfão (checado antes de rodar, via
+  `Get-CimInstance Win32_Process` filtrando `cypress`+`mop` — nada encontrado).
