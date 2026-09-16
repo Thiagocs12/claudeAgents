@@ -3,13 +3,15 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida de escopo/dado —
-`idParticipante` sem FK física em duas tabelas da fase `comitê`, ver Ciclo 6 abaixo e
-`duvidas.md`, `id-participante-sem-fk-fisica-votacao-comite-20260915`), branch
+`AGENTE.md`). Estado atual: **aguardando resposta** (nova dúvida, Ciclo 7 abaixo —
+qual campo exatamente representa "votado/aprovado" no comitê, já que
+`MC_POC_COMITE.resultadoVotacao` nunca é usado na prática em PROD — ver
+`duvidas.md`, `campo-votado-aprovado-ambiguo-comite-votacao-20260915`), branch
 `cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
 pushada — commits locais até o momento: fases `prospect`, `poc` e o grafo estrutural
 da fase `comite` mapeados, incluindo a resolução de `MC_RAT_RATING_INDICADOR(_ITEM)`
-como catálogo fora do padrão `MC_CAD_*`, commit `5edaad0`).
+como catálogo fora do padrão `MC_CAD_*` (commit `5edaad0`) e a resolução de
+`idParticipante` como participante fixo — o próprio Thiago (commit `ff6c57c`)).
 
 ### Ciclo 1 (2026-09-15) — lógica pura de classificação/match/estratégia
 
@@ -358,4 +360,65 @@ pré-existentes fora do escopo) e `npm run test:safety` (82/82) passam.
   (`investigar-schema-comite.cjs`, `investigar-participante.cjs`,
   `investigar-participante2.cjs`, `parse-schema-comite.cjs` e as respectivas saídas
   removidos antes do commit).
+
+### Ciclo 7 (2026-09-15) — idParticipante resolvido (participante fixo); nova dúvida (campo votado/aprovado ambíguo)
+
+Ao retomar (dúvida `id-participante-sem-fk-fisica-votacao-comite-20260915` já com
+`Status: respondida` — Thiago respondeu com a decisão completa, ver Resposta-4 em
+`duvidas.md`), teste de conectividade TCP puro repetido contra `PROD_DB_HOST:PROD_DB_PORT`
+e `HOMOLOG_DB_HOST:HOMOLOG_DB_PORT`: **OK nos dois** — rede seguia normalizada desde o
+Ciclo 6.
+
+Commit `ff6c57c` (local, ainda não pushado): `cypress/utils/mapeamentoCedente.js`
+(`idParticipante` em `MC_POC_COMITE_VOTACAO`/`MC_PORTAL_COMITE_VOTACAO` passa a ter
+entrada em `dependeDe` com tipo novo `participante-fixo`, tabela `MC_CAD_ANALISTA`) +
+`clonagemCedente.js` (`NOME_ANALISTA_RESPONSAVEL_CLONAGEM_CEDENTE`, exportado) + 2
+testes novos em `__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, 4
+warnings pré-existentes fora do escopo) e `npm run test:safety` (84/84) passam.
+
+- **Resolução de `idParticipante` (primeira metade da Resposta-4)**: implementada
+  como um novo tipo de dependência, `participante-fixo` (distinto de `catalogo`)
+  porque a semântica é diferente — `catalogo` resolve o valor de cada linha
+  buscando o equivalente da referência de PROD em HML; `participante-fixo` **ignora**
+  o valor de origem e sempre aponta para o mesmo registro (o do próprio Thiago),
+  qualquer que seja a linha. `construirGrafoEstrutural` já ignora qualquer `tipo`
+  diferente de `estrutural` (comportamento pré-existente, coberto por teste novo
+  específico para este tipo) — nenhuma mudança de lógica central foi necessária, só
+  a declaração de dados + a constante do nome. **Confirmado contra HML** (script
+  `.cjs` temporário em `repo/`, removido antes do commit): existe exatamente um
+  registro ativo em `MC_CAD_ANALISTA` com nome `THIAGO DA COSTA SANTOS` (id 29 no
+  momento da checagem — não hardcoded no código, resolvido em tempo de execução
+  pela busca por nome, mesmo padrão das dependências de catálogo). A resolução em
+  tempo de execução (comando/step que efetivamente faz essa busca e grava o id) só
+  será escrita quando a etapa de INSERT for implementada (ver "Comandos genéricos
+  ainda não escritos", seção de próximos passos acima) — este ciclo só declara a
+  decisão no grafo, mesmo estágio (mapeamento, não execução) dos demais ciclos.
+- **Segunda metade da Resposta-4 ("todos os comitês clonados devem ficar marcados
+  como votados e aprovados") gerou nova dúvida bloqueante**, seguindo a instrução
+  explícita do próprio Thiago na resposta ("se houver ambiguidade... registrar nova
+  dúvida específica com os nomes de coluna encontrados em vez de adivinhar"):
+  investigação real (`INFORMATION_SCHEMA.COLUMNS` + distribuição de valores reais
+  via `GROUP BY`, script `.cjs` temporário em `repo/`, removido antes do commit)
+  encontrou `MC_POC_COMITE.situacaoVotacao` (NOT NULL; valores reais:
+  `FINALIZADA`=5569, `NAO_INICIADA`=820, `INICIADA`=11, `REABERTA`=8 — claramente o
+  campo de "votado") e `MC_POC_COMITE.resultadoVotacao` (nullable, seria o campo
+  óbvio de "aprovado/reprovado") **null nas 6408 linhas da amostra, sem exceção** —
+  existe no schema mas não é usado na prática em PROD, então não há um valor real
+  de "aprovado" pra replicar por precedente. `MC_POC_COMITE_VOTACAO`/
+  `MC_PORTAL_COMITE_VOTACAO.situacaoVoto` (`CONCLUIDO`/`PENDENTE`/`AUSENTE`, +
+  variante rara `FAVORAVEL` em 5 linhas de `MC_PORTAL_COMITE_VOTACAO`, parece dado
+  inconsistente/legado) e `.voto` (nullable, único valor não-nulo observado é
+  `FAVORAVEL`) — candidatos pro "aprovado" a nível de voto individual.
+  `MC_POC_PROPOSTA.idSituacao` (catálogo `MC_CAD_SITUACAO`, já mapeado como
+  dependência de catálogo comum desde o Ciclo 3) é outro candidato possível (a
+  aprovação podendo estar representada na proposta, não no comitê/voto em si) —
+  seus valores reais ainda não foram investigados. Registrada dúvida bloqueante em
+  `duvidas.md` (mesmo bloco `## <id>` já existente — Resposta-4 migrada para
+  `Status-historico-4`, nova pergunta em `Pergunta-5`/`Id-original-da-duvida-5`,
+  `campo-votado-aprovado-ambiguo-comite-votacao-20260915`) com os nomes de coluna e
+  valores reais encontrados, pedindo ao Thiago pra decidir a combinação exata.
+  Tarefa movida para `tarefas/aguardando-resposta/`.
+- Nenhum arquivo temporário de investigação ficou para trás neste ciclo (testes de
+  conectividade e os `.cjs` de investigação de schema/valores/analista, e as
+  respectivas saídas, removidos antes do commit).
 
