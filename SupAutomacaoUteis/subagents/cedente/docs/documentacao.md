@@ -3,16 +3,14 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **executando** (Ciclo 17) — o orquestrador de INSERT
-ESTRUTURAL (`cy.clonarGrafoEstruturalCedente`, percorre `ordemTabelas` buscando
-satélites em PROD e inserindo em HML) foi implementado e testado (só lógica pura das
-funções de apoio, ainda sem exercício fim a fim contra HML real — ver Ciclo 17
-abaixo). Branch `cedente/clonar-cedente-completo-prod-hml` (a partir de
-`reviewAgents`, ainda não pushada). Falta: ligar esse orquestrador a um cedente real
-(a tabela-raiz — prospect — vem de `cy.resolverEstrategiaClonagemCedente`, ainda não
-encadeado num único comando/feature), a resolução da dependência `cascata`
-(`MC_CED_CEDENTE_VINCULADO`, ainda não tratada) e o DELETE (apaga-e-refaz,
-`ordenarTabelasParaExclusaoEstrutural`).
+`AGENTE.md`). Estado atual: **executando** (Ciclo 18) — o comando/feature que
+encadeia `cy.resolverEstrategiaClonagemCedente` -> `cy.clonarGrafoEstruturalCedente`
+(`cy.clonarCedenteCompleto`, ver Ciclo 18 abaixo) já existe. Branch
+`cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
+pushada). Falta: a resolução da dependência `cascata` (`MC_CED_CEDENTE_VINCULADO`,
+ainda não tratada) e o DELETE (apaga-e-refaz, `ordenarTabelasParaExclusaoEstrutural`,
+única coisa que falta para a estratégia "apagar-e-recriar" deixar de ser
+"pendente"/só-log em `cy.clonarCedenteCompleto`).
 
 ### Resumo do que ficou decidido/implementado nos Ciclos 1-13 (arquivados)
 

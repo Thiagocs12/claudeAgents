@@ -78,6 +78,14 @@
   tocado em `repo/` (branch segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida
   por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Já são 4 recorrências
   consecutivas deste mesmo bug nesta tarefa.
+- **Nova recorrência (2026-09-17, retomada seguinte — mesma 12ª pergunta, ainda sem resposta do
+  Thiago):** de novo o mesmo bug moveu a tarefa para `executando/`, com a 12ª rodada (evidência
+  comparativa `cy.origin`/`login.feature`) seguindo `Status: pendente`/`Resposta:` vazia em
+  `duvidas.md` — nenhuma resposta nova foi registrada desde a recorrência anterior. Confirmado
+  manualmente antes de agir; `repo/` segue limpo em `9054e8b`, nenhum Cypress rodado, dúvida não
+  respondida por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Já são 5
+  recorrências consecutivas deste mesmo bug nesta tarefa, todas para a mesma pergunta de 12ª rodada
+  ainda sem decisão do Thiago.
 - **Recorrência (2026-09-16, esta retomada):** o mesmo bug moveu a tarefa de `aguardando-resposta/`
   para `executando/` de novo, com a pergunta mais recente (sobre insistir em retry de login vs.
   investigar causa raiz) ainda `Status: pendente`. Segui o mesmo protocolo da recorrência anterior:
