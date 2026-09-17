@@ -180,3 +180,60 @@ Commit `675bc69`: 2 funções puras novas em `clonagemCedente.js` +
   `AGENTE.md`). Nenhum arquivo temporário ficou para trás (`git status` confirmou
   working tree limpa após o commit).
 
+### Ciclo 18 (2026-09-17) — orquestrador completo (`cy.clonarCedenteCompleto`)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `675bc69`,
+working tree limpa, sem dúvida pendente — todas as 9 já `respondida`), ataca o
+item (1) do "próximo passo pendente" do Ciclo 17: um comando/feature que
+encadeie `cy.resolverEstrategiaClonagemCedente` (já existia) com
+`cy.clonarGrafoEstruturalCedente` (Ciclo 17).
+
+Commit `6cfd36d`: `cy.clonarCedenteCompleto(documento)` em
+`commands/cedente.js` + função pura nova `decidirAcaoOrquestracaoCedente`
+(`shared/clonagemCedente.js`, 4 testes novos) + cenário/steps novos em
+`gerenciamentoDoCedente.feature`/`step_definitions`. `npm run lint` (0 erros,
+mesmos 4 warnings pré-existentes) e `npm run test:safety` (117/117) passam.
+
+- **`decidirAcaoOrquestracaoCedente(estrategia)`**: traduz a estratégia já
+  resolvida (`ESTRATEGIA_BLOQUEADO_SEM_ORIGEM`/`ESTRATEGIA_CRIAR`/
+  `ESTRATEGIA_APAGAR_E_RECRIAR`) em uma de 3 ações
+  (`ACAO_CLONAGEM_BLOQUEADO`/`ACAO_CLONAGEM_INSERIR`/
+  `ACAO_CLONAGEM_APAGAR_E_RECRIAR_PENDENTE`) — função pura separada só para
+  cobrir a decisão com `node:test` sem depender do Cypress, mesmo padrão já
+  usado no resto do arquivo.
+- **`cy.clonarCedenteCompleto(documento)`**: resolve a estratégia e ramifica
+  pela ação. `bloqueado` só loga o motivo (nenhuma escrita). `inserir` monta
+  `ordemTabelas` via `ordenarTabelasPorDependenciaEstrutural(
+  construirGrafoEstrutural(MAPEAMENTO_CEDENTE_UNIFICADO))` e chama
+  `cy.clonarGrafoEstruturalCedente` com a tabela-âncora do prospect
+  (`TABELA_ANCORA_POR_FASE[FASE_PROSPECT]`) e a linha já resolvida
+  (`prospectOrigem`). **`apagar-e-recriar-pendente`** (cedente já existe em
+  HML): **decisão de implementação, não de escopo** — como o DELETE
+  (apaga-e-refaz) ainda não existe, este caminho só loga a situação e nunca
+  chama o orquestrador de INSERT, para nunca duplicar/quebrar por violação de
+  chave um cedente que já existe em HML. Isso não contorna nem decide a
+  lógica de negócio "apaga e refaz" (já confirmada pelo Thiago) — só reflete
+  que essa metade ainda não foi escrita; passa a inserir de verdade assim que
+  o DELETE for implementado, sem precisar de nova decisão.
+- **Cenário/feature novo** (`@cedente`, `gerenciamentoDoCedente.feature`):
+  parametrizado por `--env documentoOrigem=...` (mesmo parâmetro já usado pelo
+  cenário de estratégia), mesmo padrão de "parâmetro ausente não quebra o
+  cenário, só loga e pula" já usado nos demais steps deste arquivo.
+- **Só o caminho de skip foi exercitado de verdade** (`npx cypress run --env
+  tags=@cedente`, sem `documentoOrigem` — 3/3 cenários de `@cedente` passam,
+  nenhuma escrita em HML): mesma decisão deliberada dos Ciclos 16/17 de adiar
+  o teste fim a fim (que criaria dado de negócio real em HML) para quando o
+  Thiago confirmar qual cedente usar.
+- **Branch ainda não pushada** (só commit local) — a tarefa continua
+  incompleta (cascata + DELETE faltando), mesmo padrão dos ciclos anteriores.
+- **Próximo passo pendente**: (1) resolver a execução real da dependência
+  `cascata` (`MC_CED_CEDENTE_VINCULADO` — buscar o cedente vinculado em HML
+  por CNPJ/CPF, disparar clonagem recursiva via `cy.clonarCedenteCompleto` se
+  ausente, detectar ciclo A-vinculado-a-B-vinculado-a-A, conforme
+  Resposta-7/item 2); (2) o DELETE (apaga-e-refaz,
+  `ordenarTabelasParaExclusaoEstrutural`, um cedente por execução, regra 12 do
+  `AGENTE.md`) — depois de implementado, trocar
+  `ACAO_CLONAGEM_APAGAR_E_RECRIAR_PENDENTE` em `cy.clonarCedenteCompleto` para
+  de fato apagar e então inserir. Nenhum arquivo temporário ficou para trás
+  (`git status` confirmou working tree limpa após o commit).
+
