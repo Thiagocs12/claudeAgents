@@ -36,18 +36,18 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
      `reviewAgents` para detectar conflito. Se houver conflito, resolva usando a skill
      `/resolve-conflicts` (`.claude/skills/resolve-conflicts/` do próprio repo) e comite a
      resolução **na própria branch da feature** antes de mesclar de verdade.
-   - Antes de rodar os testes, atualize `repo/.env` se necessário: compare `.env.example` da
+   - Atualize `repo/.env` se necessário: compare `.env.example` da
      branch com o de `reviewAgents` para achar variáveis novas. Para cada uma sem valor em
      `repo/.env`, procure o valor em `../subagents/<modulo>/docs/documentacao.md` e/ou no arquivo
      da tarefa em `../subagents/<modulo>/tarefas/concluidas/<id>.md` (seção "Material de apoio").
      Nunca invente nem deixe em branco — se não achar, é dúvida bloqueante (regra 9).
-   - Rode os testes relevantes (`npm run test:safety` sempre; e a tag Cucumber da tarefa via
-     `npx cypress run --env tags=<tag>` quando aplicável) contra a branch mesclada preventivamente
-     (sem publicar esse merge).
-   - Se os testes passarem: **finalize o merge de verdade e dê push direto na `reviewAgents`**
-     (sem PR, sem esperar aprovação). Mova o aviso de `fila-merge/pendentes/` direto para
-     `fila-merge/concluidos/` (nunca passa por `aguardando-aprovacao/` nesse fluxo).
-   - Se os testes falharem ou o conflito não puder ser resolvido: trate como dúvida bloqueante
+   - **Você não roda os testes da automação** (2026-09-17, pedido explícito do Thiago: o subAgent já
+     rodou o autoteste antes de avisar você — regra 6 do `AGENTE.md` dele — rodar de novo aqui
+     duplicaria o trabalho). Se não houver conflito, ou o conflito foi resolvido com sucesso:
+     **finalize o merge de verdade e dê push direto na `reviewAgents`** (sem PR, sem esperar
+     aprovação). Mova o aviso de `fila-merge/pendentes/` direto para `fila-merge/concluidos/` (nunca
+     passa por `aguardando-aprovacao/` nesse fluxo).
+   - Se o conflito não puder ser resolvido: trate como dúvida bloqueante
      (regra 9), desfaça o merge local (não deixe a `reviewAgents` local suja) e deixe o aviso em
      `fila-merge/pendentes/`.
 6. Sincronizar `.env`: nunca invente nem deixe em branco uma variável nova — procure sempre na
@@ -68,17 +68,16 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    único pra `master`, e o estado da sincronização da pasta de teste manual). Se o aprendizado
    valer para qualquer módulo, registre também em `../docs/conhecimento-geral.md` (releia antes de
    escrever).
-9. Se não conseguir resolver um conflito, os testes falharem antes do merge, não encontrar o valor
+9. Se não conseguir resolver um conflito, não encontrar o valor
    de uma variável de `.env` nova, um PR do legado (regra 4) for fechado sem merge, ou não
    conseguir sincronizar a pasta de teste manual: registre em `duvidas.md`, mantendo o aviso onde
    estiver (não mova para `concluidos/`).
 10. Nunca responda sua própria dúvida — apenas o Supervisor, repassando o Thiago, pode marcar uma
     dúvida como respondida.
-11. **Economia de tokens:** ao rodar `npm run test:safety`/`npx cypress run`/`npm install
-    --legacy-peer-deps` (seus ou da pasta de teste manual do Thiago), redirecione a saída para um
-    arquivo e leia/relate só o resumo relevante (passed/failed, a mensagem de erro específica,
-    últimas linhas) — nunca despeje a saída bruta inteira de volta no seu contexto nem a copie pra
-    `docs/documentacao.md`/`duvidas.md` sem necessidade.
+11. **Economia de tokens:** ao rodar `npm install --legacy-peer-deps` (da pasta de teste manual do
+    Thiago), redirecione a saída para um arquivo e leia/relate só o resumo relevante (últimas
+    linhas, erro específico se falhar) — nunca despeje a saída bruta inteira de volta no seu
+    contexto nem a copie pra `docs/documentacao.md`/`duvidas.md` sem necessidade.
 12. **Arquive quando grande (economia de tokens):** se `docs/documentacao.md`, `duvidas.md`, ou o
     log de merges ultrapassar ~200-250 linhas, mova o conteúdo histórico/resolvido/superado
     (merges antigos já concluídos, dúvidas já respondidas há muito tempo) para um arquivo

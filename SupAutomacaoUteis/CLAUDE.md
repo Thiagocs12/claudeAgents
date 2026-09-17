@@ -246,17 +246,18 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    faça um merge de teste **local** contra `reviewAgents` para achar conflito; resolva com a skill
    `/resolve-conflicts` e comite a resolução **na própria branch da feature** antes de mesclar
    de verdade.
-5. Antes de rodar os testes, atualize `repo/.env` se necessário: compare `.env.example` da branch
+5. Atualize `repo/.env` se necessário: compare `.env.example` da branch
    com o de `reviewAgents` para achar variáveis novas. Para cada uma sem valor em `repo/.env`,
    procure o valor em `../subagents/<modulo>/docs/documentacao.md` e/ou no arquivo da tarefa
    concluída em `../subagents/<modulo>/tarefas/concluidas/<id>.md` (seção "Material de apoio").
    Nunca invente nem deixe em branco — se não achar, é dúvida bloqueante (item 9).
-6. Rode os testes relevantes (`npm run test:safety`, e o cenário/tag da tarefa via `npx cypress
-   run --env tags=<tag>`) contra a branch mesclada preventivamente. Se passar: **finalize o merge
-   de verdade e dê push direto na `reviewAgents`** (sem PR, sem esperar aprovação), mova o aviso de
-   `pendentes/` direto para `concluidos/` (nunca passa por `aguardando-aprovacao/` no fluxo novo),
-   e registre em `docs/documentacao.md`. Se falhar ou não resolver conflito: dúvida bloqueante,
-   deixe o aviso em `pendentes/` (desfaça o merge local, não deixe a `reviewAgents` local suja).
+6. **Você não roda os testes da automação** (2026-09-17, pedido explícito do Thiago: o subAgent já
+   testou a implementação antes de avisar você — rodar de novo aqui duplicaria o trabalho). Se não
+   houver conflito, ou o conflito foi resolvido com sucesso: **finalize o merge de verdade e dê
+   push direto na `reviewAgents`** (sem PR, sem esperar aprovação), mova o aviso de `pendentes/`
+   direto para `concluidos/` (nunca passa por `aguardando-aprovacao/` no fluxo novo), e registre em
+   `docs/documentacao.md`. Se não resolver conflito: dúvida bloqueante, deixe o aviso em
+   `pendentes/` (desfaça o merge local, não deixe a `reviewAgents` local suja).
 7. Depois de processar os avisos, sincronize `C:\multiplica\cypress-uteis` sempre para a
    `reviewAgents` (não há mais branch de PR-por-tarefa pra testar antes de aprovar — o ponto único
    de revisão do Thiago passou a ser o PR contínuo pra `master`). Rode `npm install

@@ -196,11 +196,11 @@ ciclo da logica operacional:
    um merge de teste LOCAL contra reviewAgents para achar conflito; se houver, resolva com a skill
    /resolve-conflicts e comite a resolução na própria branch da feature antes de mesclar de
    verdade. Atualize repo/.env se necessário (mesma lógica de sempre, nunca invente/deixe em
-   branco). Rode os testes relevantes (npm run test:safety sempre; cenário/tag Cucumber da tarefa
-   via npx cypress run --env tags=<tag> quando aplicável) contra a branch mesclada
-   preventivamente. Se passar: finalize o merge de verdade e de push direto na reviewAgents (sem
-   PR, sem esperar aprovacao), mova o aviso de fila-merge/pendentes/ direto para
-   fila-merge/concluidos/ (nunca passa por aguardando-aprovacao/ nesse fluxo). Se falhar/não
+   branco). Voce NAO roda os testes da automacao (2026-09-17, pedido do Thiago: o subAgent ja
+   rodou o autoteste antes de avisar voce, rodar de novo aqui duplicaria trabalho). Se nao houver
+   conflito, ou o conflito foi resolvido com sucesso: finalize o merge de verdade e de push direto
+   na reviewAgents (sem PR, sem esperar aprovacao), mova o aviso de fila-merge/pendentes/ direto
+   para fila-merge/concluidos/ (nunca passa por aguardando-aprovacao/ nesse fluxo). Se nao
    resolver conflito: trate como dúvida bloqueante, desfaça o merge local (não deixe a
    reviewAgents local suja), deixe o aviso em fila-merge/pendentes/.
 4. Depois de processar os avisos, sincronize C:\multiplica\cypress-uteis (pasta PESSOAL do Thiago
