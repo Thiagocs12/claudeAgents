@@ -550,3 +550,28 @@ capacidade ociosa da outra conta.
   comparativa completa, pedindo decisão do Thiago. Qualquer módulo que veja `login.feature` passar
   isoladamente enquanto seu próprio spec falha com `cy.origin()` no mesmo ciclo deve registrar essa
   mesma comparação (não assumir só "ambiente instável") e referenciar este achado.
+
+## Vídeo substituído por relatório em PDF por cenário (módulo `geral`, tarefa `20260917111432-migrar-video-para-relatorio-pdf`, 2026-09-17)
+
+- **Infra cross-módulo nova, disponível para qualquer Etapa:** `cypress.config.js` agora tem
+  `video: false`. `cypress/support/etapas/EtapaBase.js` ganhou `this.passo(descricao, acao)` —
+  tira `cy.screenshot` antes/depois de rodar `acao()`, nomeando o arquivo com o cenário (via
+  `Cypress.currentTest.title`) + número do passo. Um novo `scripts/gerar-relatorio-pdf.cjs`
+  (dependência `pdfkit`) agrupa esses screenshots por cenário e gera `relatorios/<cenario>.pdf`
+  automaticamente depois de `npm test` (também via `npm run relatorio`). `relatorios/*.pdf` é
+  **versionado** (não gitignored); `cypress/screenshots/` segue gitignored. Detalhe completo em
+  `repo/CLAUDE.md` (seção "PDF execution report") e em `subagents/geral/docs/documentacao.md`.
+  **Qualquer módulo (POC, mop, futuros) que queira o mesmo relatório visual só precisa envolver as
+  ações relevantes de `executar()` em `this.passo(...)` em vez de chamar a Page direto** — só
+  `EtapaAnalisarOperacaoMonitorDiario` (mop) foi migrada até agora, como referência.
+- **Novo sintoma catalogado em `mop/mop-monitor-diario.feature`** (autoteste desta tarefa,
+  2026-09-17): `CypressError: cy.click() failed because this element ... is being covered by
+  another element: <div class="menu-MuiBackdrop-root" ...>` — ocorreu dentro de
+  `MonitorDiarioPage.navegarAte()` (clique num item de menu do Beyond enquanto um backdrop de
+  transição/overlay ainda cobria o elemento). Diferente dos três sintomas já catalogados na seção
+  "HML/login" acima (`cy.origin()` failed to create a spec bridge, `ResizeObserver loop...`,
+  `cy.click()` em botão `Mui-disabled`) — este é um problema de timing de UI (clique disparado
+  antes do backdrop/transição do menu terminar), não de rede/Keycloak nem de estado de botão.
+  Reforça, mais uma vez, que `mop-monitor-diario.feature` segue instável de formas variadas; não
+  investigado a fundo aqui (fora do escopo desta tarefa, que era só sobre vídeo→PDF) — registrar o
+  sintoma exato sempre que reaparecer, como já orientado acima.

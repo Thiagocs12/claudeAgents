@@ -88,7 +88,15 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
       }
     })
 
-    cy.wait(4000)
+    // CORRIGIDO (rodada 96): um `cy.wait(4000)` fixo aqui nao era suficiente em toda rodada - numa
+    // execucao mais lenta o proximo comando (`cy.get('body')`, fora do cy.origin) rodou antes do
+    // redirect de volta pro Beyond Banking terminar, e falhou com "expected to run against origin
+    // beyondbanking-hml but the application is at origin keycloak-new-2" (mesma classe de problema
+    // ja corrigido no teste 2, ver linha ~627). Trocado por um `cy.url()` com retry/timeout maior
+    // que so segue quando a URL sair de fato do Keycloak.
+    cy.url({ timeout: 20000 }).should((url) => {
+      expect(url, 'nao deveria mais estar numa tela de login do Keycloak').to.not.match(/\/auth\/realms\//)
+    })
     // CORRIGIDO (rodada 95): este screenshot ('02-apos-tentativa-login'), tirado logo apos o login
     // com so um cy.wait fixo, e a mesma armadilha ja documentada em docs/documentacao.md
     // ("cy.screenshot() logo apos cy.visit() quebra o runner") - a tela de login do Beyond Banking

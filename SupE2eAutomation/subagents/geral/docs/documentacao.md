@@ -114,6 +114,43 @@
 - Branch `feature/resolucao-viewport-e-video-execucao` (commits `792e06f` + `45fb200`) commitada,
   pushada, e aviso deixado em `agent-master/fila-merge/pendentes/` para merge em `reviewAgents`.
 
+## Concluído: relatório em PDF substitui vídeo (tarefa 20260917111432-migrar-video-para-relatorio-pdf)
+
+- `cypress.config.js`: `video: false` (era `true`). `cypress/support/etapas/EtapaBase.js` ganhou
+  `this.passo(descricao, acao)` — tira `cy.screenshot` antes/depois de `acao()`, com nome de
+  arquivo `<cenario-slug>__<NN>-<passo-slug>-<antes|depois>.png` (`<cenario-slug>` vem de
+  `Cypress.currentTest.title`, confiável porque o cucumber-preprocessor roda cada Cenário como um
+  `it()` do Mocha). `EtapaAnalisarOperacaoMonitorDiario` (mop) migrada como exemplo de referência.
+- Novo `scripts/gerar-relatorio-pdf.cjs` (dependência nova `pdfkit@0.20.2`, em `dependencies`)
+  agrupa os screenshots por cenário e gera `relatorios/<cenario>.pdf` (uma página por screenshot,
+  com legenda do passo). Rodado automaticamente após `cypress run` via `"test": "cypress run &
+  node scripts/gerar-relatorio-pdf.cjs"` — `&` (não `&&`) para o PDF sair mesmo quando a suíte
+  falha, já que os screenshots tirados antes da falha ainda são úteis. Também disponível via
+  `npm run relatorio` (útil pra regenerar sem re-rodar a suíte).
+- **Avaliado `cypress-mochawesome-reporter` antes de implementar do zero** (pedido explícito da
+  tarefa): ele gera relatório HTML com screenshots embutidos, não PDF — converter pra PDF exigiria
+  um passo extra (ex.: Puppeteer print-to-PDF), dependência mais pesada que só gerar o PDF direto
+  com `pdfkit`, e não mapeia bem o par "antes/depois" pedido. Optado pelo script customizado.
+  Decisão registrada aqui e no `CLAUDE.md` do repo — não foi levada como dúvida ao Supervisor por
+  não ser bloqueante (a própria tarefa já sugeria essa avaliação e aceitava a alternativa).
+- `relatorios/*.pdf` **não entrou no `.gitignore`** (decisão: versionar, seguindo a recomendação
+  já dada na própria tarefa — PDF é leve, diferente do vídeo). `cypress/screenshots/` e
+  `cypress/videos/` seguem gitignored (vídeo só não é mais gerado, entrada ficou inofensiva).
+- `CLAUDE.md` (nova seção "PDF execution report", linha "Fora de escopo" atualizada) e `README.md`
+  (seção "Rodando os testes") atualizados descrevendo o novo mecanismo.
+- **Autoteste**: `npm test` rodado 2x contra HML — ambas esbarraram em instabilidade de
+  login/HML já catalogada em `../../docs/conhecimento-geral.md` (não relacionada a esta mudança):
+  1ª tentativa chegou a capturar 1 screenshot real via `passo()` (step "navegar até o Monitor
+  Diário") e gerou 1 PDF real antes de falhar num clique de menu coberto por um `MuiBackdrop`
+  (sintoma novo, não catalogado antes, ver nota em `conhecimento-geral.md`); 2ª tentativa falhou
+  já no login/sessão (`cy.session` setup, keycloak não redirecionou a tempo). Não retentei uma 3ª
+  vez seguida (protocolo já estabelecido). Para validar a lógica do script (agrupamento/ordenação
+  por passo, múltiplas páginas) sem depender do HML, gerei screenshots sintéticos (3 passos x
+  antes/depois) e rodei `npm run relatorio` — PDF de 6 páginas gerado corretamente; removido depois
+  (não commitado, só serviu de verificação).
+- Branch `feature/migrar-video-para-relatorio-pdf` commitada, pushada, aviso deixado em
+  `agent-master/fila-merge/pendentes/`.
+
 ## Descartado (sem merge): reverter handler de ResizeObserver (tarefa 20260915110528-reverter-handler-resizeobserver)
 
 - A tarefa pedia remover, do handler de `uncaught:exception` em `cypress/support/e2e.js`, a

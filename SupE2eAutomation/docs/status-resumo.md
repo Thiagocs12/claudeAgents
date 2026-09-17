@@ -7,7 +7,8 @@
 > `duvidas.md`/`tarefas/` cru de cada módulo a cada consulta.
 
 ## geral
-Sem tarefa ativa.
+Sem tarefa ativa. Última concluída: `20260917111432-migrar-video-para-relatorio-pdf` (branch
+`feature/migrar-video-para-relatorio-pdf` pushada, aviso em `agent-master/fila-merge/pendentes/`).
 
 ## mop
 Sem tarefa ativa.
