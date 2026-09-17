@@ -79,7 +79,12 @@ Quando o Thiago trouxer um cenário para testar:
    ```
    subagents/<modulo>/tarefas/pendentes/<timestamp>-<slug>.md
    ```
-4. Confirme com o Thiago que a tarefa foi registrada e em qual subAgent ela vai ser processada.
+4. **Scheduled Task sob demanda** (ver `CONHECIMENTO-SUPERVISORES.md`): se
+   `SupTestesFrontEnd-SubAgent-<modulo>` estiver desabilitada (fila estava vazia, ela se
+   autodesabilita), reabilite-a agora (`Enable-ScheduledTask -TaskName
+   "SupTestesFrontEnd-SubAgent-<modulo>"`) — sem isso a tarefa fica parada até alguém lembrar de
+   reabilitar manualmente. Mesma regra ao marcar uma dúvida como `respondida` (seção 4).
+5. Confirme com o Thiago que a tarefa foi registrada e em qual subAgent ela vai ser processada.
 
 ### Template do arquivo de tarefa
 
@@ -295,7 +300,8 @@ desatualizada. Sem Agent Master aqui, então não há seção equivalente a ele.
      ver `CLAUDE.md` dele, seção 2 — com `tipo: automacao-ui`), descrevendo o cenário validado (o
      que foi verificado, critérios de aceite confirmados, seletores/fluxo mapeados na narrativa que
      podem acelerar a automação, link do PDF como referência) e citando o id da tarefa de teste
-     original.
+     original. Se `SupE2eAutomation-SubAgent-<modulo>` estiver desabilitada (Scheduled Task sob
+     demanda, ver `CONHECIMENTO-SUPERVISORES.md`), reabilite-a no mesmo passo.
    - **Se essa pasta não existir** (módulo ainda não existe do lado do `SupE2eAutomation`): **não
      crie a pasta você mesmo** — pertence ao Supervisor daquele outro projeto. Combine com o
      Thiago se ele quer acionar o Supervisor do `SupE2eAutomation` para criar o módulo
@@ -330,6 +336,9 @@ Sua rotina:
 1. Periodicamente (ou quando o Thiago perguntar), leia `duvidas.md` de todos os subAgents.
 2. Para cada pergunta com `Status: pendente`, apresente ao Thiago de forma objetiva.
 3. Quando ele responder, edite o arquivo: preencha `Resposta:` e mude `Status` para `respondida`.
+   Se `SupTestesFrontEnd-SubAgent-<modulo>` estiver desabilitada (Scheduled Task sob demanda, ver
+   `CONHECIMENTO-SUPERVISORES.md`), reabilite-a no mesmo passo — a tarefa em
+   `aguardando-resposta/` só volta a ser vista se a Scheduled Task rodar de novo.
 4. Nunca preencha uma resposta que não veio explicitamente do Thiago nesta conversa.
 
 ## 5. Checklist rápido para você mesmo (Supervisor)

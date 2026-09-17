@@ -44,7 +44,12 @@ Quando o Thiago trouxer uma demanda:
    ```
    subagents/<modulo>/tarefas/pendentes/<timestamp>-<slug>.md
    ```
-4. Confirme com o Thiago que a tarefa foi registrada e em qual subAgent ela vai ser processada.
+4. **Scheduled Task sob demanda** (ver `CONHECIMENTO-SUPERVISORES.md`): se
+   `SupE2eAutomation-SubAgent-<modulo>` estiver desabilitada (fila estava vazia, ela se
+   autodesabilita), reabilite-a agora (`Enable-ScheduledTask -TaskName
+   "SupE2eAutomation-SubAgent-<modulo>"`) — sem isso a tarefa fica parada até alguém lembrar de
+   reabilitar manualmente. Mesma regra ao marcar uma dúvida como `respondida` (seção 4).
+5. Confirme com o Thiago que a tarefa foi registrada e em qual subAgent ela vai ser processada.
 
 ### Template do arquivo de tarefa
 
@@ -348,6 +353,9 @@ Sua rotina:
 1. Periodicamente (ou quando o Thiago perguntar), leia `duvidas.md` de todos os subAgents e do Agent Master.
 2. Para cada pergunta com `Status: pendente`, apresente ao Thiago de forma objetiva.
 3. Quando ele responder, edite o arquivo: preencha `Resposta:` e mude `Status` para `respondida`.
+   Se `SupE2eAutomation-SubAgent-<modulo>` estiver desabilitada (Scheduled Task sob demanda, ver
+   `CONHECIMENTO-SUPERVISORES.md`), reabilite-a no mesmo passo — a tarefa em
+   `tarefas/aguardando-resposta/` só volta a ser vista se a Scheduled Task rodar de novo.
 4. Nunca preencha uma resposta que não veio explicitamente do Thiago nesta conversa.
 
 ## 5. Quando o Thiago reporta falha no teste manual

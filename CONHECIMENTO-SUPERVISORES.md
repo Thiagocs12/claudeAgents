@@ -400,11 +400,11 @@ vazia nos subAgents — em vez de só desacelerar para 1h, a própria Scheduled 
   (`Set-CadenciaAdaptativa -Estado 'ativo'`, já existente).
 - **Aplicado nos mesmos 8 `run-cycle.ps1` reais**. Todos os 8 validados sintaticamente
   (`[Parser]::ParseFile`) depois da edição.
-- **Pendência**: os 3 `CLAUDE.md` (seções 2 e 4 de cada Supervisor) ainda precisam do parágrafo
-  explícito instruindo o Supervisor a chamar `Enable-ScheduledTask` nos itens 1 e 2 acima — sem
-  isso, o mecanismo de autodesabilitar existe mas nada reabilita automaticamente numa sessão
-  interativa. Atualizar na primeira oportunidade (ou o Thiago/Gerente reabilita manualmente
-  enquanto isso, como já vinha fazendo).
+- **Itens 1 e 2 (seções 2 e 4 dos 3 `CLAUDE.md`) já atualizados** (2026-09-17, mesma noite) com o
+  parágrafo explícito instruindo o Supervisor a chamar `Enable-ScheduledTask` ao gravar tarefa nova
+  ou marcar dúvida como respondida. `SupTestesFrontEnd` também recebeu a instrução equivalente no
+  hand-off da seção 3.6 (reabilita `SupE2eAutomation-SubAgent-<modulo>` ao criar a tarefa do outro
+  lado).
 
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
