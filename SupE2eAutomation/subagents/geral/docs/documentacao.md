@@ -1,5 +1,60 @@
 # Conhecimento acumulado do módulo geral
 
+> Este Supervisor não mantém mais um `docs/conhecimento-geral.md` compartilhado (aposentado em
+> 2026-09-17, pedido do Thiago: "Supervisores não precisam ter conhecimento próprio, só os
+> subAgents"). Conhecimento genuinamente cross-módulo agora mora no módulo "dono" — este módulo
+> (`geral`) é dono da fundação de login (`cy.loginComoPerfil`), por isso o catálogo abaixo. Outros
+> módulos (`mop`, `POC`, `agent-master`) referenciam este arquivo por caminho em vez de duplicar.
+
+## Arquitetura alvo do repositório (automacaoUiMultiplica)
+
+Camadas **Pages / Etapas / Esteiras**, com Cucumber como camada fina de legibilidade sobre as
+Esteiras (não orquestra nada sozinho) — ver `repo/CLAUDE.md` para o detalhe completo. Vale para
+qualquer módulo novo.
+
+## Instabilidade de login/HML (`cy.origin`, Keycloak, rede) — catálogo de sintomas e estado da investigação (atualizado 2026-09-17)
+
+Investigação em andamento há vários dias (módulos `mop`, `POC`, Agent Master), causa raiz **ainda
+não confirmada**.
+
+- **Sintomas já catalogados, todos dentro/logo após `cy.loginComoPerfil`/`cy.session`** (registrar
+  o sintoma exato sempre que reaparecer — não presumir que é sempre o mesmo problema):
+  1. `CypressError: cy.origin() failed to create a spec bridge...` — o mais recorrente.
+  2. `CypressError: Timed out after waiting 60000ms for your remote page to load`.
+  3. `Error: connect ETIMEDOUT 10.101.10.254:443` — falha de rede ao IP **privado** de
+     `beyond-hml.grupomultiplica.com.br`, **antes** de qualquer interação com Keycloak (indica
+     VPN/rede interna instável/caída, não é sintoma de `cy.origin`). Confirmar com
+     `curl --max-time 20 https://beyond-hml.grupomultiplica.com.br/`; se der timeout e
+     `keycloak-new-2.grupomultiplica.com.br` responder normalmente (mesmo que `403`), é isso —
+     `nslookup` mostra que `beyond-hml` resolve para IP privado enquanto `keycloak-new-2` resolve
+     para IPs públicos (Cloudflare).
+  4. `AssertionError: ... expected '...keycloak-new-2.../login-actions/authenticate...' to include
+     'https://beyond-hml.grupomultiplica.com.br/'` — depois de submeter credenciais, a página não
+     redireciona de volta pra `beyond-hml` (visto 2026-09-17, Agent Master).
+  - Sintomas específicos de `mop/mop-monitor-diario.feature`, ocorrendo **depois** do login (não
+    confundir com os 4 acima): `ResizeObserver loop completed with undelivered notifications`
+    (**RESOLVIDO** — tratado como `uncaught:exception` conhecido em `cypress/support/e2e.js`,
+    mesmo padrão do handler do widget de menu do Beyond, commit `a2f2d88`, já em `reviewAgents`);
+    `cy.click() failed because this element is disabled` (botão `Mui-disabled`); `cy.click()
+    failed because ... is being covered by ... menu-MuiBackdrop-root` (clique disparado antes do
+    backdrop/transição do menu terminar). Esses três parecem timing/estado de UI da própria tela,
+    não rede/Keycloak — ainda sem causa raiz confirmada.
+- **Protocolo padrão ao encontrar qualquer sintoma acima:** não decidir sozinho, não insistir em
+  múltiplas tentativas em sequência rápida; no máximo uma checagem (`curl`, para o sintoma de
+  rede); registrar dúvida bloqueante descrevendo o sintoma **exato**.
+- **Estado mais recente da investigação (2026-09-17):** a hipótese de que "`shared/login.feature`
+  isolado é sempre confiável, só specs de outros módulos falham no mesmo ciclo" (que sugeriria algo
+  específico de timing/ordem de spec, não do Keycloak/HML em si) foi **contradita no mesmo dia**:
+  num ciclo do Agent Master, `login.feature` também falhou (sintoma 4 acima), junto com
+  `mop-monitor-diario.feature` no mesmo ponto, na mesma execução. Ou seja: **nenhuma hipótese está
+  confirmada como causa raiz até agora** — não usar "login.feature passou" como prova de que o
+  problema é de outro spec/timing sem checar a data/hora deste registro. Instabilidade de
+  rede/VPN (sintoma 3) é um fator real e distinto confirmado, mas não explica os sintomas 1/2/4.
+- Dúvidas bloqueantes abertas com o histórico completo pergunta-a-resposta:
+  `agent-master/duvidas.md` (`20260914125955-atualizar-claude-md-fluxo-integracao`,
+  `20260917111432-migrar-video-para-relatorio-pdf`), `subagents/POC/duvidas.md`
+  (`20260915131339-criar-prospect-cedente-cnpj`).
+
 ## Login via Keycloak (tarefa 20260911181703-login-keycloak-usuario-master)
 
 - Implementado: `cypress/support/pages/shared/LoginPage.js` (Page Object puro dos seletores do
@@ -77,13 +132,12 @@
   (`feature/xxx → reviewAgents`), aprovado manualmente pelo Thiago um a um, com a frase "The Agent
   Master never merges or pushes directly to `reviewAgents` or `main`". Esse texto nunca tinha sido
   corrigido desde a mudança de fluxo de 2026-09-14 (merge direto na `reviewAgents` + PR único
-  contínuo `reviewAgents → main`) — já havia sido sinalizado como risco em
-  `../../docs/conhecimento-geral.md`.
+  contínuo `reviewAgents → main`) — já havia sido sinalizado como risco anteriormente.
 - Corrigido em ambos os arquivos para descrever o fluxo atual: Agent Master mergeia direto (com
   push) na `reviewAgents` por tarefa validada, sem PR/aprovação humana por tarefa; único ponto de
   revisão manual passa a ser o PR único e contínuo `reviewAgents → main`.
 - Tarefa só de documentação — sem mudança de código/teste. Autoteste = revisão de consistência do
-  texto contra `SupE2eAutomation/CLAUDE.md` (seção 3.3) e `docs/conhecimento-geral.md`.
+  texto contra `SupE2eAutomation/CLAUDE.md` (seção 3.3).
 - Branch `feature/atualizar-claude-md-fluxo-integracao` commitada, pushada, e aviso deixado em
   `agent-master/fila-merge/pendentes/` para merge em `reviewAgents`.
 
@@ -104,9 +158,8 @@
   1920x1080 segue correto e é o que importa pro app renderizar certo durante o teste; a resolução
   menor do vídeo em modo headless é uma limitação conhecida do Cypress, não vale a pena investigar
   mais fundo. Documentar a tabela acima em vez de tentar corrigir.
-- Documentado em `README.md` (seção "Rodando os testes") e `CLAUDE.md` do repo, e também em
-  `../../docs/conhecimento-geral.md` (aprendizado cross-módulo — qualquer módulo que grave vídeo
-  headless tem a mesma limitação).
+- Documentado em `README.md` (seção "Rodando os testes") e `CLAUDE.md` do repo — aprendizado
+  cross-módulo, qualquer módulo que grave vídeo headless tem a mesma limitação.
 - **Autoteste**: `npx cypress run --spec cypress/e2e/features/shared/login.feature` rodado 2x. 1ª
   execução teve 1 falha transiente de rede no `cy.origin()` (já documentado como intermitente,
   não relacionado a esta mudança). 2ª execução passou 2/2. `.mp4` gerado normalmente em
@@ -139,10 +192,10 @@
 - `CLAUDE.md` (nova seção "PDF execution report", linha "Fora de escopo" atualizada) e `README.md`
   (seção "Rodando os testes") atualizados descrevendo o novo mecanismo.
 - **Autoteste**: `npm test` rodado 2x contra HML — ambas esbarraram em instabilidade de
-  login/HML já catalogada em `../../docs/conhecimento-geral.md` (não relacionada a esta mudança):
-  1ª tentativa chegou a capturar 1 screenshot real via `passo()` (step "navegar até o Monitor
-  Diário") e gerou 1 PDF real antes de falhar num clique de menu coberto por um `MuiBackdrop`
-  (sintoma novo, não catalogado antes, ver nota em `conhecimento-geral.md`); 2ª tentativa falhou
+  login/HML já catalogada na seção "Instabilidade de login/HML" acima (não relacionada a esta
+  mudança): 1ª tentativa chegou a capturar 1 screenshot real via `passo()` (step "navegar até o
+  Monitor Diário") e gerou 1 PDF real antes de falhar num clique de menu coberto por um
+  `MuiBackdrop` (sintoma já catalogado na seção acima); 2ª tentativa falhou
   já no login/sessão (`cy.session` setup, keycloak não redirecionou a tempo). Não retentei uma 3ª
   vez seguida (protocolo já estabelecido). Para validar a lógica do script (agrupamento/ordenação
   por passo, múltiplas páginas) sem depender do HML, gerei screenshots sintéticos (3 passos x

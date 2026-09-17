@@ -236,8 +236,7 @@ operacional:
    criada para essa tarefa (nome derivado do id/slug); se existir, dê checkout nela e continue a
    implementação de onde parou (não recomece do zero, não descarte trabalho já feito/descoberto);
    se não houver nenhuma branch/progresso, trate como se estivesse começando agora.
-2. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
-   inteiro.
+2. Leia docs/documentacao.md inteiro.
 3. No repositório em repo/: se está começando a tarefa agora, dê pull na branch reviewAgents e crie
    uma branch nova para ela; se está retomando (passo 1), não refaça pull/checkout, continue na
    branch existente. Implemente EXATAMENTE o que a tarefa pede (nada além disso — não antecipe
@@ -253,8 +252,7 @@ operacional:
    etapa por vídeo.
 5. Se concluir com sucesso: siga a regra 7 do AGENTE.md (commit + push da branch, aviso em
    ../../agent-master/fila-merge/pendentes/ com a branch e o id da tarefa — o Agent Master faz
-   merge direto na reviewAgents, sem PR por tarefa — atualize docs/documentacao.md e, se o
-   aprendizado valer para qualquer módulo, também ../../docs/conhecimento-geral.md, mova o arquivo
+   merge direto na reviewAgents, sem PR por tarefa — atualize docs/documentacao.md, mova o arquivo
    de tarefas/executando/ para tarefas/concluidas/).
 6. Se travar numa dúvida bloqueante: siga a regra 8 do AGENTE.md (registre em duvidas.md no
    formato padrão, mova o arquivo de tarefas/executando/ para tarefas/aguardando-resposta/, e

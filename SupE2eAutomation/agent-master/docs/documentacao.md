@@ -66,7 +66,8 @@ Branch só de documentação, bloqueada repetidamente porque `mop-monitor-diario
 merge de teste preventivo — com sintomas variados ao longo das tentativas (`cy.origin() failed to
 create a spec bridge`, timeout de carregamento de página, `ResizeObserver loop...`), enquanto
 `shared/login.feature` nunca falhou nos mesmos ciclos. Isso aponta para um problema específico
-daquele teste/tela, não instabilidade genérica do HML (ver também `../docs/conhecimento-geral.md`).
+daquele teste/tela, não instabilidade genérica do HML (ver também
+`../subagents/geral/docs/documentacao.md`).
 
 - 2026-09-14: Thiago disse que investigaria a causa raiz por conta própria e instruiu **não
   reprocessar automaticamente** este aviso até trazer uma decisão nova via Supervisor.
@@ -89,7 +90,8 @@ daquele teste/tela, não instabilidade genérica do HML (ver também `../docs/co
   importante: os dois primeiros ocorriam durante o login (compatível com instabilidade de
   rede/Keycloak); este ocorre **depois** do login, numa interação de UI dentro da própria tela —
   indício mais forte de um problema real de timing/estado da aplicação ou do teste, não de
-  flakiness genérica de ambiente (ver `../docs/conhecimento-geral.md` para o registro completo).
+  flakiness genérica de ambiente (ver `../subagents/geral/docs/documentacao.md` para o registro
+  completo).
   Merge local desfeito de novo, aviso mantido em `fila-merge/pendentes/`. **Nova dúvida bloqueante
   pendente** (`duvidas.md`, `20260914125955-atualizar-claude-md-fluxo-integracao (retomada 2)`,
   `Status: pendente`) perguntando como proceder.
@@ -144,7 +146,8 @@ de lá, e vídeos de testes rodados no ciclo (`repo/cypress/videos/**`) copiados
 - `npm test` (2 specs) resultou em **2/2 specs falhando**, ambas no mesmo ponto (`cy.session`/
   `cy.loginComoPerfil`, submissão de credenciais no Keycloak nunca redirecionou de volta para
   `beyond-hml`, ficando presa na URL do Keycloak) — sintoma novo, não catalogado antes. Detalhe
-  completo e evidência em `duvidas.md`/`../docs/conhecimento-geral.md`. Merge local desfeito
+  completo e evidência em `duvidas.md`/`../subagents/geral/docs/documentacao.md`. Merge local
+  desfeito
   (`git reset --hard origin/reviewAgents`, `repo/` confirmado limpo). Aviso mantido em
   `fila-merge/pendentes/`, dúvida bloqueante registrada (`Status: pendente`). Nenhuma sincronização
   de `C:\multiplica\cypress-e2e` feita neste ciclo (nada foi mergeado em `reviewAgents`).

@@ -17,7 +17,7 @@ Sem tarefa ativa.
 Bloqueado (`duvidas.md`: `20260915131339-criar-prospect-cedente-cnpj`) — mesmo com ambiente
 confirmado estável (Thiago autorizou retry, critério dele de "causa raiz nova" atingido), login via
 `cy.origin()` voltou a falhar nos 2 specs do módulo, enquanto `shared/login.feature` passou 2/2 no
-mesmo ciclo (evidência comparativa registrada, também em `../docs/conhecimento-geral.md`).
+mesmo ciclo (evidência comparativa registrada, também em `../subagents/geral/docs/documentacao.md`).
 Aguardando decisão do Thiago: investigar infra/Keycloak vs. mudar teste vs. pausar. Código de
 produção já implementado e pushado (branch `feature/poc-criar-prospect-cedente-cnpj`, `9054e8b`),
 timeout do campo "Tipo de Prospect" já em 30s (60s pendente de aplicar) — falta rodar o autoteste

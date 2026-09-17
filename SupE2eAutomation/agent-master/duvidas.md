@@ -12,7 +12,7 @@ resultou em **2 de 2 specs falhando**, ambas com o mesmo sintoma, ocorrido duran
 to include 'https://beyond-hml.grupomultiplica.com.br/'` — ou seja, depois de submeter as
 credenciais no Keycloak, a página nunca chegou a redirecionar de volta para `beyond-hml`, ficando
 presa na URL do próprio Keycloak. Isso é um **sintoma ainda não catalogado** em
-`../docs/conhecimento-geral.md` (diferente de `cy.origin() failed to create a spec bridge`, do
+`../subagents/geral/docs/documentacao.md` (diferente de `cy.origin() failed to create a spec bridge`, do
 timeout de 60s carregando a página do Keycloak, do `ETIMEDOUT` de rede, do `ResizeObserver loop...`,
 do `Mui-disabled` e do backdrop cobrindo elemento — todos já vistos antes). Além disso, é a
 **primeira vez que `shared/login.feature` falha no mesmo ciclo que `mop-monitor-diario.feature`**

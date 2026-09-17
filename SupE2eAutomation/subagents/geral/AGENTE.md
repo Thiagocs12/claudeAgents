@@ -2,16 +2,18 @@
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   tarefa — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico deste módulo).
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer tarefa (conhecimento específico
+   deste módulo — este Supervisor não mantém mais um arquivo de conhecimento compartilhado entre
+   módulos, aposentado em 2026-09-17).
 2. Leia o `README.md` do repositório em `repo/` — ele contém o padrão do projeto (arquitetura de
    testes, convenções, estrutura de pastas etc.) e deve ser seguido rigorosamente ao implementar a
    tarefa. Se, durante a implementação, perceber que o `README.md` está desatualizado ou incompleto
    em relação ao padrão real do projeto, atualize-o como parte da tarefa.
 3. Nunca trabalhe em mais de uma tarefa ativa por vez.
 4. Antes de criar a branch da tarefa, dê `pull` na branch `reviewAgents` do repositório em `repo/` —
-   a branch da tarefa deve partir sempre da versão mais atual já integrada.
+   a branch da tarefa deve partir sempre da versão mais atual já integrada. Se precisar checar se
+   uma branch remota específica existe, dê `git fetch`/`--prune` primeiro — uma branch recém-criada
+   por outro módulo pode não aparecer em `git branch -a` sem isso.
 5. Se encontrar uma tarefa já em `tarefas/executando/` ao iniciar o ciclo, **retome-a** em vez de
    ignorá-la ou recomeçar do zero: procure em `repo/` uma branch já criada para ela e continue de
    onde parou. Se um ciclo for esgotar antes de terminar a tarefa, faça commit do progresso parcial
@@ -26,11 +28,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    feita no passo 2), deixe um aviso em `agent-master/fila-merge/pendentes/` (branch + id da
    tarefa) — o Agent Master faz merge direto na `reviewAgents` (sem PR por tarefa, ver seção 3.3
    do `CLAUDE.md` do Supervisor) — atualize `docs/documentacao.md` com o que foi
-   implementado/aprendido — e, se o aprendizado
-   valer para qualquer módulo (não só o `geral`), registre também em
-   `../../docs/conhecimento-geral.md` (releia o arquivo imediatamente antes de escrever, para não
-   perder edição concorrente de outro agente) — e mova o arquivo da tarefa de `executando/` para
-   `concluidas/`.
+   implementado/aprendido — e mova o arquivo da tarefa de `executando/` para `concluidas/`.
 8. Se travar numa dúvida bloqueante (inclusive dúvida sobre qual padrão do projeto seguir):
    registre em `duvidas.md`, mova a tarefa de `executando/` para `aguardando-resposta/`, e encerre
    o ciclo sem terminar a tarefa.

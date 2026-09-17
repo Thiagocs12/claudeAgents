@@ -22,7 +22,7 @@
   de timing e aponta para possível regressão em hml (não confirmada).
 - **Bloqueio recorrente, ainda mais frequente, impedindo até testar o bloqueio acima:** login via
   `cy.loginComoPerfil` falhando com `cy.origin() failed to create a spec bridge...` (mesmo sintoma
-  catalogado em `../../docs/conhecimento-geral.md`) em quase toda tentativa recente (várias
+  catalogado em `../geral/docs/documentacao.md`) em quase toda tentativa recente (várias
   ocorrências entre 2026-09-15 e 2026-09-16, inclusive 2x seguidas numa mesma retomada). Thiago
   respondeu (2026-09-17) que era instabilidade do ambiente HML (mesmo motivo do `PAUSA-HML.flag`,
   já removido), confirmado OK, autorizando retry normal — mas condicionou: se o mesmo sintoma
@@ -44,7 +44,8 @@
   produção alterado nesta retomada (branch `feature/poc-criar-prospect-cedente-cnpj` segue limpa em
   `9054e8b`). Esse achado (login.feature passa de forma confiável enquanto outro spec que usa o
   mesmo comando de login falha no mesmo ciclo) também foi registrado em
-  `../../docs/conhecimento-geral.md` por ser potencialmente relevante a qualquer módulo.
+  `../geral/docs/documentacao.md` (catálogo de sintomas de instabilidade de login) por ser
+  potencialmente relevante a qualquer módulo.
 - **Próxima retomada, assim que a dúvida pendente for respondida:** depende da decisão do Thiago
   sobre a dúvida acima. Se autorizado a seguir com o teste em si (não bloqueado por login): (1)
   rodar o spec de diagnóstico descartável (`_scratch/diagnostico-campos-habilitam.feature`,
@@ -56,8 +57,9 @@
 
 ## Bug conhecido na sincronização mecânica da fila (`Test-DuvidaRespondida`)
 
-- Ver detalhe completo em `../../docs/conhecimento-geral.md` (seção "Bug em `Test-DuvidaRespondida`").
-  Resumo: como esta tarefa já teve várias rodadas de dúvida sob o mesmo id, a checagem mecânica em
+- Ver detalhe completo em `CONHECIMENTO-SUPERVISORES.md` (raiz de `claudeAgents`), seção "Bugs
+  conhecidos no padrão compartilhado de `run-cycle.ps1`". Resumo: como esta tarefa já teve várias
+  rodadas de dúvida sob o mesmo id, a checagem mecânica em
   `run-cycle.ps1` (que olha só o **primeiro** bloco `## <id>` que bate, não o mais recente) considera
   o id "respondido para sempre" assim que a 1ª pergunta é respondida — mesmo que rodadas
   posteriores sigam pendentes.

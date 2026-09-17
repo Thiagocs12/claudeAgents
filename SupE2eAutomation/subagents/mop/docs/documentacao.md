@@ -79,15 +79,14 @@ Ao clicar em "Beyond BackOffice", o componente de menu (`mc-menu.js`, carregado 
 por padrão (exceção não capturada da aplicação). Não afeta a navegação visual real. Corrigido
 adicionando um handler `Cypress.on('uncaught:exception', ...)` em `cypress/support/e2e.js` que
 ignora especificamente essa mensagem — **já commitado** (`a83b438`) e enviado (push) na branch da
-tarefa. Registrado também em `conhecimento-geral.md` por ser útil a qualquer módulo que navegue
-pelo mesmo menu.
+tarefa. Útil a qualquer módulo que navegue pelo mesmo menu.
 
 ### Histórico do bloqueio de login (`cy.origin`) — resolvido
 
 Em ciclos anteriores (2026-09-11 e retomada em 2026-09-14), `cy.loginComoPerfil('master')` falhou
 de forma recorrente com `CypressError: cy.origin() failed to create a spec bridge...` logo após o
 redirect para `keycloak-new-2.grupomultiplica.com.br`. Duas dúvidas bloqueantes foram registradas
-e respondidas pelo Thiago (ver `duvidas.md` e `conhecimento-geral.md` para o texto completo);
-causa raiz não confirmada (ambiente instável vs. algo estrutural), mas neste ciclo (2026-09-14) o
-login funcionou normalmente de ponta a ponta, permitindo concluir a investigação e a
-implementação.
+e respondidas pelo Thiago (ver `duvidas.md` para o texto completo; catálogo geral de sintomas de
+instabilidade de login em `../geral/docs/documentacao.md`); causa raiz não confirmada (ambiente
+instável vs. algo estrutural), mas neste ciclo (2026-09-14) o login funcionou normalmente de ponta
+a ponta, permitindo concluir a investigação e a implementação.

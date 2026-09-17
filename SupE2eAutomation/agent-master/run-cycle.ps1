@@ -195,8 +195,7 @@ deterministicamente por PowerShell antes deste ciclo (funcao Confirmar-PRUnico n
 via GH_TOKEN, disponivel se precisar dele por outro motivo. Execute agora UM unico ciclo da logica
 operacional:
 
-1. Leia ../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
-   inteiro.
+1. Leia docs/documentacao.md inteiro.
 2. Legado: se houver algo em fila-merge/aguardando-aprovacao/ (aviso de PR por tarefa do modelo
    antigo, ex. PR numero 9 da branch feature/mop-monitor-diario-analisar-operacao), para cada um
    rode gh pr view passando a branch do aviso e pedindo os campos state, mergedAt e url em json.
@@ -231,8 +230,7 @@ operacional:
    pull/checkout falhar (working tree suja, divergência), não force nada: registre em duvidas.md.
 5. Registre em docs/documentacao.md tudo que foi feito (merges feitos direto na reviewAgents,
    conflitos resolvidos, variáveis de .env novas só o nome, e estado da sincronização da pasta de
-   teste manual). Se o aprendizado valer para qualquer módulo, registre também em
-   ../docs/conhecimento-geral.md (releia antes de escrever).
+   teste manual).
 6. Nunca responda sua própria dúvida.
 '@
 
