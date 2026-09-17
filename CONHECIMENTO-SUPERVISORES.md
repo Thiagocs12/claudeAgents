@@ -158,6 +158,46 @@ estavam em `contaB` e não precisaram mudar. Todos os 11 validados sintaticament
   - Os Supervisores ajustam cadência de forma independente entre si historicamente — não presuma
     que vão continuar sincronizados só porque coincidem agora; confira sempre a task real.
 
+## Cadência adaptativa (ociosa 1h / ativa 10-20min) — criado em 2026-09-17
+
+Pedido explícito do Thiago (via Gerente): em vez de rodar sempre no intervalo cheio mesmo quando
+não há nada a fazer, cada `run-cycle.ps1` (subAgent + Agent Master, não Status Watcher — já
+desativados) agora se reagenda sozinho a cada ciclo:
+
+- **Ciclo ocioso** (a pré-checagem em PowerShell da seção 3.4 de cada `CLAUDE.md` não achou nada
+  pendente/retomável, ou o `PAUSA-HML.flag` está ativo): ajusta a própria Scheduled Task para
+  repetir de **1 em 1 hora**.
+- **Ciclo ativo** (achou algo e chamou o Claude, mesmo que o ciclo não termine todo o trabalho):
+  ajusta de volta para o intervalo normal — **10min** pra subAgent, **20min** pra Agent Master.
+
+Mecanismo: função `Set-CadenciaAdaptativa` (copiada em cada `run-cycle.ps1`, mesmo padrão de
+reaproveitar bloco já estabelecido nesta nota) lê a Scheduled Task pelo próprio nome
+(`$nomeTaskAgendada`, variável no topo do script) via `Get-ScheduledTask`, compara o intervalo de
+repetição atual com o alvo, e só chama `Set-ScheduledTask` se for diferente — preserva
+`StartBoundary`/Actions/Principal originais, só troca `RepetitionInterval` (mesma técnica das
+trocas de cadência manuais já documentadas na seção "Cadência real" abaixo). Chamada em 3 pontos de
+cada script: no branch do `PAUSA-HML.flag` (ocioso), no branch de "nada pendente" da pré-checagem
+(ocioso), e no fim do script depois do ciclo real rodar (ativo).
+
+**Efeito colateral aceito, não é bug**: como a decisão é "achou algo neste ciclo?", não "a fila
+ficou vazia no fim?", um módulo que termina toda a fila num ciclo só volta pra 1h no ciclo
+*seguinte* (que vai rodar ainda no intervalo ativo, constatar fila vazia, e só aí desacelerar) —
+uma tarefa nova que apareça durante a janela de 1h pode esperar até 1h pra ser pega, em vez dos
+10-20min de antes. Compensação deliberada pelo Thiago: menos gasto de token/rate-limit em ciclos
+ociosos, ao custo de reação mais lenta pra tarefa nova enquanto ocioso.
+
+**Aplicado nos 8 `run-cycle.ps1` reais** (não em Status Watcher, já desativado, nem em
+`SupTestesFrontEnd/subagents/contratos`, que ainda não tem Scheduled Task registrada):
+`SupE2eAutomation` (`geral`, `mop`, `POC`, `agent-master`), `SupAutomacaoUteis` (`cedente`,
+`keycloakUser`, `agent-master`), `SupTestesFrontEnd` (`mop`). Validados sintaticamente
+(`[Parser]::ParseFile`) e o mecanismo de troca de trigger testado ao vivo contra uma task real
+(`SupE2eAutomation-SubAgent-geral`, ida e volta, sem deixar alterado) antes de aplicar nos 8.
+
+**Achado à parte, não relacionado a esta mudança**: no momento desta edição, as 8 Scheduled Tasks
+citadas acima estavam com `Enabled = False`, apesar de terem rodado normalmente até minutos antes
+— causa não identificada, não fui eu (Gerente) quem desativou. Não reabilitadas automaticamente;
+aguardando confirmação do Thiago.
+
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.

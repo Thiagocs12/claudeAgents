@@ -4,6 +4,38 @@
 $ErrorActionPreference = "Continue"
 Set-Location -Path $PSScriptRoot
 
+# --- Cadência adaptativa da Scheduled Task (pedido do Thiago, 2026-09-17) ---
+# Ociosa (nada pra fazer neste ciclo) passa a rodar de 1 em 1 hora em vez de continuar batendo no
+# intervalo normal só pra constatar fila vazia. Assim que aparecer algo pra fazer (ciclo real ou
+# retomando tarefa incompleta), volta pro intervalo ativo de sempre (10min) — o script se reagenda
+# sozinho, sem precisar de Status Watcher/monitor externo. Preserva StartBoundary/Actions/Principal
+# originais da task, só troca o intervalo de repetição (mesma técnica usada nas trocas de cadência
+# já documentadas em CONHECIMENTO-SUPERVISORES.md, seção "Cadência real").
+$nomeTaskAgendada = "SupE2eAutomation-SubAgent-POC"
+$intervaloAtivoTask = New-TimeSpan -Minutes 10
+function Set-CadenciaAdaptativa {
+    param(
+        [ValidateSet('ocioso','ativo')][string]$Estado,
+        [string]$LogPath
+    )
+    $intervaloAlvo = if ($Estado -eq 'ocioso') { New-TimeSpan -Hours 1 } else { $intervaloAtivoTask }
+    try {
+        $task = Get-ScheduledTask -TaskName $nomeTaskAgendada -ErrorAction Stop
+        $trigger = $task.Triggers | Select-Object -First 1
+        $intervaloAtual = [System.Xml.XmlConvert]::ToTimeSpan($trigger.Repetition.Interval)
+        if ($intervaloAtual -ne $intervaloAlvo) {
+            $novoTrigger = New-ScheduledTaskTrigger -Once -At ([datetime]$trigger.StartBoundary) `
+                -RepetitionInterval $intervaloAlvo -RepetitionDuration (New-TimeSpan -Days 3650)
+            Set-ScheduledTask -TaskName $nomeTaskAgendada -Trigger $novoTrigger | Out-Null
+            "$(Get-Date -Format 'HH:mm:ss') | [cadencia] $nomeTaskAgendada ajustada para $Estado (repeticao=$intervaloAlvo)" |
+                Add-Content -Path $LogPath -Encoding utf8
+        }
+    } catch {
+        "$(Get-Date -Format 'HH:mm:ss') | [cadencia] nao foi possivel ajustar $nomeTaskAgendada - $($_.Exception.Message)" |
+            Add-Content -Path $LogPath -Encoding utf8
+    }
+}
+
 # --- Sincronização automática do repo raiz (claudeAgents) ---
 # O .git deste repo (raiz C:\Multiplica\claudeAgents) é compartilhado por todos os
 # Supervisores/agentes/Status Watchers rodando nesta máquina (mesmo working tree, mesmo remoto
@@ -63,6 +95,7 @@ Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 if (Test-Path "C:\Multiplica\claudeAgents\PAUSA-HML.flag") {
     "$(Get-Date -Format 'HH:mm:ss') | [pausado] ambiente HML indisponivel (PAUSA-HML.flag existe) - ciclo nao executado" |
         Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
 
@@ -164,6 +197,7 @@ if (-not (Test-TrabalhoPendente)) {
     $ts = Get-Date -Format "HH:mm:ss"
     "$ts | [ciclo pulado] sem tarefa pendente/retomavel/respondida - claude nao foi chamado" |
         Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
 
@@ -263,3 +297,5 @@ if ($script:ultimoRateLimit) {
 # Publica no remoto tudo que este ciclo escreveu/moveu no repo raiz (docs, duvidas, tarefas) — ver
 # função Sync-RepoRaizClaudeAgents definida no início deste script.
 Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt") -PermitirCommitEPush -MensagemCommit "POC: sincroniza estado do ciclo (auto, $(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
+
+Set-CadenciaAdaptativa -Estado 'ativo' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
