@@ -426,6 +426,22 @@ hipóteses levantadas na dúvida `(2)`. Corrigido diretamente no `.env`. Reabrin
 os passos 13-14** (Monitor Diário do Beyond BackOffice) — passos 1-12 continuam validados, não
 refazer. Se o login voltar a falhar mesmo assim, é um problema novo, não mais este.
 
+## 2ª Reabertura (2026-09-17, à noite, decisão do Thiago)
+
+**Achado 1 (Franquia) corrigido pelo Thiago**: ele preencheu o `idFranquia` do usuário `automacao`
+no Keycloak (raiz do achado — ver `docs/documentacao.md`, seção "Home do Beyond Banking passou a
+mostrar tela de Franquia": esse campo é um claim do token JWT, lido via `SegurancaService.getValue
+("idFranquia")` nos backends `mc-operacao-ms`/`mc-cedente-ms`/`mc-operacao-backoffice-ms` — sem ele
+a tela de cards não aparece). Expectativa do Thiago: o fluxo normal do Beyond Banking (cards "Beyond
+Comex"/"Beyond Operação Interno"/"Beyond Portal") deve voltar a aparecer. **Reabrindo só para
+confirmar isso e retomar os passos 13-14.**
+
+**Atenção — achado 2 (login "Usuário ou senha inválidos" isolado ao realm `multiplicacapital`,
+Beyond BackOffice) segue SEM correção conhecida** — não foi mencionado pelo Thiago nesta reabertura.
+Se o teste 2 (Monitor Diário/Beyond BackOffice) travar de novo nesse mesmo ponto, registre como
+resultado (não dúvida, já é achado conhecido) e não insista tentando de novo sozinho — só o achado 1
+(Franquia) tem confirmação de correção até agora.
+
 ## Execução — rodada 105-106 (2026-09-17, retomada da reabertura)
 
 - Ao retomar, estendi a spec (`cypress/e2e/criacao-operacao-servico.cy.js`) para cobrir os passos
