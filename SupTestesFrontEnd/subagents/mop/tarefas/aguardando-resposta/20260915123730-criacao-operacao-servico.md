@@ -248,3 +248,24 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   correto, já que a dúvida bloqueante real segue sem resposta) — sem alterar `duvidas.md` (regra 8:
   nunca respondo minha própria dúvida). `docs/status-resumo.md` já refletia corretamente o estado
   "Bloqueado" com a dúvida `(2)`, então não precisou de correção adicional.
+
+## Execução — rodada 99 (2026-09-17, ciclo seguinte)
+
+- Ao iniciar o ciclo, encontrei esta tarefa de novo em `tarefas/executando/` (mesma
+  pré-sincronização determinística do `run-cycle.ps1` a moveu de volta, pelo mesmo motivo já
+  registrado na rodada 98: ela casa pela dúvida antiga sem sufixo, já `respondida`, ignorando que a
+  dúvida mais recente `(2)` — a que de fato bloqueia — continua `Status: pendente`, `Resposta:`
+  vazia, conferido agora em `duvidas.md`).
+- **Não retomei tentativas de login**: a dúvida `(2)` (risco de aprofundar um possível bloqueio de
+  conta por força bruta ao repetir tentativas de login) ainda não tem orientação do Thiago. Não
+  executei nenhum `npx cypress run` neste ciclo — seria repetir exatamente o risco identificado na
+  rodada 97.
+- **Corrigi o estado de novo**: movendo a tarefa de volta para `tarefas/aguardando-resposta/`. Não
+  alterei `duvidas.md` (regra 8). `docs/status-resumo.md` já refletia o estado "Bloqueado" com a
+  dúvida `(2)` corretamente, sem necessidade de ajuste.
+- **Nota para o Supervisor**: esta é a segunda vez consecutiva (rodadas 98 e 99) que a
+  pré-sincronização do `run-cycle.ps1` devolve esta tarefa para `executando/` incorretamente — a
+  correção documentada em `docs/documentacao.md`/`../../docs/conhecimento-geral.md` (considerar a
+  dúvida mais recente sob um id, não a primeira que casar pelo prefixo) ainda não foi aplicada ao
+  script. Enquanto isso não for corrigido, cada ciclo seguinte vai repetir este mesmo padrão
+  (retomar → constatar dúvida `(2)` pendente → devolver sem agir) até a dúvida ser respondida.
