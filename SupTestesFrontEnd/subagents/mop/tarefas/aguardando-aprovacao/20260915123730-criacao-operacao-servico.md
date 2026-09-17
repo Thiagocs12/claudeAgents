@@ -372,7 +372,7 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
   aconteceu 6 vezes seguidas.
 
-## Resultado
+### Resultado anterior (histórico, superado — ver "## Resultado" no fim do arquivo para o veredito atual)
 
 **Veredito: cumprido parcialmente.**
 
@@ -425,3 +425,120 @@ editar o arquivo) — não é rotação/expiração de senha nem bloqueio de con
 hipóteses levantadas na dúvida `(2)`. Corrigido diretamente no `.env`. Reabrindo a tarefa **só para
 os passos 13-14** (Monitor Diário do Beyond BackOffice) — passos 1-12 continuam validados, não
 refazer. Se o login voltar a falhar mesmo assim, é um problema novo, não mais este.
+
+## Execução — rodada 105-106 (2026-09-17, retomada da reabertura)
+
+- Ao retomar, estendi a spec (`cypress/e2e/criacao-operacao-servico.cy.js`) para cobrir os passos
+  13-14 de fato: depois de expandir o drawer (ponto onde a spec parava antes, screenshot
+  `26-apos-expandir-drawer`), reaproveitei os seletores já mapeados e validados pelo
+  `SupE2eAutomation` (`docs/documentacao.md` deste módulo aponta para
+  `SupE2eAutomation/subagents/mop/repo/cypress/support/pages/mop/MonitorDiarioPage.js`): clicar em
+  "Monitor Diário" (`cy.contains('.menu-MuiDrawer-paper *', 'Monitor Diário')`), confirmar
+  `pathname === '/mop/monitor'`, clicar "Buscar", e se a operação (lida de
+  `cypress/ultima-operacao.json`, gravado pelo teste 1) não aparecer na janela de data padrão,
+  ampliar para 29 dias (mesma técnica de setter nativo em `input[type=date]`) e buscar de novo.
+  Ao achar a linha (comparando a 1ª coluna "Op." com o número da operação), leio o texto do chip
+  `.mop-MuiChip-label` da coluna "Etapa" (cabeçalhos completos da tabela, confirmados via grep nos
+  discovery HTMLs do `SupE2eAutomation`: Op., Data Op., Fundo, Cedente, Banco Cedente, Agente, Qtd
+  Tít., Valor Bruto, Valor Líq., PMP D+, Taxa Final, Produto, **Etapa**, Tempo, MC, REM, Chat,
+  Ações).
+- Tentei rodar a spec completa (`cypress-run-105.log`, síncrono, timeout 300000ms) → **ambos os
+  testes falharam, mas por dois motivos NOVOS e distintos dos anteriores** (não mais a mensagem
+  "Usuário ou senha inválidos" genérica em ambos os realms — desta vez cada teste travou num ponto
+  diferente):
+  - **Teste 1 (Beyond Banking, realm `beyondbanking-hml`): login funcionou** (sem erro de
+    credencial) e o cedente kenerson apareceu selecionado no cabeçalho ("KENERSON INDUSTRIA E
+    COME..."), mas a **Home mudou de conteúdo**: em vez dos 3 cards já mapeados ("Beyond Comex",
+    "Beyond Operação Interno", "Beyond Portal"), a tela mostrou **"Bem-vindo ao Beyond Banking"**
+    com um dropdown **"Franquia"** e a mensagem **"Nenhuma franquia disponível para o seu
+    usuário"** — uma tela completamente diferente, sem nenhum dos cards necessários para navegar a
+    "Beyond Operação Interno" → "Criar Operação". `cy.contains('Beyond Operação Interno')` deu
+    timeout (elemento nunca existiu nesta tela). Screenshot de falha confirma visualmente
+    (`Exploracao ... acessa o Beyond Banking ... (failed).png`).
+  - **Teste 2 (Beyond BackOffice, realm `multiplicacapital`): login falhou** com a mesma mensagem
+    real da tela já vista antes, **"Usuário ou senha inválidos"** — campo Login/E-mail preenchido
+    (`automacao`), Senha vazia (Keycloak limpa após submit rejeitado). URL travada em
+    `/login-actions/authenticate`.
+- **Verifiquei o `.env`** (sem expor o valor, só metadado) antes de suspeitar que a correção do
+  Thiago não tivesse pegado: `HML_MASTER_USERNAME` (9 caracteres) e `HML_MASTER_PASSWORD` (13
+  caracteres), nenhum dos dois com espaço em branco no início/fim (`/^\s|\s$/` não bate em nenhum)
+  — a correção do espaço em branco continua aplicada, não foi revertida.
+- **Rodei de novo** (`cypress-run-106.log`, mesma spec, sem alteração) para checar reprodutibilidade
+  → **os dois mesmos sintomas se repetiram de forma idêntica**: teste 1 chegou de novo na tela
+  "Bem-vindo ao Beyond Banking" / "Nenhuma franquia disponível para o seu usuário" (mesmo texto,
+  mesmo cedente no cabeçalho), teste 2 travou de novo no login do Keycloak (`multiplicacapital`)
+  com "Usuário ou senha inválidos". **2 de 2 tentativas nesta sessão confirmam ambos os achados
+  como reproduzíveis**, não transitórios.
+- **Achado 1 (Beyond Banking): a mesma credencial `master`/`automacao` que funcionou nas rodadas
+  74-93/94 (2026-09-16/17, criando operações reais) agora leva a uma tela "Franquia" nova, que não
+  existia antes** — não é mais possível chegar ao card "Beyond Operação Interno" a partir daqui com
+  este usuário. Isso não é uma falha da automação (o login funcionou, a URL/cedente confirmam
+  sessão válida) — é uma mudança de comportamento real da aplicação/permissão do usuário
+  `automacao` neste ambiente HML.
+- **Achado 2 (Beyond BackOffice): login com a mesma credencial `master`/`automacao` continua sendo
+  rejeitado no realm `multiplicacapital`** mesmo depois da correção do espaço em branco e mesmo
+  essa MESMA credencial funcionando sem erro no realm `beyondbanking-hml` no mesmo run — ou seja,
+  **não é mais explicável só pelo espaço em branco do `.env`** (que já foi corrigido e confirmado
+  ausente). O fato de falhar especificamente no realm `multiplicacapital` e não no
+  `beyondbanking-hml` (mesmo usuário/senha, mesma execução) sugere um problema **isolado a este
+  realm específico** — mais consistente com um bloqueio de conta por proteção de força bruta
+  restrito a esse realm (rodadas 96, 97 e 104 da sessão anterior concentraram várias tentativas de
+  login mal-sucedidas justamente contra `multiplicacapital`) do que com uma senha errada de forma
+  geral.
+- **Decisão**: ambos são problemas reais e concretos da aplicação/ambiente/conta, reproduzidos de
+  forma consistente (2/2), não uma questão que dependa de uma decisão de "tentar de novo ou não" —
+  tratando como **RESULTADO** (regra 6 do `AGENTE.md`), não dúvida nova. Passos 13-14 continuam
+  **não concluídos**, agora por um motivo diferente do da sessão anterior (antes: credencial
+  rejeitada nos dois realms; agora: credencial rejeitada só em `multiplicacapital`, e um obstáculo
+  novo e distinto — tela de "Franquia" sem opções — bloqueando também o próprio fluxo de criação
+  no Beyond Banking, que antes funcionava). Gerando o PDF e encerrando esta rodada.
+
+## Resultado (atualizado, rodadas 105-106, 2026-09-17)
+
+**Veredito: cumprido parcialmente — passos 13-14 continuam bloqueados, agora por dois problemas
+novos e reproduzíveis (2/2), diferentes dos já superados pela correção do Thiago.**
+
+- **Passos 1-12 (criação e avanço da operação no Beyond Banking): seguem validados** pelas rodadas
+  74-93 de 2026-09-16 (confirmação em banco, operações 88681-88683) — não foram refeitos nesta
+  rodada nem precisam ser, mas **um achado novo torna incerto se seriam repetíveis hoje** (ver
+  achado 1 abaixo).
+- **Achado 1 (NOVO, bloqueia o fluxo de criação desde a Home do Beyond Banking)**: com a mesma
+  credencial `master`/`automacao` que criou as operações 88681-88683, a Home do Beyond Banking
+  deixou de mostrar os 3 cards já mapeados ("Beyond Comex", "Beyond Operação Interno", "Beyond
+  Portal") e passou a mostrar uma tela "Bem-vindo ao Beyond Banking" com um seletor "Franquia" e a
+  mensagem **"Nenhuma franquia disponível para o seu usuário"** — sem nenhum card, sem caminho
+  visível para "Beyond Operação Interno"/"Criar Operação". Reproduzido de forma idêntica em 2/2
+  tentativas (`cypress-run-105.log`, `cypress-run-106.log`). O login em si funciona (cedente
+  kenerson aparece confirmado no cabeçalho) — o bloqueio é especificamente essa tela nova de
+  "Franquia" sem opções.
+- **Achado 2 (recorrência parcial): login do Beyond BackOffice (realm `multiplicacapital`) continua
+  rejeitando a credencial `master`/`automacao` com "Usuário ou senha inválidos"**, reproduzido em
+  2/2 tentativas — mas, diferente da sessão anterior (rodada 104, onde os DOIS realms rejeitavam a
+  credencial), desta vez o realm `beyondbanking-hml` (Beyond Banking) aceitou a mesma credencial sem
+  erro na mesma execução. Isso descarta o `.env`/espaço em branco (já corrigido e confirmado ausente
+  nesta rodada) como explicação e torna mais provável um bloqueio **isolado ao realm
+  `multiplicacapital`**, possivelmente por proteção de força bruta (as rodadas 96, 97 e 104 da
+  sessão anterior concentraram várias tentativas de login mal-sucedidas justamente contra esse
+  realm).
+- **Passos 13-14 (verificar no Monitor Diário que a etapa "Inclusão OPE" aparece concluída): NÃO
+  CONCLUÍDOS** — a spec já foi estendida para cobri-los (reaproveitando os seletores do Monitor
+  Diário já mapeados/validados pelo `SupE2eAutomation`: navegação até `/mop/monitor`, busca com
+  ampliação de janela para 29 dias se necessário, e leitura do chip da coluna "Etapa" na linha cujo
+  "Op." bate com o número da operação), mas nunca chegou a executar de fato por causa do Achado 2
+  (login do Beyond BackOffice bloqueado antes de chegar ao Monitor Diário).
+- **Relatório em PDF**: `relatorios/20260915123730-criacao-operacao-servico.pdf` (screenshots desta
+  rodada mostram a tela "Bem-vindo ao Beyond Banking"/"Nenhuma franquia disponível" e a tela de
+  login do Beyond BackOffice com "Usuário ou senha inválidos").
+- **Achados que precisam de ação fora do escopo deste subAgent**:
+  1. Confirmar com quem administra o Beyond Banking/permissões se o usuário `automacao` deveria
+     mesmo ter uma "franquia" configurada para ver os cards normais da Home, ou se isso é uma
+     regressão/mudança de configuração recente que precisa ser revertida/corrigida.
+  2. Confirmar com quem administra o Keycloak se o usuário `automacao` está bloqueado
+     especificamente no realm `multiplicacapital` (proteção de força bruta) e, se for o caso,
+     desbloquear ou aguardar o tempo de expiração do bloqueio antes de tentar de novo.
+- **Próximo passo recomendado**: assim que qualquer um dos dois problemas acima for resolvido,
+  retomar esta tarefa (ou uma nova, referenciando esta) para os passos ainda pendentes. Se só o
+  Achado 2 for resolvido (login do Beyond BackOffice), os passos 13-14 podem ser tentados usando o
+  número de operação já validado em banco (88683, `cypress/ultima-operacao.json`), sem precisar
+  recriar uma operação nova — só se o Achado 1 (Franquia) também bloquear alguma dependência do
+  Monitor Diário é que passos 1-12 precisariam ser investigados de novo.

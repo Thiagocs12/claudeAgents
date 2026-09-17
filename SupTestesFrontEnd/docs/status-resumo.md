@@ -8,13 +8,18 @@
 
 ## mop
 Aguardando aprovação do Thiago (`20260915123730-criacao-operacao-servico`) — cumprido parcialmente:
-passos 1-12 do roteiro (criação e avanço da operação de serviço no Beyond Banking) concluídos e
-confirmados em banco; passos 13-14 (Monitor Diário do Beyond BackOffice) bloqueados por falha de
-login persistente ("Usuário ou senha inválidos" em ambos os realms, reproduzida de novo mesmo após
-o Thiago autorizar retry na rodada 104) — parece precisar de ação de quem administra a
-credencial/Keycloak (rotação de senha ou desbloqueio de conta), fora do escopo deste subAgent.
-Relatório em `relatorios/20260915123730-criacao-operacao-servico.pdf`. Pendência secundária não
-bloqueante: divergência UI×banco na operação 88677.
+passos 1-12 do roteiro (criação e avanço da operação de serviço no Beyond Banking) seguem
+concluídos e confirmados em banco (rodadas 74-93). Reaberta pelo Thiago só para os passos 13-14
+(Monitor Diário do Beyond BackOffice); nesta retomada (rodadas 105-106) apareceram **dois achados
+novos**, ambos reproduzidos 2/2: (1) a Home do Beyond Banking passou a mostrar uma tela de
+"Franquia" sem opções para o usuário `automacao`, bloqueando o caminho de criação desde o início;
+(2) o login do Beyond BackOffice (realm `multiplicacapital`) continua rejeitando a credencial com
+"Usuário ou senha inválidos" mesmo após a correção do `.env` (espaço em branco) — mas agora só
+nesse realm (o realm `beyondbanking-hml` aceitou a mesma credencial na mesma execução), sugerindo
+bloqueio de conta isolado a esse realm, não mais problema geral de senha. Ambos parecem precisar de
+ação de quem administra permissões/Keycloak, fora do escopo deste subAgent. Relatório em
+`relatorios/20260915123730-criacao-operacao-servico.pdf`. Pendência secundária não bloqueante:
+divergência UI×banco na operação 88677.
 
 ## contratos
 Sem tarefa ativa. Módulo novo (criado em 2026-09-17): tarefa

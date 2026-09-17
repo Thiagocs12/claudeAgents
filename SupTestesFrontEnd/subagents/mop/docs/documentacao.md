@@ -91,31 +91,12 @@ animação ou depois dela assentar) o teste passou normalmente. Se precisar de s
 um `cy.visit()`, prefira aguardar a tela assentar (`cy.wait()` maior, ou aguardar um elemento
 específico visível) antes de tirar o screenshot, ou evitar o screenshot nesse ponto específico.
 
-**Recorrência (rodadas 94-95, 2026-09-17):** o mesmo erro derrubou o teste em mais dois pontos —
-`02-apos-tentativa-login` (redirect pós-login do Beyond Banking, tela de seleção de cliente/Home,
-mesmo fundo com padrão de pontos) e `27-apos-submeter-login-beyond-backoffice` (redirect pós-login
-do Beyond BackOffice, Home "Ecossistema Beyond", mesmo padrão de fundo animado). Confirmado nos
-dois casos que o **login em si funcionava** (a screenshot de falha automática do Cypress mostrava a
-próxima tela já carregada) — só o screenshot manual diagnóstico é que quebrava o runner. Ambos
-removidos (eram só diagnóstico, não essenciais ao relatório final); o dump de texto bruto do body
-(sem risco) e as screenshots mais adiante, tiradas só depois da tela assentar de fato, continuam
-documentando esses trechos. **Regra geral reforçada**: qualquer screenshot nos primeiros segundos
-após um redirect/login em qualquer uma das telas com fundo animado (Beyond Banking e Beyond
-BackOffice/Beyond) é candidato a essa quebra — preferir não tirar screenshot ali, ou só depois de
-uma espera/checagem de estabilização bem maior que alguns segundos.
-
-## Armadilha: `beyondbanking-hml` fica intermitentemente indisponível (observado 2026-09-15)
-
-Numa mesma sessão de exploração, o host `beyondbanking-hml.grupomultiplica.com.br` respondeu
-normalmente numa rodada e, poucos minutos depois, passou a falhar com `ESOCKETTIMEDOUT` logo no
-`cy.visit()` inicial — confirmado fora do Cypress com `curl` direto (múltiplas tentativas ao longo
-de ~2 min, todas `HTTP_CODE=000`/timeout de conexão), enquanto o Keycloak (`keycloak-new-2...`)
-respondia normalmente no mesmo intervalo — ou seja, não é problema de rede geral, é o host
-`beyondbanking-hml` especificamente. Se um ciclo futuro tomar `ESOCKETTIMEDOUT` no `cy.visit()`
-inicial: (1) confirmar com `curl --max-time 20` direto no host antes de assumir bug de spec; (2)
-se confirmado que o host não responde, isso **não é dúvida bloqueante** (não precisa de decisão do
-Thiago) nem resultado final (objetivo não foi tentado por completo) — deixar a tarefa em
-`executando/` com a narrativa atualizada e deixar o próximo ciclo (5 min depois) tentar de novo.
+**Regra geral reforçada (recorrência nas rodadas 94-95, narrativa completa em
+`documentacao-historico.md`):** qualquer screenshot nos primeiros segundos após um redirect/login
+em qualquer uma das telas com fundo animado (Beyond Banking e Beyond BackOffice/Beyond) é candidato
+a essa quebra — preferir não tirar screenshot ali, ou só depois de uma espera/checagem de
+estabilização bem maior que alguns segundos. Em ambos os casos observados, o login em si funcionava
+normalmente — só o screenshot manual diagnóstico é que derrubava o teste.
 
 ## Armadilha: `cy.contains(seletor, texto)` quebra com texto de múltiplas palavras (2026-09-15)
 
@@ -264,16 +245,10 @@ o app já tendo "passado direto" pela tela de login sem logar
 fixo, e usar a origin de fato observada (`new URL(url).origin`) no `cy.origin()` em vez de sempre
 `ambiente.keycloakUrl`.
 
-**Achado adicional, ainda não confirmado como reproduzível:** numa execução em que o host `lgni`
-foi usado, a própria tela do Keycloak (antes até de mostrar o formulário de login) respondeu com
-o erro **"Parâmetro inválido: redirect_uri"** — sugere que o client `autenticacao` do realm
-`multiplicacapital` pode não ter `https://beyond-hml.grupomultiplica.com.br/` cadastrado como
-`redirect_uri` válido nesse host específico (`lgni`), diferente de `keycloak-new-2` (onde o mesmo
-fluxo funcionou em rodadas anteriores, 80-88). Não confirmado se é uma falha de configuração
-persistente de `lgni` ou um estado transitório (2 tentativas seguintes falharam antes de chegar
-nessa tela, por flakiness já conhecida do `cy.origin()` — ver armadilha abaixo — sem re-observar o
-erro de `redirect_uri` nem confirmá-lo como ausente). Se reaparecer em execuções futuras,
-considerar RESULTADO (bug/config real, bloqueia passos 13-14), não dúvida.
+**Achado adicional, nunca mais reobservado** (narrativa completa em `documentacao-historico.md`):
+numa execução em que o host `lgni` foi usado, a tela do Keycloak chegou a responder
+"Parâmetro inválido: redirect_uri" antes do formulário — não confirmado como reproduzível, e as
+sessões seguintes (host sempre `keycloak-new-2`) não repetiram isso.
 
 ## Armadilha: pré-sincronização pode devolver tarefa pra `executando/` com base na dúvida errada quando há mais de uma dúvida sob o mesmo id
 
@@ -287,23 +262,6 @@ todas `respondida`). Narrativa completa do caso original (2026-09-17) em
 `documentacao-historico.md`. Ver também `CONHECIMENTO-SUPERVISORES.md` (raiz de `claudeAgents`),
 seção "Bugs conhecidos no padrão compartilhado de `run-cycle.ps1`" (mesma armadilha, vale pra
 qualquer módulo/Supervisor com esse padrão de script).
-
-## Armadilha: falha de login "Usuário ou senha inválidos" reproduzível nos dois realms (2026-09-17)
-
-A partir da rodada 96 desta sessão (2026-09-17), o login via Keycloak (`keycloak-new-2...`) passou
-a rejeitar a credencial `master` (usuário `automacao`, mesma usada desde 2026-09-15) com a
-mensagem real da tela **"Usuário ou senha inválidos"**, em **ambos os realms**
-(`beyondbanking-hml` e `multiplicacapital`) — não é a flakiness intermitente antiga do
-`cy.origin()`/spec bridge (essa é uma classe de erro diferente, sem mensagem de credencial
-inválida). O login funcionava normalmente até a rodada 94 desta mesma sessão e ao longo de toda a
-sessão anterior (rodadas 74-93, 2026-09-16, com operações reais criadas/avançadas). Consultado o
-Thiago (rodada 97, dúvida bloqueante) se seria rotação/expiração de senha ou bloqueio de conta por
-força bruta (efeito colateral de tentativas repetidas) — autorizou tentar de novo (rodada 104), mas
-a falha se repetiu de forma idêntica e imediata nos dois realms. **Conclusão registrada como
-RESULTADO da tarefa** (não mais dúvida): a credencial parece precisar de ação de quem administra o
-Keycloak/HML (confirmar rotação de senha ou desbloqueio de conta) antes de qualquer novo teste que
-dependa de login neste módulo. Ver task `20260915123730-criacao-operacao-servico`, seção
-`## Resultado`, para o detalhe completo.
 
 ## Armadilha: screenshots do Cypress não persistem entre execuções (`npx cypress run` sobrescreve a pasta)
 
@@ -320,6 +278,54 @@ as screenshots relevantes daquela rodada para uma pasta separada (ex.
 `cypress/screenshots-arquivadas/<rodada-N>/`) antes da próxima `npx cypress run` apagar, ou aceitar
 que o relatório final só terá evidência visual do trecho mais recentemente executado (com a
 narrativa textual cobrindo o restante).
+
+## Armadilha/achado: Home do Beyond Banking passou a mostrar tela de "Franquia" sem opções (2026-09-17)
+
+Com a mesma credencial `master`/`automacao` que criou as operações 88681-88683 (rodadas 74-93,
+2026-09-16), a Home do Beyond Banking **parou de mostrar os 3 cards já mapeados** ("Beyond Comex",
+"Beyond Operação Interno", "Beyond Portal") e passou a mostrar uma tela **"Bem-vindo ao Beyond
+Banking"** com um dropdown **"Franquia"** e a mensagem **"Nenhuma franquia disponível para o seu
+usuário"** — sem nenhum card visível, bloqueando totalmente o caminho para "Beyond Operação
+Interno" → "Criar Operação". O login funciona normalmente (cedente kenerson aparece confirmado no
+cabeçalho) — o bloqueio é especificamente essa tela nova. Reproduzido de forma idêntica em 2/2
+tentativas (`cypress-run-105.log`, `cypress-run-106.log`, rodadas 105-106). Ver task
+`20260915123730-criacao-operacao-servico`, seção `## Resultado` mais recente, para o detalhe
+completo. **Ação recomendada**: confirmar com quem administra permissões do Beyond Banking se o
+usuário `automacao` deveria ter uma "franquia" configurada.
+
+## Armadilha: falha de login "Usuário ou senha inválidos" agora isolada ao realm `multiplicacapital` (2026-09-17)
+
+Atualização da armadilha anterior ("falha de login ... reproduzível nos dois realms"): depois da
+correção do Thiago (espaço em branco no `.env`, confirmada removida), o login voltou a falhar com
+"Usuário ou senha inválidos" — mas desta vez **só no realm `multiplicacapital`** (Beyond
+BackOffice); o realm `beyondbanking-hml` (Beyond Banking) aceitou a mesma credencial, na mesma
+execução, sem erro (rodadas 105-106, 2/2 reproduzido). Isso descarta de vez o `.env`/espaço em
+branco como explicação atual e torna mais provável um **bloqueio isolado ao realm
+`multiplicacapital`**, possivelmente por proteção de força bruta do Keycloak (as rodadas 96, 97 e
+104 da sessão anterior concentraram várias tentativas de login mal-sucedidas justamente contra esse
+realm). **Ação recomendada**: confirmar com quem administra o Keycloak se há bloqueio de conta
+específico nesse realm para o usuário `automacao`.
+
+## Monitor Diário do Beyond BackOffice — seletores mapeados (2026-09-17, spec estendida mas ainda não validada ao vivo)
+
+Reaproveitados do `SupE2eAutomation` (`repo/cypress/support/pages/mop/MonitorDiarioPage.js` e
+`docs/documentacao.md` daquele Supervisor) e incorporados à spec deste módulo — **ainda não
+confirmados ao vivo por este subAgent** (a spec chega até aqui mas o login do Beyond BackOffice tem
+travado antes, ver armadilha acima):
+
+- Clicar em "Monitor Diário": `cy.contains('.menu-MuiDrawer-paper *', 'Monitor Diário')` (o `*` é
+  essencial — sem ele o `contains` casa com o container do drawer, que não tem `onClick`).
+- Rota esperada após navegar: `pathname === '/mop/monitor'`.
+- Cabeçalhos completos da tabela de resultados (`table.MuiTable-root tbody tr`): **Op.**, Data Op.,
+  Fundo, Cedente, Banco Cedente, Agente, Qtd Tít., Valor Bruto, Valor Líq., PMP D+, Taxa Final,
+  Produto, **Etapa**, Tempo, MC, REM, Chat, Ações. A 1ª coluna ("Op.") tem o número da operação
+  (mesmo número mostrado no Beyond Banking); "Etapa" é o chip `.mop-MuiChip-label` com o status
+  atual (valores já observados pelo `SupE2eAutomation`: "Inclusão OPE", "Middle", entre outros).
+- Se a operação não aparecer na busca com a janela de data padrão, ampliar para 29 dias: pegar
+  `input[type="date"]` (o primeiro, data inicial), setar via o setter nativo do protótipo de
+  `HTMLInputElement` (mesma técnica documentada pelo `SupE2eAutomation` — `.val()` do jQuery não
+  dispara o `onChange` de um input controlado por React) para `data final - 28 dias`, disparar
+  `input`/`change`, e clicar "Buscar" de novo.
 
 ## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
 
