@@ -171,6 +171,8 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     ponteiro pro arquivo de histórico. Nunca apague informação ao arquivar — é sempre mover, nunca
     descartar. Esses arquivos são relidos INTEIROS a cada ciclo (regra 1) — deixá-los crescer sem
     limite é o maior custo de token deste sistema.
+11. Status compacto para o Gerente: sempre que mudar o estado da sua tarefa, atualize também
+    `../../docs/status-resumo.md` (ver seção 3.5).
 ```
 
 ### 3.2 Lógica que a Scheduled Task de cada subAgent deve seguir a cada execução
@@ -303,6 +305,27 @@ Isso é puramente uma otimização de custo/rate-limit — não muda nenhuma reg
 novo (subAgent de módulo futuro) deve nascer já com essa pré-checagem — copie o bloco de um
 `run-cycle.ps1` existente em vez de reescrever do zero (mesmo padrão de reaproveitar o bloco de log
 já documentado no `CONHECIMENTO-SUPERVISORES.md`).
+
+### 3.5 Status compacto (`docs/status-resumo.md`) — criado em 2026-09-17
+
+Pedido explícito do Thiago (via Gerente), depois de um "status" consumir ~500 mil tokens numa única
+checagem por forçar a Gerente a reler `duvidas.md`/`tarefas/` cru de cada subAgent + Agent Master
+via subagentes forkados (cada um herdando a conversa inteira da Gerente, replicado 3x). Correção:
+cada subAgent/Agent Master mantém sua própria seção compacta em `docs/status-resumo.md` (raiz deste
+Supervisor), atualizada como parte da regra 11 do `AGENTE.md` (subAgent) / regra correspondente do
+Agent Master, toda vez que seu estado muda (tarefa move de pasta, dúvida nova/atualizada). A Gerente
+lê só esse arquivo (compacto, poucas linhas) para responder "status" — só cai para ler
+`duvidas.md`/`tarefas/` de um módulo específico se a seção dele no `status-resumo.md` estiver
+ausente, contraditória, ou claramente desatualizada.
+
+- Formato: uma seção `## <modulo>` por subAgent + uma `## agent-master`, cada uma com 1-2 frases:
+  "Sem tarefa ativa.", "Bloqueado (`duvidas.md`: `<id>`) — <resumo>.", ou "Em execução (`<id>`) —
+  <feito> — falta: <falta>."
+- Cada agente só edita a própria seção — releia o arquivo inteiro antes de escrever, mesma
+  disciplina já usada para `conhecimento-geral.md` (evita perder edição concorrente de outro
+  módulo).
+- Este arquivo é sobre **estado atual**, não conhecimento (isso continua em
+  `docs/documentacao.md`/`conhecimento-geral.md`) — mantenha-o sempre pequeno, sem histórico.
 
 ## 4. Protocolo de dúvidas — você é o único canal
 

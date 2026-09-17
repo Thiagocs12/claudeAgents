@@ -37,10 +37,10 @@ Consequências estruturais importantes:
 - **Relatório é narrativo, não só veredito**: o formato esperado é passo a passo — "tentei avançar
   para a próxima etapa, apareceu X"; "tentei preencher o campo Y, deu o erro Z" — não um resumo
   final seco de "passou/falhou". Isso é o que dá valor pra quem for automatizar depois (ver seção
-  3.5) e pro Thiago avaliar o que aconteceu de verdade.
+  3.6) e pro Thiago avaliar o que aconteceu de verdade.
 - **Vídeo é obrigatório** ao final de toda execução (ver seção 3.1, regra 5).
 - **Hand-off pro `SupE2eAutomation` só acontece depois de aprovação explícita do Thiago** (ver
-  seção 3.5) — nunca automaticamente ao concluir um teste.
+  seção 3.6) — nunca automaticamente ao concluir um teste.
 
 Você é responsável por:
 - Refinar o objetivo/cenário de teste junto com o Thiago (o que testar, critérios de aceite, qual
@@ -49,7 +49,7 @@ Você é responsável por:
   ainda não existir — sempre confirmando o contexto com o Thiago antes).
 - Ser o único canal de dúvidas entre os subAgents e o Thiago.
 - **Apresentar ao Thiago cada resultado em `tarefas/aguardando-aprovacao/`** (relatório + vídeo) e
-  registrar a decisão dele — aprovado (gera hand-off, seção 3.5) ou reprovado (refina o que precisa
+  registrar a decisão dele — aprovado (gera hand-off, seção 3.6) ou reprovado (refina o que precisa
   mudar e reabre a tarefa).
 - Reabrir o refinamento quando o Thiago quiser ajustar um cenário já testado.
 
@@ -110,7 +110,7 @@ Módulos surgem conforme a demanda aparece — não há lista fixa.
 - "Esse módulo `<X>` ainda não tem subAgent de teste. Confirma que devo criar a estrutura pra
   ele?"
 - Prefira usar o **mesmo nome de módulo** já usado no `SupE2eAutomation` quando o cenário for da
-  mesma área (ex.: `mop`, `geral`) — isso é o que permite o hand-off automático da seção 3.5
+  mesma área (ex.: `mop`, `geral`) — isso é o que permite o hand-off automático da seção 3.6
   funcionar sem ambiguidade. Se for uma área nova que ainda não existe em nenhum dos dois
   Supervisores, confirme com o Thiago o nome antes de criar, para os dois lados nascerem
   alinhados.
@@ -194,7 +194,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado (e
      `../../docs/conhecimento-geral.md` se valer para outro módulo, releia antes de escrever).
    - Mova o arquivo de `executando/` para `aguardando-aprovacao/` — **não** para `concluidas/`: só
-     o Thiago decide isso (ver seção 3.5). **Nunca gere o hand-off pro `SupE2eAutomation` você
+     o Thiago decide isso (ver seção 3.6). **Nunca gere o hand-off pro `SupE2eAutomation` você
      mesmo aqui** — isso só acontece depois da aprovação dele, executado pelo Supervisor.
 7. Se travar numa dúvida bloqueante de verdade (precisa de uma decisão/informação do Thiago pra
    continuar — não confundir com "encontrei um bug", que é resultado, regra 6): registre em
@@ -211,6 +211,8 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     ainda é operacionalmente relevante + um ponteiro pro arquivo de histórico. Nunca apague
     informação ao arquivar — é sempre mover, nunca descartar. Esses arquivos são relidos INTEIROS a
     cada ciclo (regra 1) — deixá-los crescer sem limite é o maior custo de token deste sistema.
+11. Status compacto para o Gerente: sempre que mudar o estado da sua tarefa, atualize também
+    `../../docs/status-resumo.md` (ver seção 3.5).
 ```
 
 ### 3.2 Lógica que a Scheduled Task de cada subAgent deve seguir a cada execução
@@ -246,7 +248,27 @@ completo de cada um:
 - Nunca despejar saída bruta de `cypress run`/`npm install` no contexto do agente ou em
   `docs/documentacao.md`/`duvidas.md` — redirecionar para arquivo e reportar só o resumo relevante.
 
-### 3.5 Aprovação do Thiago e hand-off para o `SupE2eAutomation`
+### 3.5 Status compacto (`docs/status-resumo.md`) — criado em 2026-09-17
+
+Pedido explícito do Thiago (via Gerente), depois de um "status" consumir ~500 mil tokens numa única
+checagem por forçar a Gerente a reler `duvidas.md`/`tarefas/` cru de cada subAgent via subagentes
+forkados (cada um herdando a conversa inteira da Gerente, replicado 3x). Correção: cada subAgent
+mantém sua própria seção compacta em `docs/status-resumo.md` (raiz deste Supervisor), atualizada
+como parte da regra 11 do `AGENTE.md`, toda vez que seu estado muda (tarefa move de pasta, dúvida
+nova/atualizada, ou vai para `aguardando-aprovacao/`). A Gerente lê só esse arquivo (compacto,
+poucas linhas) para responder "status" — só cai para ler `duvidas.md`/`tarefas/` de um módulo
+específico se a seção dele no `status-resumo.md` estiver ausente, contraditória, ou claramente
+desatualizada. Sem Agent Master aqui, então não há seção equivalente a ele.
+
+- Formato: uma seção `## <modulo>` por subAgent, com 1-2 frases: "Sem tarefa ativa.", "Bloqueado
+  (`duvidas.md`: `<id>`) — <resumo>.", "Em execução (`<id>`) — <feito> — falta: <falta>.", ou
+  "Aguardando aprovação do Thiago (`<id>`) — <veredito>."
+- Cada subAgent só edita a própria seção — releia o arquivo inteiro antes de escrever, mesma
+  disciplina já usada para `conhecimento-geral.md`.
+- Este arquivo é sobre **estado atual**, não conhecimento (isso continua em
+  `docs/documentacao.md`/`conhecimento-geral.md`) — mantenha-o sempre pequeno, sem histórico.
+
+### 3.6 Aprovação do Thiago e hand-off para o `SupE2eAutomation`
 
 **Regra do Thiago (2026-09-15):** o subAgent nunca decide isso sozinho. Quem faz tudo desta seção
 é **você, Supervisor**, numa conversa com o Thiago — nunca de forma autônoma num ciclo agendado.

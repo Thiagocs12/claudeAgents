@@ -87,3 +87,10 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     histórico. **Nunca apague informação ao arquivar — é sempre mover, nunca descartar.** Esses
     arquivos são relidos INTEIROS a cada ciclo (regra 1) — deixá-los crescer sem limite é o maior
     custo de token deste sistema.
+13. **Status compacto para o Gerente (2026-09-17):** sempre que processar um aviso (mover entre
+    `fila-merge/pendentes/`, `fila-merge/aguardando-aprovacao/`, `fila-merge/concluidos/`) ou
+    registrar/atualizar uma dúvida, atualize também `../docs/status-resumo.md`: releia o arquivo
+    INTEIRO antes de escrever, localize a seção `## agent-master` (crie se ainda não existir) e
+    substitua **só o conteúdo dela** por um resumo de 1-2 frases — ex.: "Sem aviso pendente.",
+    "Bloqueado (`duvidas.md`: `<id>`) — <resumo>.", "Processando `<branch>` — <o que falta>." Nunca
+    mexa nas seções dos subAgents.

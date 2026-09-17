@@ -462,6 +462,32 @@ final via `Set-UtilizacaoConta`):
   `SupTestesFrontEnd/subagents/mop/tarefas/executando/20260915123730-criacao-operacao-servico.md`
   (resumo compacto que ficou no lugar do original, com nota apontando pro histórico).
 
+## Status compacto por Supervisor (`docs/status-resumo.md`) — criado em 2026-09-17
+
+Pedido explícito do Thiago à Gerente, depois de um "status" dos 3 Supervisores consumir ~500 mil
+tokens numa única checagem: a Gerente tinha forkado 3 subagentes (um por Supervisor) para reler
+`duvidas.md`/`tarefas/` cru de cada subAgent/Agent Master — cada fork herdando a conversa inteira
+da Gerente (incluindo este arquivo + os 3 `CLAUDE.md`, já grandes), replicado 3x, mais uma retentativa
+porque um dos forks devolveu resposta vazia.
+
+**Correção adotada nos 3 Supervisores:** cada um passa a manter um arquivo compacto
+`docs/status-resumo.md` (raiz do Supervisor, irmão de `conhecimento-geral.md`), com uma seção `##
+<modulo>` por subAgent + uma `## agent-master` (quando existir), atualizada **pelo próprio
+subAgent/Agent Master** (nunca pela Gerente) sempre que seu estado mudar — regra nova acrescentada
+ao `AGENTE.md` de cada um (ver seção "Status compacto" do `CLAUDE.md` de cada Supervisor pro
+detalhe exato). Cada agente só edita a própria seção, relendo o arquivo inteiro antes de escrever
+(mesma disciplina já usada em `conhecimento-geral.md`, evita perder edição concorrente).
+
+**Novo protocolo de "status" da Gerente:** ler só os 3 `docs/status-resumo.md` (um por Supervisor)
++ os dois `ultima-utilizacao.json` de conta — nunca mais forkar/reler `duvidas.md`/`tarefas/` cru de
+cada módulo por padrão. Só cair para uma leitura mais profunda de um módulo específico se a seção
+dele no `status-resumo.md` estiver ausente, contraditória com o que o Thiago já sabe, ou claramente
+desatualizada (ex.: aponta tarefa que já não existe mais na pasta).
+
+Qualquer Supervisor novo deve nascer já com esse arquivo (mesmo que vazio/com só cabeçalho) e a
+regra correspondente no `AGENTE.md` de cada subAgent/Agent Master — copiar o padrão de um dos 3
+`CLAUDE.md` existentes em vez de reinventar.
+
 ## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
 
 - O cache de binário do Cypress é **global por usuário do Windows**

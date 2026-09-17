@@ -69,6 +69,16 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     está, decisões já tomadas) + um ponteiro pro arquivo de histórico. **Nunca apague informação ao
     arquivar — é sempre mover, nunca descartar.** Esses arquivos são relidos INTEIROS a cada ciclo
     (regra 1) — deixá-los crescer sem limite é o maior custo de token deste sistema.
+11. **Status compacto para o Gerente (2026-09-17):** sempre que mudar o estado da sua tarefa (mover
+    entre pastas de `tarefas/`, registrar ou atualizar uma dúvida em `duvidas.md`), atualize também
+    `../../docs/status-resumo.md`: releia o arquivo INTEIRO antes de escrever (evita perder edição
+    concorrente de outro módulo), localize a seção `## mop` (crie se ainda não existir) e substitua
+    **só o conteúdo dela** por um resumo de 1-2 frases do estado atual — ex.: "Sem tarefa ativa.",
+    "Bloqueado (`duvidas.md`: `<id>`) — <resumo objetivo da pergunta>.", "Em execução (`<id>`) — <o
+    que já foi feito> — falta: <o que falta>.", ou "Aguardando aprovação do Thiago (`<id>`) —
+    <resumo do veredito em `## Resultado`>." Nunca mexa na seção de outro módulo. Isso existe pra o
+    Gerente responder "status" ao Thiago sem precisar reler `duvidas.md`/`tarefas/` de todos os
+    módulos a cada consulta.
 
 ## Escopo deste módulo
 
