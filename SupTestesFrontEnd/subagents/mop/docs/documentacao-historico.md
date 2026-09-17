@@ -50,3 +50,40 @@ qualquer teste Cypress que não esteja ignorando exceções da aplicação; na U
 vermelho de erro). Reproduzido em 2 de 2 tentativas válidas na época (operações 88675 e 88676) —
 causa real identificada depois: campo "Documento" repetido entre as operações de teste, não um bug
 de aplicação.
+
+## Narrativa original: processos órfãos de `npx cypress run` sem timeout (2026-09-15)
+
+Movido do arquivo principal em 2026-09-17 (a armadilha continua ativa — a regra compacta ficou lá;
+esta é a narrativa completa do incidente que originou a regra).
+
+Num ciclo real, o subAgent chamou `npx cypress run` via Bash sem passar um `timeout` explícito;
+o comando estourou o timeout implícito do Bash, foi movido pra background pela ferramenta, e o
+subAgent tentou "esperar terminar depois" (chegou a chamar `ScheduleWakeup`, que não se aplica a
+um ciclo `claude -p` de execução única — não existe próximo turno pra um wakeup disparar) e
+encerrou o ciclo com o processo Cypress/Electron/node ainda rodando. Ficaram processos órfãos
+vivos por mais de 2h até serem encontrados e encerrados manualmente pelo Supervisor.
+
+- **Correção na regra (`AGENTE.md`, regra 5):** sempre passar `timeout: 300000` (5 min) ou mais ao
+  chamar `npx cypress run` via Bash; nunca usar `ScheduleWakeup` neste contexto; nunca encerrar o
+  ciclo com um processo Cypress/node ainda vivo.
+- **Rede de segurança determinística (`run-cycle.ps1`):** no início e no fim de todo ciclo, mata
+  qualquer processo cuja `CommandLine` referencie esta pasta e contenha "cypress" (raiz) mais toda
+  a árvore de processos filhos (Electron/Cypress) — independe do LLM se comportar corretamente.
+  Ver também `CONHECIMENTO-SUPERVISORES.md` (relevante pros outros dois Supervisores, que também
+  chamam Cypress via ciclos `claude -p`).
+
+## Narrativa original: dúvida errada casada por prefixo de id na pré-sincronização (2026-09-17)
+
+Movido do arquivo principal em 2026-09-17 (a armadilha continua ativa — a regra compacta e a
+pendência pro Supervisor ficaram lá; esta é a narrativa completa do caso que originou o registro).
+
+Esta tarefa teve **duas** dúvidas registradas ao longo do tempo sob o mesmo id base
+(`20260915123730-criacao-operacao-servico`, sem sufixo, e `... (2)`, mais recente). A primeira foi
+respondida e resolvida ainda em 2026-09-15; a segunda (sobre o login falhando com "Usuário ou senha
+inválidos", rodadas 96-97) ficou pendente. Mesmo assim, a pré-sincronização determinística do
+`run-cycle.ps1` devolveu a tarefa de `tarefas/aguardando-resposta/` pra `tarefas/executando/` no
+ciclo seguinte — aparentemente casando pelo prefixo do id e enxergando a dúvida **antiga**
+(`respondida`) em vez da mais recente (`(2)`, ainda `pendente`), que é a que de fato bloqueia a
+continuação. Corrigido manualmente pelo subAgent (rodada 98): tarefa devolvida pra
+`aguardando-resposta/` sem retomar tentativas de login (que repetiriam o risco de aprofundar um
+possível bloqueio de conta).

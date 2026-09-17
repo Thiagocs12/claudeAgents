@@ -1,5 +1,9 @@
 # Conhecimento acumulado do módulo mop (Sup TestesFrontEnd)
 
+> Histórico/resolvido/superado arquivado em `documentacao-historico.md` (mesma pasta) — só abra
+> se precisar reconstituir o "porquê" de uma investigação já fechada. Este arquivo é relido
+> INTEIRO a cada ciclo: manter aqui só o que ainda é operacionalmente relevante.
+
 ## Ponto de partida: conhecimento já mapeado pelo SupE2eAutomation
 
 Ver `C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\mop\docs\documentacao.md` (outro
@@ -38,23 +42,15 @@ do Beyond BackOffice/API/Keycloak já usadas pelo outro Supervisor — **não ne
 Beyond Banking**, que é sistema novo pra qualquer um dos dois Supervisores; se faltar alguma URL
 de ambiente/config, registrar como aprendizado aqui assim que descoberta.
 
-## Armadilha: `npx cypress run` sem timeout explícito pode ficar órfão (2026-09-15)
+## Armadilha: `npx cypress run` sem timeout explícito pode ficar órfão
 
-Num ciclo real, o subAgent chamou `npx cypress run` via Bash sem passar um `timeout` explícito;
-o comando estourou o timeout implícito do Bash, foi movido pra background pela ferramenta, e o
-subAgent tentou "esperar terminar depois" (chegou a chamar `ScheduleWakeup`, que não se aplica a
-um ciclo `claude -p` de execução única — não existe próximo turno pra um wakeup disparar) e
-encerrou o ciclo com o processo Cypress/Electron/node ainda rodando. Ficaram processos órfãos
-vivos por mais de 2h até serem encontrados e encerrados manualmente pelo Supervisor.
-
-- **Correção na regra (`AGENTE.md`, regra 5):** sempre passar `timeout: 300000` (5 min) ou mais ao
-  chamar `npx cypress run` via Bash; nunca usar `ScheduleWakeup` neste contexto; nunca encerrar o
-  ciclo com um processo Cypress/node ainda vivo.
-- **Rede de segurança determinística (`run-cycle.ps1`):** no início e no fim de todo ciclo, mata
-  qualquer processo cuja `CommandLine` referencie esta pasta e contenha "cypress" (raiz) mais toda
-  a árvore de processos filhos (Electron/Cypress) — independe do LLM se comportar corretamente.
-  Ver também `CONHECIMENTO-SUPERVISORES.md` (relevante pros outros dois Supervisores, que também
-  chamam Cypress via ciclos `claude -p`).
+Sempre passar `timeout: 300000` (5 min) ou mais ao chamar `npx cypress run` via Bash; nunca usar
+`ScheduleWakeup` neste contexto (não se aplica a um ciclo `claude -p` de execução única — não
+existe próximo turno pra um wakeup disparar); nunca encerrar o ciclo com um processo Cypress/node
+ainda vivo. Já causou processos órfãos vivos por +2h num ciclo real (2026-09-15, narrativa
+completa em `documentacao-historico.md`). Rede de segurança determinística também existe no
+`run-cycle.ps1` (mata processo Cypress/Electron da pasta + árvore de filhos no início/fim de todo
+ciclo, independente do LLM) — ver `CONHECIMENTO-SUPERVISORES.md`.
 
 URL do Beyond Banking (HML) adicionada ao `.env` local como `HML_BEYOND_BANKING_URL` (não
 versionado, `.env` está no `.gitignore`).
@@ -279,25 +275,17 @@ nessa tela, por flakiness já conhecida do `cy.origin()` — ver armadilha abaix
 erro de `redirect_uri` nem confirmá-lo como ausente). Se reaparecer em execuções futuras,
 considerar RESULTADO (bug/config real, bloqueia passos 13-14), não dúvida.
 
-(Texto original, mais detalhado, do bug do 400 antes desta correção — arquivado em
-`documentacao-historico.md`.)
+## Armadilha: pré-sincronização pode devolver tarefa pra `executando/` com base na dúvida errada quando há mais de uma dúvida sob o mesmo id
 
-## Armadilha: pré-sincronização pode devolver tarefa pra `executando/` com base na dúvida errada quando há mais de uma dúvida sob o mesmo id (2026-09-17)
-
-Esta tarefa teve **duas** dúvidas registradas ao longo do tempo sob o mesmo id base
-(`20260915123730-criacao-operacao-servico`, sem sufixo, e `... (2)`, mais recente). A primeira foi
-respondida e resolvida ainda em 2026-09-15; a segunda (sobre o login falhando com "Usuário ou senha
-inválidos", rodadas 96-97) ficou pendente. Mesmo assim, a pré-sincronização determinística do
-`run-cycle.ps1` devolveu a tarefa de `tarefas/aguardando-resposta/` pra `tarefas/executando/` no
-ciclo seguinte — aparentemente casando pelo prefixo do id e enxergando a dúvida **antiga**
-(`respondida`) em vez da mais recente (`(2)`, ainda `pendente`), que é a que de fato bloqueia a
-continuação. Corrigido manualmente pelo subAgent (rodada 98): tarefa devolvida pra
-`aguardando-resposta/` sem retomar tentativas de login (que repetiriam o risco de aprofundar um
-possível bloqueio de conta). **Pendência pro Supervisor**: avaliar corrigir o `run-cycle.ps1` pra
-considerar a dúvida **mais recente** sob um id (ou todas, exigindo todas `respondida`) em vez de
-qualquer uma que bata no prefixo — relevante pra qualquer módulo/task que reabra uma dúvida sob o
-mesmo id (sufixo `(2)`, `(3)`, ...). Ver também `../../docs/conhecimento-geral.md` (mesma
-armadilha, registrada lá por valer pra qualquer módulo/Supervisor com esse padrão de script).
+Quando uma tarefa acumula mais de uma dúvida sob o mesmo id (sufixo `(2)`, `(3)`...), a
+pré-sincronização do `run-cycle.ps1` pode casar pelo prefixo do id e enxergar uma dúvida antiga já
+`respondida` em vez da mais recente ainda `pendente`, devolvendo a tarefa de
+`aguardando-resposta/` pra `executando/` incorretamente. Se acontecer: mova manualmente de volta
+pra `aguardando-resposta/` sem retomar a ação que gerou a dúvida mais recente. **Pendência pro
+Supervisor**: corrigir o `run-cycle.ps1` pra considerar a dúvida mais recente sob um id (ou exigir
+todas `respondida`). Narrativa completa do caso original (2026-09-17) em
+`documentacao-historico.md`. Ver também `../../docs/conhecimento-geral.md` (mesma armadilha,
+registrada lá por valer pra qualquer módulo/Supervisor com esse padrão de script).
 
 ## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
 

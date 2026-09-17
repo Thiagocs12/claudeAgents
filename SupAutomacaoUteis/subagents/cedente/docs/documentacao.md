@@ -102,10 +102,10 @@ relevante, sem repetir o `docs/documentacao-historico.md`/o `CLAUDE.md` do repo 
   implementadas — só a Pergunta-9 (colunas de auditoria) seguiu para o Ciclo 14/15
   abaixo.
 
-### Ciclos 14-18 (2026-09-16/17) — resolvedor de catálogo, INSERT estrutural e orquestrador (resumo)
+### Ciclos 14-19 (2026-09-16/17) — resolvedor de catálogo, INSERT estrutural, orquestrador e correção de múltiplas raízes (resumo)
 
 Histórico ciclo a ciclo completo em `docs/documentacao-historico.md`. Resumo do que
-ficou pronto (tudo ainda vigente, exceto onde o Ciclo 19 corrigiu — ver nota):
+ficou pronto (tudo ainda vigente, exceto onde um ciclo posterior corrigiu — ver notas):
 
 - **Ciclos 14-15**: `cy.resolverIdCatalogoEmHml` (`catalogoCedente.js`) — resolvedor
   genérico de dependência de catálogo (busca por chave natural em HML via
@@ -128,96 +128,23 @@ ficou pronto (tudo ainda vigente, exceto onde o Ciclo 19 corrigiu — ver nota):
 - **Ciclo 18**: `cy.clonarCedenteCompleto(documento)` (`commands/cedente.js`) — liga
   `cy.resolverEstrategiaClonagemCedente` (leitura) a `cy.clonarGrafoEstruturalCedente`
   (Ciclo 17), com `decidirAcaoOrquestracaoCedente` (função pura, 3 ações:
-  `bloqueado`/`inserir`/`apagar-e-recriar-pendente` — DELETE ainda não implementado,
-  então este último caminho só loga, nunca insere sobre um cedente já existente em
-  HML). Cenário/feature novo `@cedente` (`gerenciamentoDoCedente.feature`,
-  `--env documentoOrigem=...`). Só o caminho de skip (sem `documentoOrigem`) foi
-  exercitado de verdade — 3/3 passam, nenhuma escrita em HML.
-
-### Ciclo 19 (2026-09-17) — descoberta de múltiplas raízes (prospect+proposta+comitê) para o orquestrador de INSERT
-
-Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `6cfd36d`,
-working tree limpa, sem dúvida pendente), antes de atacar o "próximo passo
-pendente" do Ciclo 18 (cascata/DELETE), revisei o `git diff`/estado da
-implementação existente (regra do `conhecimento-geral.md`, "Alterações não
-commitadas... revisar contra o AGENTE.md antes de continuar") e, ao reler
-`cy.clonarGrafoEstruturalCedente` com atenção ao mapeamento real, encontrei um
-problema de correção que os Ciclos 16-18 não tinham exercitado com dados reais
-(só o caminho de skip, sem `documentoOrigem`):
-
-- **O achado**: `cy.clonarGrafoEstruturalCedente` (Ciclo 17) partia de uma
-  única raiz (`tabelaRaiz`/`linhaRaiz`, sempre o prospect) e descobria o resto
-  só por busca de satélite (`dependenciasEstruturaisResolviveis`/
-  `montarCondicaoBuscaSatelite` — uma tabela só é encontrada se tiver, ela
-  mesma, uma dependência estrutural para uma tabela-PAI já processada). Mas
-  `MC_POC_PROPOSTA` (âncora da fase POC) e `MC_CAD_COMITE` (âncora da fase
-  comitê) **não têm nenhuma dependência estrutural de volta para
-  `MC_PRT_PROSPECT`** (`MC_POC_PROPOSTA.dependeDe` só tem catálogo +
-  `idComite`; `MC_CAD_COMITE.dependeDe` só tem catálogo) — partindo só do
-  prospect, essas duas âncoras (e tudo que dependesse delas: toda a fase
-  POC/comitê/cedente) nunca eram alcançadas pela busca de satélite; ficavam
-  "processadas" sem nenhuma linha real, silenciosamente. Um clone real teria
-  produzido só o prospect (e satélites diretos dele), sem POC/comitê/cedente
-  nenhum — só não foi percebido antes porque nenhum ciclo anterior rodou isso
-  contra dados reais (decisão deliberada dos Ciclos 16-18, para não criar dado
-  de negócio de teste sem necessidade).
-- **A causa raiz**: o vínculo real prospect -> proposta é a tabela de junção
-  `MC_POC_PROSPECT` (`idProspect` + `idProposta`, ambas colunas estruturais já
-  mapeadas) — não uma FK direta entre as duas âncoras. Não há decisão de
-  negócio nova aqui (a tarefa original já diz "tudo o que tiver da POC, tudo o
-  que tiver de comitê" — confirma clonar TODAS as propostas/comitês
-  relacionados, não só o mais recente), então resolvido sem dúvida bloqueante
-  (regra 8 do `AGENTE.md` — é correção de uma lacuna de implementação dentro
-  do escopo já confirmado, não inclusão de tabela nova nem mudança de regra de
-  negócio).
-- **A correção** (commit `03db772`): `cy.clonarGrafoEstruturalCedente` agora
-  recebe um mapa de "sementes" (`{ [tabela]: linhas[] }`, uma por
-  tabela-âncora de fase) em vez de `tabelaRaiz`/`linhaRaiz` único — um só
-  `reduce` sobre `ordemTabelas` usa a semente quando existe, senão cai na
-  busca de satélite genérica de sempre (unifica a inserção de raiz e satélite
-  num só loop, eliminando a duplicação de código que existia antes). Novos
-  comandos em `estruturaCedente.js`:
-  `cy.buscarPropostasRelacionadasAoProspectEmProd` (via `MC_POC_PROSPECT`) e
-  `cy.buscarComitesRelacionadosEmProd` (via `idComite` das propostas
-  encontradas) — ambos devolvem array vazio (não erro) quando não há
-  relacionado, tratado como "nada a semear" naquela fase. Nova função pura
-  `construirSementesGrafoEstrutural` (`shared/clonagemCedente.js`, 3 testes
-  novos) monta o mapa de sementes. `cy.clonarCedenteCompleto` (`commands/cedente.js`)
-  chama essa descoberta antes de orquestrar.
-- **`npm run lint`** (0 erros, mesmos 4 warnings pré-existentes) e
-  **`npm run test:safety`** (120/120, +3 novos) passam. `npx cypress run --env
-  tags=@cedente` (sem `documentoOrigem`) continua 3/3 passando, nenhuma
-  escrita em HML — mesma decisão deliberada dos ciclos anteriores de adiar o
-  teste fim a fim com dado de negócio real para quando o Thiago confirmar qual
-  cedente usar.
-- **A ordem topológica garante a correção da inserção das sementes**: como
-  `ordemTabelas` já é a ordenação topológica do grafo unificado, `MC_CAD_COMITE`
-  sempre aparece antes de `MC_POC_PROPOSTA` (que depende dele via `idComite`)
-  — inserir as sementes na ordem em que aparecem em `ordemTabelas` (em vez de
-  todas de uma vez, sem ordem) já resolve suas próprias dependências
-  cruzadas entre si, sem lógica extra.
-- **O DELETE (apaga-e-refaz) tem o mesmo problema de raiz única, ainda não
-  resolvido**: quando o cedente já existe em HML, o ponto de partida
-  conhecido é só `cedenteHmlExistente` (a linha de `MC_CED_CEDENTE`) — mas
-  essa linha **guarda `idProspect`/`idProposta` (nullable) como colunas
-  próprias** (ver `MAPEAMENTO_CEDENTE_CEDENTE.MC_CED_CEDENTE` em
-  `mapeamentoCedente.js`), o que dá uma forma direta de encontrar as raízes de
-  prospect/POC a apagar em HML (diferente do INSERT, que precisou descobrir
-  via `MC_POC_PROSPECT`) — mas ainda falta implementar essa descoberta do lado
-  HML (`buscarPropostaEmHmlPorId`/equivalente) e o comando de exclusão em si
-  (`ordenarTabelasParaExclusaoEstrutural`, regra 12 do `AGENTE.md`). Registrar
-  isso como parte do próximo passo pendente, não uma dúvida bloqueante (é
-  outra aplicação do mesmo padrão de "sementes múltiplas" já resolvido aqui,
-  não uma decisão de negócio nova).
-- **Próximo passo pendente**: (1) implementar o DELETE (apaga-e-refaz) —
-  descobrir em HML as linhas existentes do cedente (a partir de
-  `cedenteHmlExistente.idProspect`/`.idProposta`, mais o próprio
-  `cedenteHmlExistente`, seguindo o mesmo grafo estrutural mas lendo de HML em
-  vez de PROD) e excluir na ordem de `ordenarTabelasParaExclusaoEstrutural`,
-  um cedente por execução (regra 12 do `AGENTE.md`); (2) resolver a execução
-  real da dependência `cascata` (`MC_CED_CEDENTE_VINCULADO`); (3) depois de
-  (1), trocar `ACAO_CLONAGEM_APAGAR_E_RECRIAR_PENDENTE` em
-  `cy.clonarCedenteCompleto` para de fato apagar e então inserir. Nenhum
-  arquivo temporário ficou para trás (`git status` confirmou working tree
-  limpa após o commit).
+  `bloqueado`/`inserir`/`apagar-e-recriar-pendente`, ver correção do Ciclo 20 acima).
+- **Ciclo 19**: corrigido um problema de correção que os Ciclos 16-18 não tinham
+  exercitado com dado real (só caminho de skip): `cy.clonarGrafoEstruturalCedente`
+  (Ciclo 17) partia de uma única raiz (o prospect) e nunca alcançava POC/comitê/cedente,
+  pois `MC_POC_PROPOSTA`/`MC_CAD_COMITE` (âncoras dessas fases) não têm dependência
+  estrutural de volta ao prospect — o vínculo real é via a tabela de junção
+  `MC_POC_PROSPECT`. Corrigido (commit `03db772`): `cy.clonarGrafoEstruturalCedente`
+  passou a receber um mapa de "sementes" (`{ [tabela]: linhas[] }`, uma por âncora de
+  fase) em vez de raiz única — um só `reduce` sobre `ordemTabelas` usa a semente quando
+  existe, senão cai na busca de satélite genérica (unifica raiz+satélite, sem duplicar
+  código; a ordem topológica de `ordemTabelas` já garante a ordem certa entre as
+  sementes, ex. comitê antes de proposta). Novos comandos
+  `cy.buscarPropostasRelacionadasAoProspectEmProd`/`cy.buscarComitesRelacionadosEmProd`
+  (devolvem array vazio, não erro, quando não há relacionado) + função pura
+  `construirSementesGrafoEstrutural` (3 testes novos). `npm run lint`/`test:safety`
+  (120/120) passam; `cypress run --env tags=@cedente` sem `documentoOrigem` continua
+  3/3, nenhuma escrita em HML. Este ciclo identificou (sem resolver ainda) que o DELETE
+  tinha o mesmo problema de raiz única — **resolvido no Ciclo 20 acima**, usando
+  `idProspect`/`idProposta` de `cedenteHmlExistente` como sementes do lado HML.
 
