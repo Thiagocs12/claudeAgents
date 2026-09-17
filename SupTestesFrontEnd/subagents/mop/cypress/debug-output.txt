@@ -65,3 +65,33 @@ ELEMENTOS APOS CLICAR OLA NO CHAT:
   "Manter",
   "Trocar"
 ]
+ELEMENTOS APOS CLICAR TROCAR:
+[
+  "INPUT[name=null,placeholder=Buscar]",
+  "Dashboard",
+  "Recibo Pêndencia",
+  "Recibo Recompra",
+  "Importar XML",
+  "Consulta de Títulos",
+  "Instrução Bancária Lote",
+  "Instruções Bancárias",
+  "Emissão de Boletos",
+  "Ordem Pagamento",
+  "Tour Virtual",
+  "Faq",
+  "Logout",
+  "Olá",
+  "COBRANCA SIMPLES",
+  "AQUISICAO",
+  "AQUISICAO ANCORA",
+  "AQUISICAO FORNECEDOR ANCORA",
+  "AQUISICAO FIDUCIARIA",
+  "AQUISICAO JUDICIAL",
+  "AQUISICAO ANCORA RISCO SACADO",
+  "AQUISICAO FORNECEDOR RISCO SACADO",
+  "AQUISICAO FINANCEIRA DOLAR",
+  "testes hml",
+  "CESSAO FIDUCIARIA DE DIREITO",
+  "AQUISICAO LARCA",
+  "AQUISIÇÃO COMEX - LARCA"
+]
