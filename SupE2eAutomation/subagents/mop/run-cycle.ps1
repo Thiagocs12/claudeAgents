@@ -114,40 +114,124 @@ function Set-UtilizacaoConta {
         ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
 }
 
+# --- Ordem global por antiguidade + prioridade manual (pedido do Thiago, 2026-09-17): "Gerente
+# controla a ordem das tarefas, sempre a mais antiga primeiro, a menos que peça prioridade em
+# alguma". Cada ciclo com trabalho pendente registra o id da sua tarefa atual (o timestamp no
+# começo do id já é a idade) em fila-tarefas.json antes de tentar um slot; se existir tarefa mais
+# antiga que a minha em outro módulo — em quantidade >= slots livres agora — cedo a vez neste ciclo
+# mesmo com slot livre, pro módulo mais antigo ter a chance primeiro no próximo disparo dele.
+# prioridade.json (gravado pela Gerente quando o Thiago pede prioridade numa tarefa específica)
+# sempre vence a ordem por idade.
+function Get-DataDoId {
+    param([string]$Id)
+    if ($Id -and $Id -match '^(\d{14})') {
+        try { return [datetime]::ParseExact($Matches[1], "yyyyMMddHHmmss", $null) } catch { return $null }
+    }
+    return $null
+}
+
+function Atualizar-FilaTarefas {
+    param([string]$NomeModulo, [string]$IdTarefa)
+    $mutex = New-Object System.Threading.Mutex($false, "Global\ClaudeAgentsContaSlot")
+    try {
+        $mutex.WaitOne(30000) | Out-Null
+        $caminho = "$env:USERPROFILE\.claude-accounts\fila-tarefas.json"
+        $fila = [ordered]@{}
+        if (Test-Path $caminho) {
+            try {
+                $obj = Get-Content $caminho -Raw | ConvertFrom-Json
+                foreach ($prop in $obj.PSObject.Properties) { $fila[$prop.Name] = $prop.Value }
+            } catch {}
+        }
+        if ($IdTarefa) {
+            $fila[$NomeModulo] = $IdTarefa
+        } elseif ($fila.Contains($NomeModulo)) {
+            $fila.Remove($NomeModulo)
+        }
+        ($fila | ConvertTo-Json) | Set-Content -Path $caminho -Encoding utf8
+    } finally {
+        $mutex.ReleaseMutex()
+    }
+}
+
 # Lock por arquivo (%USERPROFILE%\.claude-accounts\<conta>\em-uso.lock), claim atomico via Mutex
 # nomeado global (mesma tecnica do Sync-RepoRaizClaudeAgents). Lock considerado travado/liberavel
 # depois de 4h (processo que crashou sem liberar) - nao deveria acontecer num ciclo normal.
 function Adquirir-SlotConta {
-    param([string]$NomeModulo, [string]$LogPath)
+    param([string]$NomeModulo, [string]$IdTarefa, [string]$LogPath)
     $mutex = New-Object System.Threading.Mutex($false, "Global\ClaudeAgentsContaSlot")
     $contaObtida = $null
+    $devoCeder = $false
+    $motivoCeder = $null
     try {
         $mutex.WaitOne(30000) | Out-Null
-        foreach ($conta in @("contaA","contaB")) {
-            $pastaConta = "$env:USERPROFILE\.claude-accounts\$conta"
-            $lockPath = "$pastaConta\em-uso.lock"
-            $livre = $true
-            if (Test-Path $lockPath) {
-                try {
-                    $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
-                    if (((Get-Date).ToUniversalTime() - [datetime]$lock.desde) -lt (New-TimeSpan -Hours 4)) {
-                        $livre = $false
+        Atualizar-FilaTarefas -NomeModulo $NomeModulo -IdTarefa $IdTarefa
+
+        $prioridadePath = "$env:USERPROFILE\.claude-accounts\prioridade.json"
+        $prioridadeAtiva = $null
+        if (Test-Path $prioridadePath) {
+            try { $prioridadeAtiva = (Get-Content $prioridadePath -Raw | ConvertFrom-Json).idTarefa } catch {}
+        }
+
+        if ($prioridadeAtiva -and $prioridadeAtiva -ne $IdTarefa) {
+            $devoCeder = $true
+            $motivoCeder = "prioridade manual ativa em outra tarefa ($prioridadeAtiva)"
+        } elseif (-not $prioridadeAtiva) {
+            $livres = (@("contaA","contaB") | Where-Object { -not (Test-Path "$env:USERPROFILE\.claude-accounts\$_\em-uso.lock") }).Count
+            if ($livres -gt 0) {
+                $minhaData = Get-DataDoId -Id $IdTarefa
+                $maisAntigas = 0
+                if ($minhaData) {
+                    $caminhoFila = "$env:USERPROFILE\.claude-accounts\fila-tarefas.json"
+                    if (Test-Path $caminhoFila) {
+                        try {
+                            $obj = Get-Content $caminhoFila -Raw | ConvertFrom-Json
+                            foreach ($prop in $obj.PSObject.Properties) {
+                                if ($prop.Name -eq $NomeModulo) { continue }
+                                $outraData = Get-DataDoId -Id $prop.Value
+                                if ($outraData -and $outraData -lt $minhaData) { $maisAntigas++ }
+                            }
+                        } catch {}
                     }
-                } catch { $livre = $true }
+                }
+                if ($maisAntigas -ge $livres) {
+                    $devoCeder = $true
+                    $motivoCeder = "$maisAntigas tarefa(s) mais antiga(s) disputando $livres slot(s) livre(s)"
+                }
             }
-            if ($livre) {
-                if (-not (Test-Path $pastaConta)) { New-Item -ItemType Directory -Force -Path $pastaConta | Out-Null }
-                @{ ocupado_por = $NomeModulo; pid = $PID; desde = (Get-Date).ToUniversalTime().ToString("o") } |
-                    ConvertTo-Json | Set-Content -Path $lockPath -Encoding utf8
-                $contaObtida = $conta
-                break
+        }
+
+        if (-not $devoCeder) {
+            foreach ($conta in @("contaA","contaB")) {
+                $pastaConta = "$env:USERPROFILE\.claude-accounts\$conta"
+                $lockPath = "$pastaConta\em-uso.lock"
+                $livre = $true
+                if (Test-Path $lockPath) {
+                    try {
+                        $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+                        if (((Get-Date).ToUniversalTime() - [datetime]$lock.desde) -lt (New-TimeSpan -Hours 4)) {
+                            $livre = $false
+                        }
+                    } catch { $livre = $true }
+                }
+                if ($livre) {
+                    if (-not (Test-Path $pastaConta)) { New-Item -ItemType Directory -Force -Path $pastaConta | Out-Null }
+                    @{ ocupado_por = $NomeModulo; pid = $PID; desde = (Get-Date).ToUniversalTime().ToString("o") } |
+                        ConvertTo-Json | Set-Content -Path $lockPath -Encoding utf8
+                    $contaObtida = $conta
+                    break
+                }
             }
         }
     } finally {
         $mutex.ReleaseMutex()
     }
     if ($contaObtida) {
-        "$(Get-Date -Format 'HH:mm:ss') | [fila-global] slot obtido: $contaObtida (modulo=$NomeModulo)" |
+        Atualizar-FilaTarefas -NomeModulo $NomeModulo -IdTarefa $null
+        "$(Get-Date -Format 'HH:mm:ss') | [fila-global] slot obtido: $contaObtida (modulo=$NomeModulo, tarefa=$IdTarefa)" |
+            Add-Content -Path $LogPath -Encoding utf8
+    } elseif ($devoCeder) {
+        "$(Get-Date -Format 'HH:mm:ss') | [fila-global] cedendo a vez ($motivoCeder) - tarefa=$IdTarefa" |
             Add-Content -Path $LogPath -Encoding utf8
     } else {
         "$(Get-Date -Format 'HH:mm:ss') | [fila-global] contaA e contaB ocupadas por outro modulo agora - ciclo aguarda a proxima execucao" |
@@ -212,13 +296,15 @@ if (-not (Test-TrabalhoPendente)) {
     $ts = Get-Date -Format "HH:mm:ss"
     "$ts | [ciclo pulado] sem tarefa pendente/retomavel/respondida - claude nao foi chamado" |
         Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    Atualizar-FilaTarefas -NomeModulo "SupE2eAutomation/mop" -IdTarefa $null
     Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
 
-$contaEfetiva = Adquirir-SlotConta -NomeModulo "SupE2eAutomation/mop" -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+$idTarefaAtual = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Select-Object -First 1).BaseName
+$contaEfetiva = Adquirir-SlotConta -NomeModulo "SupE2eAutomation/mop" -IdTarefa $idTarefaAtual -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 if (-not $contaEfetiva) {
-    Set-CadenciaAdaptativa -Estado 'ativo' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+    Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
 $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\$contaEfetiva"

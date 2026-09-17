@@ -239,7 +239,10 @@ tarefas existam nem de qual Supervisor/módulo elas são.
   enquanto as duas primeiras ainda estiverem rodando **espera** — não faz o ciclo tentar de novo
   imediatamente, apenas registra `[fila-global] ... aguarda a proxima execucao` no `run-log.txt` e
   encerra o ciclo (`exit 0`, sem chamar `claude -p`); a Scheduled Task tenta de novo sozinha no
-  próximo disparo natural dela (10min pra subAgent em cadência ativa, 20min pra Agent Master).
+  próximo disparo natural dela. **Atualizado em 2026-09-17 (mesmo dia, à tarde) — ver seção "Ordem
+  global por antiguidade" logo abaixo:** quem pega o slot livre não é mais só "quem pediu primeiro"
+  — é a tarefa mais antiga entre as que estão disputando, a menos que o Thiago tenha pedido
+  prioridade manual numa tarefa específica.
 - **Onde entra no fluxo de cada `run-cycle.ps1`**: só depois da pré-checagem determinística
   (`Test-TrabalhoPendente`) já confirmar que há trabalho real — pedir um slot antes disso seria
   desperdício (tarefa nenhuma pra fazer, não faz sentido reservar conta). Ou seja: sem
@@ -261,15 +264,62 @@ tarefas existam nem de qual Supervisor/módulo elas são.
 - **`ultima-utilizacao.json` continua sendo gravado por informação** (usado pelo "status" da
   Gerente pra mostrar utilização de rate-limit) — só não decide mais qual conta usar. As funções
   `Get-UtilizacaoConta`/o bloco de decisão por `>=99%` foram removidos dos 8 scripts.
-- **Cadência ao encontrar as duas contas ocupadas**: subAgent mantém a cadência **ativa** (não
-  desacelera pra 1h — há trabalho real esperando, só não conseguiu conta agora) chamando
-  `Set-CadenciaAdaptativa -Estado 'ativo'` antes do `exit 0`; Agent Master não tem cadência
-  adaptativa (agendamento diário fixo), só sai e tenta nos próximos 20min da mesma janela.
+- **Cadência ao não conseguir slot (2026-09-17, atualizado à tarde — pedido do Thiago, "se a conta
+  tiver ocupada o agente deve ficar ocioso também"):** subAgent desacelera pra 1h
+  (`Set-CadenciaAdaptativa -Estado 'ocioso'`) igual a um ciclo sem trabalho nenhum — **não** tenta
+  de novo em 10min só pra achar as contas ocupadas de novo. Troca de posição em relação à primeira
+  versão desta regra (que mantinha cadência ativa/10min nesse caso) — decisão explícita do Thiago
+  de aceitar reação mais lenta em troca de menos ciclos gastos batendo numa conta ocupada. Agent
+  Master não tem cadência adaptativa (agendamento diário fixo), só sai e tenta nos próximos 20min
+  da mesma janela.
 - **Aplicado nos mesmos 8 `run-cycle.ps1` reais** de sempre (6 subAgents + 2 Agent Master).
   Validado: mecanismo testado isoladamente (reserva sequencial de 2 slots, 3ª tentativa nula,
   liberação e reserva do slot liberado) antes de aplicar nos 8 scripts reais; todos os 8 validados
   sintaticamente (`[Parser]::ParseFile`) depois da edição; conferido que não sobrou nenhum
   `em-uso.lock` órfão nas pastas de conta reais.
+
+## Ordem global por antiguidade + prioridade manual — criado em 2026-09-17 (mesmo dia, à tarde)
+
+Pedido explícito do Thiago: **"Você Gerente deve controlar a ordem das tarefas, então sempre a
+mais antiga primeiro, a menos que eu peça prioridade em alguma"**. Estende a fila global de contas
+acima — não é mais só "quem pediu o slot primeiro" (ordem de chegada por timing de Scheduled Task),
+e sim a tarefa mais antiga entre as que estão disputando slot **em qualquer Supervisor/módulo**,
+com uma exceção manual pra quando o Thiago quer priorizar algo específico.
+
+- **Idade de uma tarefa = o timestamp já embutido no próprio id** (`<timestamp
+  yyyyMMddHHmmss>-<slug>`, convenção já usada em todo id de tarefa/aviso neste sistema) — não
+  precisa de metadado novo.
+- **Mecanismo** (funções `Atualizar-FilaTarefas`/`Get-DataDoId`, mesmo padrão de bloco reaproveitado
+  em cada `run-cycle.ps1`): antes de tentar um slot, cada ciclo com trabalho pendente registra
+  `{ "<modulo>": "<idTarefa>" }` num arquivo compartilhado
+  `%USERPROFILE%\.claude-accounts\fila-tarefas.json` (protegido pelo mesmo Mutex
+  `Global\ClaudeAgentsContaSlot` da fila de contas — mesma seção crítica, sem mutex adicional).
+  Depois, ainda dentro do mutex: conta quantos slots estão livres agora e quantos outros módulos
+  na fila têm tarefa **mais antiga** que a minha; se essa contagem for `>=` slots livres, cedo a vez
+  neste ciclo (log `[fila-global] cedendo a vez (...)`) mesmo com slot tecnicamente livre — deixo o
+  módulo mais antigo pegar no disparo dele. Um ciclo sem trabalho (ou que decide ceder) limpa a
+  própria entrada da fila (`Atualizar-FilaTarefas -IdTarefa $null`) pra não deixar registro
+  obsoleto atrapalhando a próxima comparação.
+- **Prioridade manual**: arquivo `%USERPROFILE%\.claude-accounts\prioridade.json`
+  (`{ "idTarefa": "<id>" }`), gravado pela sessão da Gerente quando o Thiago pede prioridade numa
+  tarefa específica em conversa (não existe outro jeito de setar — decisão explícita do Thiago,
+  "você me avisa em conversa"). Enquanto ativo, **sempre vence a ordem por idade**: a tarefa cujo id
+  bate com `prioridade.json` nunca cede vez; qualquer outra tarefa disputando cede
+  incondicionalmente enquanto essa prioridade estiver ativa, mesmo sendo mais antiga. Limitação
+  conhecida: não há auto-limpeza quando a tarefa prioritária termina — a Gerente precisa lembrar de
+  apagar/atualizar `prioridade.json` quando o Thiago disser que não precisa mais, ou perceber sozinha
+  (ex. ao conferir "status") que a tarefa já terminou.
+- **Limitação estrutural aceita**: como cada `run-cycle.ps1` é uma execução curta e independente
+  (não há um processo "esperando" de verdade), a comparação de idade só enxerga os módulos que
+  também estão no meio do próprio ciclo checando a fila **naquele exato momento** — não existe um
+  orquestrador central vendo tudo em tempo real. Na prática, como os ciclos são frequentes (10-20min
+  na maioria) e cada ciclo (mesmo sem conseguir slot) atualiza sua entrada na fila, a aproximação é
+  boa o bastante — o pior caso é uma pequena janela onde a ordem não é perfeitamente respeitada, não
+  um travamento ou erro.
+- **Testado isoladamente antes de aplicar nos 8 scripts reais**: 3 cenários (2 slots livres sem
+  disputa real; 1 slot livre com tarefa mais nova pedindo primeiro mas tarefa mais antiga já
+  registrada na fila — a mais antiga venceu; prioridade manual ativa numa tarefa mais nova — ela
+  venceu mesmo assim). Todos os 8 `run-cycle.ps1` validados sintaticamente depois da edição.
 
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
