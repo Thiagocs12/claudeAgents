@@ -27,9 +27,13 @@ manualmente que a pergunta mais recente (12ª rodada) segue `Status: pendente`, 
 `repo/`).
 
 ## agent-master
-Sem aviso pendente em `fila-merge/`. PR único `reviewAgents → main` mantido aberto; o PR legado
-`feature/atualizar-claude-md-fluxo-integracao` foi abandonado por decisão do Thiago (não conta como
-pendência).
+Bloqueado (`duvidas.md`: `20260917111432-migrar-video-para-relatorio-pdf`) — merge de teste local de
+`feature/migrar-video-para-relatorio-pdf` sem conflito, mas `npm test` falhou 2/2 specs com sintoma
+de login novo (Keycloak não redireciona de volta pra `beyond-hml`); `shared/login.feature` também
+falhou (quebra o padrão anterior de "login isolado é confiável"). Merge local desfeito, aviso em
+`fila-merge/pendentes/`. PR único `reviewAgents → main` mantido aberto; o PR legado
+`feature/atualizar-claude-md-fluxo-integracao` segue abandonado por decisão do Thiago (não conta
+como pendência).
 
 _Bootstrap inicial gerado pela Gerente em 2026-09-17 a partir do levantamento manual do "status" —
 a partir de agora, cada seção é mantida pelo próprio subAgent/Agent Master._

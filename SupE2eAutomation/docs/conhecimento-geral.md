@@ -575,3 +575,32 @@ capacidade ociosa da outra conta.
   Reforça, mais uma vez, que `mop-monitor-diario.feature` segue instável de formas variadas; não
   investigado a fundo aqui (fora do escopo desta tarefa, que era só sobre vídeo→PDF) — registrar o
   sintoma exato sempre que reaparecer, como já orientado acima.
+
+## Novo sintoma de login + `shared/login.feature` deixa de ser confiável isoladamente (Agent Master, merge de teste de `migrar-video-para-relatorio-pdf`, 2026-09-17)
+
+- **Sintoma novo, não catalogado até agora:** `AssertionError: Timed out retrying after 15000ms:
+  expected '...keycloak-new-2.grupomultiplica.com.br/auth/realms/.../login-actions/authenticate...'
+  to include 'https://beyond-hml.grupomultiplica.com.br/'` — depois de submeter credenciais no
+  Keycloak, a página **nunca redireciona de volta** para `beyond-hml`, ficando presa na própria URL
+  do Keycloak. Ocorreu dentro do `cy.session`/`cy.loginComoPerfil`, mesmo ponto dos sintomas já
+  catalogados (`cy.origin() failed to create a spec bridge`, timeout de 60s carregando a página do
+  Keycloak, `ETIMEDOUT` de rede) — mas a mensagem de erro em si é diferente de todos eles.
+- **Contradiz a hipótese registrada horas antes na seção acima** ("`shared/login.feature` passa de
+  forma confiável enquanto outro spec com o mesmo comando falha"): neste ciclo do Agent Master
+  (merge de teste local de `feature/migrar-video-para-relatorio-pdf` contra `reviewAgents`, `npm
+  test` com 2 specs), **`shared/login.feature` também falhou** — o cenário "Login com credenciais
+  válidas" reproduziu o sintoma acima, e `mop/mop-monitor-diario.feature` falhou no mesmo ponto,
+  com o mesmo sintoma. É a primeira vez registrada em que `login.feature` falha no mesmo ciclo que
+  outro spec de login — todas as ocorrências anteriores (`mop`, `POC`) mostravam `login.feature`
+  passando 2/2 de forma confiável. Isso enfraquece a teoria de "algo específico de timing/ordem de
+  outros specs" e reabre a possibilidade de instabilidade genérica do Keycloak/HML (ou algo mudou no
+  ambiente entre as ocorrências do mesmo dia).
+- A mudança sendo testada (vídeo→PDF, `EtapaBase.passo()`, `gerar-relatorio-pdf.cjs`) não toca em
+  login/Keycloak/`cy.session` — não parece ser a causa, mas o merge de teste ficou bloqueado mesmo
+  assim (protocolo padrão: não decidir sozinho, não insistir em sequência).
+- Dúvida bloqueante registrada em `agent-master/duvidas.md`
+  (`20260917111432-migrar-video-para-relatorio-pdf`), merge local desfeito, aviso mantido em
+  `agent-master/fila-merge/pendentes/`. Qualquer módulo que use `cy.loginComoPerfil`/`cy.session`
+  deve considerar, a partir de agora, que **mesmo `login.feature` isolado pode falhar** — não usar
+  mais "login.feature passou" como evidência definitiva de que o problema é específico de outro
+  spec/timing, sem checar a data/hora e comparar com este registro.

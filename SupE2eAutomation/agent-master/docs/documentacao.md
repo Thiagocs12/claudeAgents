@@ -134,6 +134,21 @@ só se `package.json`/`package-lock.json` mudou, `.env` do Agent Master copiado 
 de lá, e vídeos de testes rodados no ciclo (`repo/cypress/videos/**`) copiados para
 `cypress/videos/` dentro dessa pasta.
 
+## Aviso bloqueado — `migrar-video-para-relatorio-pdf` (módulo `geral`, 2026-09-17)
+
+- Aviso em `fila-merge/pendentes/` (`20260917111432-migrar-video-para-relatorio-pdf`,
+  `feature/migrar-video-para-relatorio-pdf`). Merge de teste local limpo (sem conflito,
+  fast-forward de um único commit sobre `9f38a75`). `.env.example` sem mudança (confirmado via
+  diff). `package.json` trouxe dependência nova `pdfkit@0.20.2` — `npm install` rodado sem erro (19
+  pacotes adicionados).
+- `npm test` (2 specs) resultou em **2/2 specs falhando**, ambas no mesmo ponto (`cy.session`/
+  `cy.loginComoPerfil`, submissão de credenciais no Keycloak nunca redirecionou de volta para
+  `beyond-hml`, ficando presa na URL do Keycloak) — sintoma novo, não catalogado antes. Detalhe
+  completo e evidência em `duvidas.md`/`../docs/conhecimento-geral.md`. Merge local desfeito
+  (`git reset --hard origin/reviewAgents`, `repo/` confirmado limpo). Aviso mantido em
+  `fila-merge/pendentes/`, dúvida bloqueante registrada (`Status: pendente`). Nenhuma sincronização
+  de `C:\multiplica\cypress-e2e` feita neste ciclo (nada foi mergeado em `reviewAgents`).
+
 ## Ciclos de rotina — resumo (compactado em 2026-09-15)
 
 Entre 2026-09-14 e 2026-09-15, dezenas de ciclos (~30+) não encontraram nada para processar: PR #11
