@@ -324,6 +324,36 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
   aconteceu 5 vezes seguidas.
 
+## Execução — rodada 104 (2026-09-17, ciclo seguinte — login autorizado de novo)
+
+- O Thiago respondeu a dúvida `(2)` em `duvidas.md`: "Pode tentar o login de novo agora." Tarefa
+  retomada normalmente em `tarefas/executando/` (desta vez a dúvida relevante estava mesmo
+  respondida, não é o bug de sincronização das rodadas 98-103).
+- Tentei rodar a spec completa de novo (`npx cypress run`, síncrono, timeout 300000ms) →
+  **AMBOS os testes falharam de novo, exatamente com o mesmo sintoma das rodadas 96-97**: travados
+  na tela de login do Keycloak, sem sair de `/login-actions/authenticate`, com a mensagem real
+  visível na screenshot de falha automática do Cypress: **"Usuário ou senha inválidos"**.
+  - Teste 1 (Beyond Banking, realm `beyondbanking-hml`, host `keycloak-new-2`): campo Login/E-mail
+    preenchido (`automacao`), mensagem de erro visível logo abaixo, campo Senha vazio.
+  - Teste 2 (Beyond BackOffice, realm `multiplicacapital`, mesmo host `keycloak-new-2`): mesma
+    mensagem de erro, mesmo padrão.
+- **Achado confirmado**: a falha de login **não foi resolvida pela simples nova tentativa** — é
+  reproduzível de forma consistente agora, nos dois realms, na primeira tentativa desta rodada.
+  Isso descarta a hipótese de bloqueio temporário por força bruta já ter passado sozinho, e torna
+  mais provável que a senha em uso (`HML_MASTER_PASSWORD` deste `.env`) esteja de fato desatualizada
+  (rotacionada/expirada) ou a conta `automacao` esteja bloqueada de forma persistente — algo que só
+  quem administra a credencial (fora do escopo deste subAgent) pode confirmar/corrigir.
+- **Decisão**: não repetir mais tentativas de login às cegas (mesmo risco de aprofundar um possível
+  bloqueio já levantado na rodada 97, e agora reforçado pelo fato de já termos usado a autorização
+  do Thiago para uma nova tentativa e ela ter falhado do mesmo jeito). Isso deixou de ser uma dúvida
+  que dependa de uma decisão sobre "tentar de novo ou não" — é um problema real e concreto
+  bloqueando a continuação (credencial/conta), então trato como **RESULTADO** (regra 6 do
+  `AGENTE.md`), não como nova dúvida.
+- Gerando o PDF do relatório e encerrando esta rodada com veredito de **cumprido parcialmente**
+  (ver `## Resultado` abaixo) — os passos 1-12 seguem validados como nas rodadas 74-93 (com
+  confirmação em banco), só os passos 13-14 (Monitor Diário) ficam bloqueados por este problema de
+  credencial.
+
 ## Execução — rodada 103 (2026-09-17, ciclo seguinte)
 
 - Sexta vez consecutiva (rodadas 98-102 e agora 103) que a pré-sincronização do `run-cycle.ps1`
@@ -341,3 +371,48 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
 - Nenhum achado novo além do já registrado nas rodadas 98-102 — a pendência pro Supervisor
   (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
   aconteceu 6 vezes seguidas.
+
+## Resultado
+
+**Veredito: cumprido parcialmente.**
+
+- **Passos 1-11 (criação da operação de serviço no Beyond Banking): CONCLUÍDOS e validados**, com
+  confirmação em banco de dados (não só na UI) nas rodadas 74-93 de 2026-09-16 — operações
+  88681, 88682 e 88683 criadas com sucesso (login → seleção do cedente kenerson → "Beyond Operação
+  Interno" → wizard de produto Aquisição → Antecipação de Duplicata → Duplicata → Serviço → Boleto
+  → conta pré-selecionada → "Digitação" → Cad Pessoa via CPF de teste → título com Documento único
+  (hash aleatória) e Valor R$ 100.000,00 → Salvar → Gerar Operação → Confirmar).
+- **Passo 12 (avançar a operação a partir do dashboard): CONCLUÍDO e validado em banco** —
+  confirmado nas rodadas 74-93 que `indVirouOperacao=true` + linha criada em `MC_MOP_OPERACAO` para
+  as 3 operações com Documento único (a hipótese do Thiago sobre Documento duplicado causando o 400
+  foi confirmada; a conclusão antiga de "bug real" está superada — ver `docs/documentacao.md`).
+- **Passos 13-14 (verificar no Monitor Diário do Beyond BackOffice que a etapa "Inclusão OPE"
+  aparece concluída): NÃO CONCLUÍDOS.** Bloqueados, nesta sessão (rodadas 94-104, 2026-09-17), por
+  uma falha de login persistente e reproduzível: o Keycloak (`keycloak-new-2.grupomultiplica.com.br`)
+  rejeita a credencial `master` (usuário `automacao`) com a mensagem real da tela **"Usuário ou
+  senha inválidos"**, em **ambos os realms** (`beyondbanking-hml` e `multiplicacapital`), de forma
+  consistente mesmo após o Thiago autorizar uma nova tentativa (rodada 104) — não é mais a
+  flakiness intermitente antiga do `cy.origin()` (essa já tinha sido distinguida e documentada
+  separadamente). O login havia funcionado normalmente até a rodada 94 desta sessão e ao longo de
+  toda a sessão anterior (74-93, 2026-09-16).
+- **Achado que precisa de ação fora do escopo deste subAgent**: a credencial `HML_MASTER_USERNAME`/
+  `HML_MASTER_PASSWORD` usada por este módulo (`.env` local, copiada do `SupE2eAutomation`) parece
+  ter parado de funcionar em algum momento entre a rodada 94 e a rodada 96 desta sessão (2026-09-17),
+  de forma consistente, nos dois realms. Recomendação: confirmar com quem administra o Keycloak/HML
+  se a senha da conta `automacao` foi rotacionada/expirou, ou se a conta está bloqueada por proteção
+  de força bruta — e, se for o caso, atualizar o `.env` (aqui e possivelmente no
+  `SupE2eAutomation`, que reaproveita a mesma credencial) antes de tentar os passos 13-14 de novo.
+- **Achado secundário ainda em aberto** (não bloqueia, mas fica registrado): a operação 88677
+  (rodada 89) apareceu na UI com "situação sucesso" mas a validação em banco (rodada 93) mostrou
+  `indVirouOperacao=false`, sem linha em `MC_MOP_OPERACAO` — divergência UI-vs-banco não explicada
+  (ver `docs/documentacao.md`, seção "Validação em banco de dados").
+- **Relatório em PDF**: `relatorios/20260915123730-criacao-operacao-servico.pdf` (screenshots desta
+  rodada mostram a tela de login com a mensagem "Usuário ou senha inválidos" nos dois realms;
+  screenshots das rodadas 1-93, que documentaram os passos 1-12 com sucesso, não foram preservadas
+  entre execuções do Cypress — a pasta `cypress/screenshots/` é sobrescrita a cada `npx cypress run`
+  e não havia, até esta tarefa, um passo de arquivamento entre rodadas; narrativa textual detalhada
+  desses passos permanece em `## Execução` acima e em
+  `20260915123730-criacao-operacao-servico.historico.md`).
+- **Próximo passo recomendado**: assim que a credencial for confirmada/corrigida, reabrir esta
+  tarefa (ou uma nova, referenciando esta) só para os passos 13-14 — os passos 1-12 já estão
+  validados e não precisam ser refeitos.

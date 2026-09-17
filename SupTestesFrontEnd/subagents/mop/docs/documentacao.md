@@ -288,6 +288,39 @@ todas `respondida`). Narrativa completa do caso original (2026-09-17) em
 seção "Bugs conhecidos no padrão compartilhado de `run-cycle.ps1`" (mesma armadilha, vale pra
 qualquer módulo/Supervisor com esse padrão de script).
 
+## Armadilha: falha de login "Usuário ou senha inválidos" reproduzível nos dois realms (2026-09-17)
+
+A partir da rodada 96 desta sessão (2026-09-17), o login via Keycloak (`keycloak-new-2...`) passou
+a rejeitar a credencial `master` (usuário `automacao`, mesma usada desde 2026-09-15) com a
+mensagem real da tela **"Usuário ou senha inválidos"**, em **ambos os realms**
+(`beyondbanking-hml` e `multiplicacapital`) — não é a flakiness intermitente antiga do
+`cy.origin()`/spec bridge (essa é uma classe de erro diferente, sem mensagem de credencial
+inválida). O login funcionava normalmente até a rodada 94 desta mesma sessão e ao longo de toda a
+sessão anterior (rodadas 74-93, 2026-09-16, com operações reais criadas/avançadas). Consultado o
+Thiago (rodada 97, dúvida bloqueante) se seria rotação/expiração de senha ou bloqueio de conta por
+força bruta (efeito colateral de tentativas repetidas) — autorizou tentar de novo (rodada 104), mas
+a falha se repetiu de forma idêntica e imediata nos dois realms. **Conclusão registrada como
+RESULTADO da tarefa** (não mais dúvida): a credencial parece precisar de ação de quem administra o
+Keycloak/HML (confirmar rotação de senha ou desbloqueio de conta) antes de qualquer novo teste que
+dependa de login neste módulo. Ver task `20260915123730-criacao-operacao-servico`, seção
+`## Resultado`, para o detalhe completo.
+
+## Armadilha: screenshots do Cypress não persistem entre execuções (`npx cypress run` sobrescreve a pasta)
+
+A pasta `cypress/screenshots/` é limpa/sobrescrita a cada nova execução de `npx cypress run` — as
+screenshots manuais tiradas em rodadas anteriores (regra 3 do `AGENTE.md`, o par antes/depois de
+clique) **não sobrevivem** para a próxima rodada, só as da execução mais recente ficam disponíveis
+quando chega a hora de gerar o PDF (regra 6). Isso significa que, se uma tarefa passar por muitas
+rodadas de retomada (como esta, ~100 rodadas), só as screenshots da ÚLTIMA execução aparecem no PDF
+final — os passos já validados em rodadas anteriores (mesmo que bem documentados em texto na
+narrativa) ficam sem evidência visual no relatório, a menos que sejam copiados manualmente pra fora
+de `cypress/screenshots/` logo após cada execução relevante. **Para tarefas futuras**: se um passo
+importante for validado com sucesso numa rodada e não for a última antes da geração do PDF, copiar
+as screenshots relevantes daquela rodada para uma pasta separada (ex.
+`cypress/screenshots-arquivadas/<rodada-N>/`) antes da próxima `npx cypress run` apagar, ou aceitar
+que o relatório final só terá evidência visual do trecho mais recentemente executado (com a
+narrativa textual cobrindo o restante).
+
 ## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
 
 Este módulo agora consegue consultar o banco HML (`beyondhml`) em modo **somente leitura**,
