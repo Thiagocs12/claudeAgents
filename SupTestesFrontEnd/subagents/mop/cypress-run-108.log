@@ -27,3 +27,109 @@ Learn more: https://on.cypress.io/cypress-env-migration
 
 
   Exploracao: criacao de operacao de servico no Beyond Banking
+    1) acessa o Beyond Banking e mapeia a tela inicial / login
+    2) verifica a operacao avancada no Monitor Diario do Beyond BackOffice
+
+
+  0 passing (3m)
+  2 failing
+
+  1) Exploracao: criacao de operacao de servico no Beyond Banking
+       acessa o Beyond Banking e mapeia a tela inicial / login:
+     CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element is `disabled`:
+
+`<button class="MuiButtonBase-root Mui-disabled MuiIconButton-root Mui-disabled MuiIconButton-sizeMedium css-sow0qu" tabindex="-1" type="button" disabled="" value="">...</button>`
+
+Fix this problem, or use `{force: true}` to disable error checking.
+
+https://on.cypress.io/element-cannot-be-interacted-with
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:186:7)
+  From Your Spec Code:
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:552:99)
+
+  2) Exploracao: criacao de operacao de servico no Beyond Banking
+       verifica a operacao avancada no Monitor Diario do Beyond BackOffice:
+     AssertionError: Timed out retrying after 20000ms: nao deveria mais estar numa tela de login do Keycloak: expected 'https://keycloak-new-2.grupomultiplica.com.br/auth/realms/multiplicacapital/login-actions/authenticate?execution=7ec8a6b1-7f79-4cdf-96c5-10b7b88bf478&client_id=autenticacao&tab_id=vd4G4dJ47ec&client_data=eyJydSI6Imh0dHBzOi8vYmV5b25kLWhtbC5ncnVwb211bHRpcGxpY2EuY29tLmJyLyIsInJ0IjoiY29kZSIsInJtIjoiZnJhZ21lbnQiLCJzdCI6IjU2MjlkMzZiLWI3MjctNGM4Yy1iYTVmLTAzYTA0MjlmNDFjMSJ9' not to match /\/auth\/realms\//
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:644:84)
+      at <unknown> (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:120766:17)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        2                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  22                                                                               │
+  │ Video:        false                                                                            │
+  │ Duration:     2 minutes, 50 seconds                                                            │
+  │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\04-apos-selecionar-kenerson-avancar.png                          
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\05-tela-operacoes.png                                            
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\06-apos-clicar-criar-operacao.png                                
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\07-apos-clicar-ola-no-chat.png                                   
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x768)
+     riacao-operacao-servico.cy.js\08-apos-clicar-trocar.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x828)
+     riacao-operacao-servico.cy.js\09-apos-clicar-aquisicao.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x784)
+     riacao-operacao-servico.cy.js\10-apos-clicar-antecipacao-de-duplicata.png                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x844)
+     riacao-operacao-servico.cy.js\11-apos-clicar-duplicata.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1008)
+     riacao-operacao-servico.cy.js\12-apos-clicar-servico.png                                       
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1068)
+     riacao-operacao-servico.cy.js\13-apos-clicar-boleto.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1224)
+     riacao-operacao-servico.cy.js\14-apos-clicar-continuar.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1336)
+     riacao-operacao-servico.cy.js\15-apos-confirmar-conta.png                                      
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
+     riacao-operacao-servico.cy.js\16-apos-clicar-digitacao.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
+     riacao-operacao-servico.cy.js\17-apos-digitar-cpf.png                                          
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
+     riacao-operacao-servico.cy.js\18-apos-buscar-cpf.png                                           
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x799)
+     riacao-operacao-servico.cy.js\19-apos-preencher-titulo.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\20-apos-clicar-salvar.png                                        
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1000x660)
+     riacao-operacao-servico.cy.js\21-apos-gerar-operacao.png                                       
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1000x1552)
+     riacao-operacao-servico.cy.js\22-apos-clicar-confirmar.png                                     
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c    (1280x1059)
+     riacao-operacao-servico.cy.js\23-tabela-operacoes-viewport-largo.png                           
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- verifica a operacao avancada no Monitor Diario do Beyond BackOffice               
+      (failed).png                                                                                  
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  criacao-operacao-servico.cy.js           02:50        2        -        2        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     02:50        2        -        2        -        -  
+
