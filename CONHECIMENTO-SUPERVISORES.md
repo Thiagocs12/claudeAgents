@@ -53,7 +53,26 @@ redirecione todas as funções que partem de uma conversa minha com os superviso
   aguardando aprovação do Thiago antes de qualquer coisa. Só depois de aprovado é que vira uma
   tarefa nova no `SupE2eAutomation` (hand-off manual, feito pelo Supervisor, nunca automático).
   Sem `agent-master`, sem `repo/` — ver seção "Padrão estrutural" abaixo pra variação completa.
-  Ainda sem nenhum módulo/subAgent criado (esqueleto apenas: Supervisor + Status Watcher).
+  Módulos: `mop` (piloto, Beyond Banking/operações) e `contratos` (criado em 2026-09-17, integração
+  de envio do contrato mãe para o Qcertifica — material de apoio em `AgenteEspecificacao/
+  especificacoes/contratos-qcertifica/`, ainda sem execução real por causa do `PAUSA-HML.flag`).
+
+## Outros papéis — `AgenteEspecificacao/` (criado em 2026-09-17)
+
+Papel novo, paralelo aos 3 Supervisores, também irmão de `SupTestesFrontEnd/` na raiz do repo.
+Diferente de um Supervisor, não refina/organiza tarefas de teste nem tem subAgents — sua função é
+**levantar e documentar especificações** (funcionais, de integração, de regra de negócio) através
+de entrevista estruturada com o Thiago, gravadas em `AgenteEspecificacao/especificacoes/<tema>/
+especificacao.md`, para servirem de **material de apoio** reutilizável por qualquer
+Supervisor/módulo (referenciadas pelo caminho do arquivo, nunca copiadas). Ver
+`AgenteEspecificacao/CLAUDE.md` para o protocolo completo.
+
+- **Não participa do pool de Scheduled Task/conta por ciclo automático** — não tem `run-cycle.ps1`,
+  nem subAgent, nem Agent Master, nem Status Watcher. Existe só como sessão interativa (mesma
+  lógica de conta padrão `contaB` de qualquer sessão interativa, sem variável especial).
+- Primeiro tema levantado: `contratos-qcertifica` (especificação da integração de envio do
+  contrato mãe para o Qcertifica), material de apoio da tarefa nova do módulo `contratos` em
+  `SupTestesFrontEnd`.
 
 ## Pool de contas do Claude Code (`%USERPROFILE%\.claude-accounts\`)
 

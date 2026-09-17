@@ -16,5 +16,11 @@ reproduzível. Pendência secundária não bloqueante: divergência UI×banco na
 **Nota:** HML está fora do ar (`PAUSA-HML.flag` desde 2026-09-16) — ciclos automáticos deste módulo
 estão pausados de propósito, não travados por bug.
 
+## contratos
+Sem tarefa ativa. Módulo novo (criado em 2026-09-17): tarefa
+`20260917115830-envio-contrato-mae-qcertifica` registrada em `tarefas/pendentes/`, aguardando
+HML voltar (`PAUSA-HML.flag`) e a especificação de apoio (`AgenteEspecificacao/especificacoes/
+contratos-qcertifica/`) ser completada com o Thiago.
+
 _Bootstrap inicial gerado pela Gerente em 2026-09-17 a partir do levantamento manual do "status" —
 a partir de agora, cada seção é mantida pelo próprio subAgent._
