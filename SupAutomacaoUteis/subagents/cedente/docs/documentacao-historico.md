@@ -817,3 +817,134 @@ mesmos 4 warnings pré-existentes) e `npm run test:safety` (100/100) passam.
 - Nenhum arquivo temporário de investigação ficou para trás (`investigar-catalogo-teste.cjs`
   e as saídas de lint/test/cypress removidas antes do commit; `git status` confirmou
   working tree limpa).
+
+## Ciclos 14-18 (2026-09-16/17) — texto completo arquivado do `documentacao.md` (Ciclo 19 compactou)
+
+### Ciclos 14-15 (2026-09-16) — resolvedor genérico de catálogo completo (resumo)
+
+Histórico completo (bloqueio de auditoria, teste fim a fim contra HML real) já estava
+arquivado acima. Resumo do que ficou pronto:
+
+- **`cy.resolverIdCatalogoEmHml(tabela, idProducao)`** (`catalogoCedente.js`):
+  busca a linha em PROD, procura em HML por chave natural
+  (`METADADOS_CATALOGO_CEDENTE`), cria a cópia se não existir
+  (`montarInsertCatalogo`). Tabela sem metadado lança erro explícito.
+- **Resposta-9 implementada**: `montarInsertCatalogo` substitui as 4 colunas de
+  auditoria (NOT NULL em praticamente todo o schema do domínio, já que o INSERT
+  aqui é SQL direto, não API REST) por valores fixos (`gerarValoresAuditoriaCedente`
+  — timestamp da inserção + `USUARIO_AUDITORIA_CEDENTE = 'sistema'`), em vez de só
+  excluí-las. `id` sempre excluído (`OUTPUT INSERTED.id`).
+- **Testado fim a fim contra PROD/HML reais** (caminho "já existe" e "criar"),
+  via `npx cypress run --env tags=@cedente,catalogoTabela=...,catalogoIdProducao=...`.
+  Um registro real ficou criado em HML (`MC_CAD_SITUACAO` id 50, "MAJORADO") —
+  não é dado de teste descartável, é catálogo real que HML precisava ter.
+- `PAUSA-HML.flag` (criado pelo Thiago em 2026-09-16, HML fora do ar) já foi
+  removido (commit `5ee158a`, fora desta sessão) — HML confirmado OK, sem
+  restrição de infraestrutura pendente no momento deste ciclo.
+
+### Ciclo 16 (2026-09-17) — resolvedor genérico de INSERT ESTRUTURAL (não-catálogo)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `05b80fd`,
+working tree limpa), sem dúvida pendente. Ataca o próximo passo pendente do
+Ciclo 15: os comandos de INSERT das tabelas estruturais.
+
+Commit `c85c25b`: `cypress/support/shared/clonagemCedente.js`
+(`resolverDependenciasEstruturais`, `montarInsertEstrutural` — funções puras
+novas, reaproveitam `aplicarValoresFixos`/`montarInsertCatalogo` já existentes)
++ `cypress/support/commands/estruturaCedente.js` (novo —
+`cy.resolverIdParticipanteFixoEmHml`, `cy.resolverValoresDependenciasLinhaEstrutural`,
+`cy.inserirLinhaEstruturalEmHml`) + `commands/index.js` (registra o módulo) + 6
+testes novos em `__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros,
+mesmos 4 warnings pré-existentes) e `npm run test:safety` (107/107) passam.
+
+- **`resolverDependenciasEstruturais`**: sobrescreve, sobre a linha de PROD, só as
+  colunas de `dependeDe` já resolvidas em HML (mapa `{campo: valorHml}` calculado
+  pelo chamador) e aplica `aplicarValoresFixos` por último — uma coluna sem entrada
+  em `valoresResolvidos` (nullable sem valor de origem, ou dependência ainda sem
+  resolução automática, ex. `cascata`) mantém o valor original.
+- **`montarInsertEstrutural`**: combina `resolverDependenciasEstruturais` +
+  `montarInsertCatalogo` (mesmo tratamento de `id`/auditoria já usado no catálogo).
+- **`cy.resolverIdParticipanteFixoEmHml()`**: resolve o participante fixo
+  (Resposta-4) por chave natural em `MC_CAD_ANALISTA`, reaproveitando
+  `cy.buscarRegistroCatalogoPorChaveNaturalEmHml` já existente.
+- **`cy.resolverValoresDependenciasLinhaEstrutural`**: percorre `dependeDe` e
+  resolve cada dependência `catalogo`/`participante-fixo`/`estrutural`. Encadeado
+  via `reduce` sobre `cy.wrap({})`. `cascata` fica sem resolução aqui de propósito.
+- **`cy.inserirLinhaEstruturalEmHml`**: resolve + monta o INSERT + executa contra
+  HML, devolve o novo id.
+- **Só testado com lógica pura desta vez** (`node:test`) — decisão deliberada de
+  não exercitar um INSERT estrutural real contra HML neste ciclo (criaria dado de
+  negócio "de mentira" sem necessidade).
+- Nenhum arquivo temporário ficou para trás.
+
+### Ciclo 17 (2026-09-17) — orquestrador de INSERT estrutural (percorre o grafo)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `c85c25b`,
+working tree limpa, sem dúvida pendente), ataca o "próximo passo pendente" do
+Ciclo 16: a orquestração que percorre a ordem de dependência estrutural tabela por
+tabela.
+
+Commit `675bc69`: 2 funções puras novas em `clonagemCedente.js` +
+`cy.clonarGrafoEstruturalCedente`/`cy.buscarLinhasSatelitesEmProd` em
+`estruturaCedente.js` + 6 testes novos. `npm run lint` (0 erros) e
+`npm run test:safety` (113/113) passam.
+
+- **`dependenciasEstruturaisResolviveis(tabela, mapeamento, tabelasJaProcessadas)`**:
+  filtra, de `dependeDe`, só as `estrutural` cuja tabela-pai já está em
+  `tabelasJaProcessadas` — uma tabela sem nenhuma dependência estrutural resolvível
+  assim (ex.: `MC_CAD_MODELO_ATA_COMITE`, só catálogo) não é satélite de nada já
+  processado.
+- **`montarCondicaoBuscaSatelite`**: monta o `WHERE` (`campo IN (ids...)` por
+  dependência, unidas por `AND`) que localiza em PROD as linhas satélite de uma
+  tabela para as tabelas-pai já processadas. Une por `AND` (não só um pai) para
+  tabelas de junção com mais de um pai estrutural já processado (ex.:
+  `MC_CAD_COMITE_PROPOSTA`, depende de `MC_CAD_COMITE` **e** `MC_POC_PROPOSTA`).
+  Devolve `null` quando a tabela não é satélite de nada já processado e `'1 = 0'`
+  para a parte de um pai já processado mas sem nenhuma linha.
+- **`cy.buscarLinhasSatelitesEmProd(tabela, condicaoWhere)`**: `SELECT *` simples
+  com a condição já pronta.
+- **`cy.clonarGrafoEstruturalCedente(ordemTabelas, tabelaRaiz, linhaRaiz,
+  mapeamento)` — versão ORIGINAL, substituída no Ciclo 19 por uma versão com
+  múltiplas "sementes" (ver `documentacao.md`, o problema descoberto foi que esta
+  versão original só descobria a partir de UMA raiz — o prospect — e nunca
+  alcançava POC/comitê/cedente numa clonagem real)**: inseria a linha-raiz única,
+  iniciava `idsHmlPorTabela`/`idsProdPorTabela` com ela, e então percorria as
+  tabelas restantes de `ordemTabelas` (pulando catálogo) via busca de satélite.
+  Encadeado inteiramente via `reduce` sobre `cy.wrap(...)`.
+- **Só testado com lógica pura desta vez** (`node:test`) — o orquestrador em si
+  ainda não tinha sido exercitado contra PROD/HML reais nesta versão.
+- Nenhum arquivo temporário ficou para trás.
+
+### Ciclo 18 (2026-09-17) — orquestrador completo (`cy.clonarCedenteCompleto`)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `675bc69`,
+working tree limpa, sem dúvida pendente), ataca o item (1) do "próximo passo
+pendente" do Ciclo 17: um comando/feature que encadeie
+`cy.resolverEstrategiaClonagemCedente` (já existia) com
+`cy.clonarGrafoEstruturalCedente` (Ciclo 17).
+
+Commit `6cfd36d`: `cy.clonarCedenteCompleto(documento)` em `commands/cedente.js`
+(versão ORIGINAL — a chamada a `cy.clonarGrafoEstruturalCedente` foi atualizada no
+Ciclo 19 para usar sementes múltiplas, ver `documentacao.md`) + função pura nova
+`decidirAcaoOrquestracaoCedente` (4 testes novos) + cenário/steps novos em
+`gerenciamentoDoCedente.feature`/`step_definitions`. `npm run lint` (0 erros) e
+`npm run test:safety` (117/117) passam.
+
+- **`decidirAcaoOrquestracaoCedente(estrategia)`**: traduz a estratégia já
+  resolvida em uma de 3 ações (`ACAO_CLONAGEM_BLOQUEADO`/`ACAO_CLONAGEM_INSERIR`/
+  `ACAO_CLONAGEM_APAGAR_E_RECRIAR_PENDENTE`).
+- **`cy.clonarCedenteCompleto(documento)`**: resolve a estratégia e ramifica pela
+  ação. `bloqueado` só loga o motivo (nenhuma escrita). `inserir` (nesta versão
+  original) chamava `cy.clonarGrafoEstruturalCedente` com a tabela-âncora do
+  prospect e a linha já resolvida — **este caminho tinha um problema de correção
+  não percebido ainda** (ver Ciclo 19, `documentacao.md`: a busca de satélite nunca
+  alcançava POC/comitê a partir só do prospect). **`apagar-e-recriar-pendente`**
+  (cedente já existe em HML): como o DELETE ainda não existe, este caminho só loga
+  a situação e nunca chama o orquestrador de INSERT.
+- **Cenário/feature novo** (`@cedente`, `gerenciamentoDoCedente.feature`):
+  parametrizado por `--env documentoOrigem=...`, mesmo padrão de "parâmetro
+  ausente não quebra o cenário, só loga e pula".
+- **Só o caminho de skip foi exercitado de verdade** (`npx cypress run --env
+  tags=@cedente`, sem `documentoOrigem` — 3/3 cenários de `@cedente` passam,
+  nenhuma escrita em HML).
+- Nenhum arquivo temporário ficou para trás.
