@@ -30,7 +30,8 @@ Merge de teste local contra `reviewAgents`, rodar suíte, se passar: merge diret
 ## Autoteste já feito pelo subAgent (não precisa repetir do zero)
 
 - `npm test` rodado 2x contra HML: ambas as vezes esbarraram em instabilidade de HML/login já
-  catalogada em `../docs/conhecimento-geral.md` (não relacionada a esta mudança) — 1ª tentativa
+  catalogada em `../subagents/geral/docs/documentacao.md` (não relacionada a esta mudança) — 1ª
+  tentativa
   chegou a capturar 1 screenshot real via `passo()` e gerar 1 PDF real antes de falhar num clique
   de menu coberto por backdrop; 2ª tentativa falhou já no login/sessão. Não retentei uma 3ª vez
   seguida (protocolo já estabelecido para essa instabilidade).

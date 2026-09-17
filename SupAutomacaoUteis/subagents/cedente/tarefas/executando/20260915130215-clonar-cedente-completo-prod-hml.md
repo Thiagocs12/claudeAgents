@@ -152,8 +152,7 @@ tabelas de documento, que estão fora do escopo).
 ## Material de apoio
 
 - Diagrama completo (ciclo de vida + tabelas + legenda): `mapa-cedente-diagrama.html`, raiz de
-  `C:\Multiplica\claudeAgents\SupAutomacaoUteis` (também publicado como Artifact, ver
-  `docs/conhecimento-geral.md` se precisar do link).
+  `C:\Multiplica\claudeAgents\SupAutomacaoUteis`.
 - Números de referência do levantamento (PROD, 2026-09-15): 174 tabelas distintas com alguma FK no
   grafo do cedente, 330 relações de FK mapeadas, 66 tabelas referenciam `idCedente` diretamente, 28
   referenciam `idProspect`, 51 referenciam `idProposta`.
