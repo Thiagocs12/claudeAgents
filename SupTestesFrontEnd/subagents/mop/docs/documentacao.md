@@ -279,19 +279,48 @@ as screenshots relevantes daquela rodada para uma pasta separada (ex.
 que o relatório final só terá evidência visual do trecho mais recentemente executado (com a
 narrativa textual cobrindo o restante).
 
-## Armadilha/achado: Home do Beyond Banking passou a mostrar tela de "Franquia" sem opções (2026-09-17)
+## Armadilha/achado: Home do Beyond Banking passou a mostrar tela de "Franquia" sem opções (2026-09-17) — RESOLVIDO
 
 Com a mesma credencial `master`/`automacao` que criou as operações 88681-88683 (rodadas 74-93,
 2026-09-16), a Home do Beyond Banking **parou de mostrar os 3 cards já mapeados** ("Beyond Comex",
 "Beyond Operação Interno", "Beyond Portal") e passou a mostrar uma tela **"Bem-vindo ao Beyond
 Banking"** com um dropdown **"Franquia"** e a mensagem **"Nenhuma franquia disponível para o seu
 usuário"** — sem nenhum card visível, bloqueando totalmente o caminho para "Beyond Operação
-Interno" → "Criar Operação". O login funciona normalmente (cedente kenerson aparece confirmado no
-cabeçalho) — o bloqueio é especificamente essa tela nova. Reproduzido de forma idêntica em 2/2
-tentativas (`cypress-run-105.log`, `cypress-run-106.log`, rodadas 105-106). Ver task
-`20260915123730-criacao-operacao-servico`, seção `## Resultado` mais recente, para o detalhe
-completo. **Ação recomendada**: confirmar com quem administra permissões do Beyond Banking se o
-usuário `automacao` deveria ter uma "franquia" configurada.
+Interno" → "Criar Operação". Reproduzido de forma idêntica em 2/2 tentativas nas rodadas 105-106.
+
+**RESOLVIDO (2026-09-17, rodadas 107-108):** causa raiz era o usuário `automacao` não ter
+`idFranquia` configurado no Keycloak (claim do token JWT, lido via
+`SegurancaService.getValue("idFranquia")` nos backends `mc-operacao-ms`/`mc-cedente-ms`/
+`mc-operacao-backoffice-ms`). O Thiago preencheu esse campo diretamente no Keycloak; confirmado em
+2/2 tentativas seguintes que a Home voltou a mostrar os 3 cards normais e o fluxo completo de
+criação (login → wizard de produto → título → Salvar → Gerar Operação → Confirmar) voltou a
+funcionar de ponta a ponta.
+
+## Armadilha/achado: operação recém-criada não aparece na listagem "Operações" do Beyond Banking, apesar de existir no banco (2026-09-17)
+
+Depois da correção do `idFranquia` acima, o fluxo de criação passou a funcionar de novo, mas surgiu
+um problema novo no passo seguinte (avançar a operação): após "Confirmar" (toast "Operação criada
+com sucesso!"), a tabela "Operações" continuou mostrando só as mesmas operações antigas já
+conhecidas (88677-88683, todas de 16/09/2026, "1-7 de 7" na paginação) — a operação recém-criada
+nunca apareceu como primeira linha nem em nenhuma linha visível, mesmo com o `cy.wait(5000)` já
+usado com sucesso nas rodadas 74-93 (antes do `idFranquia` existir).
+
+**Confirmado em banco que a operação FOI criada de verdade** (não é o toast mentindo nem só
+lentidão de UI sem dado real por trás): consultando `MC_MOP_PRE_OPERACAO` (`ORDER BY id DESC`)
+logo após cada execução, as pré-operações 88684 (rodada 107) e 88685 (rodada 108) existem, com
+`situacao=VALIDADO` e `dataCadastro` batendo exatamente com o horário de cada rodada — só não
+aparecem na listagem da UI. Reproduzido de forma idêntica em 2/2 tentativas.
+
+Consequência prática pra qualquer spec futura que dependa de "pegar a primeira linha da tabela
+Operações logo após criar uma operação" (padrão usado desde a rodada 61): **esse padrão não é mais
+confiável neste ambiente** — a spec acabou agindo sobre uma operação antiga (88683, já em situação
+"em análise", com o ícone "Avançar" desabilitado) em vez da que acabara de criar, e falhou com
+`cy.click() failed because this element is disabled`. Causa raiz não investigada a fundo (hipóteses
+não confirmadas: filtro por franquia na listagem, atraso de propagação maior que antes, ou outra
+mudança do app) — **ação recomendada**: confirmar com quem tem acesso a banco/backend por que a
+pré-operação não aparece na listagem, antes de confiar de novo no padrão "primeira linha da
+tabela" pra identificar a operação recém-criada. Ver task `20260915123730-criacao-operacao-servico`,
+seção `## Resultado` mais recente, para o detalhe completo.
 
 ## Armadilha: falha de login "Usuário ou senha inválidos" agora isolada ao realm `multiplicacapital` (2026-09-17)
 
@@ -305,6 +334,11 @@ branco como explicação atual e torna mais provável um **bloqueio isolado ao r
 104 da sessão anterior concentraram várias tentativas de login mal-sucedidas justamente contra esse
 realm). **Ação recomendada**: confirmar com quem administra o Keycloak se há bloqueio de conta
 específico nesse realm para o usuário `automacao`.
+
+**Atualização (rodadas 107-108, 2026-09-17):** reproduzido pela 4ª rodada seguida (105, 106, 107,
+108), sempre isolado ao realm `multiplicacapital`, sem correção conhecida até agora — ainda não
+foi mencionado como resolvido pelo Thiago (diferente do achado da Franquia acima, que já foi
+corrigido).
 
 ## Monitor Diário do Beyond BackOffice — seletores mapeados (2026-09-17, spec estendida mas ainda não validada ao vivo)
 

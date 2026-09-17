@@ -684,3 +684,375 @@ registrados na documentação, nunca valores).
   `executando/` pro próximo ciclo tentar de novo o teste 2. Se o erro de `redirect_uri` reaparecer
   de forma consistente numa tentativa que realmente chegue na tela de login, tratar como RESULTADO
   (bug/config real) em vez de continuar tentando indefinidamente. Sem processo órfão ao final.
+## Execução — rodada 94 (retomada, 2026-09-17)
+
+- Tentei rodar a spec completa de novo (`npx cypress run`) → **teste 1 falhou** logo no
+  `cy.origin()` do login do Beyond Banking, com `CypressError: cy.origin() failed to create a spec
+  bridge...` antes de qualquer screenshot — mesma flakiness intermitente já documentada, ambiental,
+  não regressão.
+- **Teste 2 avançou mais que nas rodadas 90-93**: desta vez o Keycloak do Beyond BackOffice foi
+  servido por `keycloak-new-2...` (não `lgni`, então o erro de `redirect_uri` não se repetiu nesta
+  rodada — ainda não confirmado nem descartado como reproduzível). O login de fato funcionou (a
+  screenshot de falha automática do Cypress mostra a Home do Beyond já carregada, "BEM-VINDO AO
+  ECOSSISTEMA BEYOND", com o card "Beyond BackOffice" visível) → mas o teste falhou logo depois com
+  `TypeError: Cannot destructure property 'duration' of 'props' as it is undefined` — **é a mesma
+  armadilha já documentada em `docs/documentacao.md`** ("cy.screenshot() logo após cy.visit() quebra
+  o runner"), desta vez disparada pelo screenshot manual `27-apos-submeter-login-beyond-backoffice`
+  tirado logo após o clique de login, numa tela com fundo animado (padrão de pontos) — não é bug da
+  aplicação, é o próprio Cypress 15.20.1 quebrando.
+- **Corrigi**: removi esse screenshot diagnóstico específico (não é mais necessário — já
+  confirmamos visualmente que o login funciona; o texto bruto do body, sem risco, e as screenshots
+  mais adiante, depois do `<main>` estabilizar, já cobrem esse trecho).
+- Tentei rodar de novo → **teste 1 falhou de novo com o MESMO erro** (`Cannot destructure property
+  'duration'...`), desta vez no screenshot `02-apos-tentativa-login` (redirect pós-login do Beyond
+  Banking) — a mesma armadilha, recorrente em outro ponto do fluxo (confirmado: essa tela também
+  tem o fundo animado de pontos). **Teste 2 desta vez travou de fato no login** (Keycloak, host
+  `keycloak-new-2`): a URL não saiu de `/login-actions/authenticate` mesmo após o timeout de 20s —
+  intermitência já conhecida do `cy.origin()`, não um erro novo.
+- **Corrigi**: removi também o screenshot `02-apos-tentativa-login` (mesmo raciocínio — diagnóstico,
+  não essencial, o texto bruto e as screenshots seguintes já cobrem). Atualizei
+  `docs/documentacao.md` (armadilha de screenshot pós-redirect) com os dois casos novos. Vou rodar
+  de novo.
+- Tentei rodar de novo (rodada 96) → **teste 1 falhou** com `CypressError: ... expected to run
+  against origin beyondbanking-hml but the application is at origin keycloak-new-2` — o
+  `cy.wait(4000)` fixo antes de sair do `cy.origin()` do login não foi suficiente numa execução
+  mais lenta (mesma classe de problema já resolvido no teste 2 com `cy.url({timeout:20000})`, nunca
+  aplicado ao teste 1). **Corrigi**: troquei o `cy.wait(4000)` por um `cy.url({timeout:20000
+  }).should(...)` que só segue quando a URL sair de fato do Keycloak (mesmo padrão do teste 2).
+  **Teste 2 (rodada 96) falhou de novo travado no login** (URL nunca saiu de
+  `/login-actions/authenticate`) — a screenshot de falha mostrou, pela primeira vez, a mensagem real
+  da tela: **"Usuário ou senha inválidos"**, com o campo Login/E-mail preenchido (`automacao`) e
+  Senha vazio (Keycloak limpa a senha após um submit rejeitado, comportamento normal dele).
+- Tentei rodar de novo (rodada 97, já com a correção do teste 1) → **AMBOS os testes travaram no
+  login com a mesma mensagem "Usuário ou senha inválidos"** — teste 1 (realm `beyondbanking-hml`) e
+  teste 2 (realm `multiplicacapital`), nos dois hosts (`keycloak-new-2`), nas duas telas de login,
+  na mesma rodada. Confirmei que as variáveis de ambiente `HML_MASTER_USERNAME`/`HML_MASTER_PASSWORD`
+  estão de fato carregadas do `.env` (tamanho de string plausível, 9 e 13 caracteres — nunca
+  exibindo o valor) — não é um `.env` vazio/não carregado.
+- **Achado importante**: login funcionou normalmente na rodada 94 (screenshot mostrou a Home do
+  Beyond BackOffice carregada com sucesso) e nas rodadas 74-93 do dia anterior (2026-09-16, operações
+  88681-88683 criadas e avançadas com sucesso) — ou seja, **não é uma falha permanente**, é
+  **intermitente**, mas passou a acontecer com frequência bem maior nesta sessão (3 falhas de login
+  com "credenciais inválidas" em 2 das últimas 3 rodadas, em ambos os realms). Não tenho como
+  distinguir, sem informação do Thiago, entre: (a) a senha usada foi rotacionada/expirou desde
+  ontem, (b) a conta `automacao` está temporariamente bloqueada por proteção de força bruta do
+  Keycloak (efeito colateral das minhas próprias tentativas repetidas), ou (c) uma instabilidade
+  pontual do ambiente HML sem relação com a credencial em si.
+- **Decidi parar de tentar login novamente por enquanto**: continuar batendo tentativas de login
+  com a mesma credencial arrisca aprofundar um possível bloqueio de conta por tentativas malsucedidas
+  repetidas (política comum de proteção contra força bruta) — registrando como dúvida bloqueante
+  em vez de seguir tentando às cegas.
+- **Dúvida registrada em `duvidas.md`** (id `20260915123730-criacao-operacao-servico (2)`) e tarefa
+  movida para `tarefas/aguardando-resposta/` — aguardando o Thiago confirmar se é rotação de senha,
+  bloqueio de conta por força bruta (efeito colateral das minhas próprias tentativas), ou
+  instabilidade pontual do ambiente, antes de tentar login de novo.
+
+## Execução — rodada 98 (2026-09-17, ciclo seguinte)
+
+- Ao iniciar o ciclo, encontrei esta tarefa de volta em `tarefas/executando/` (movida pela
+  pré-sincronização determinística do `run-cycle.ps1`, que devolve pra `executando/`/`pendentes/`
+  quando a dúvida do id está `respondida`).
+- **Achado**: conferi `duvidas.md` e a dúvida realmente bloqueante (`20260915123730-criacao-
+  operacao-servico (2)`, sobre o login falhando com "Usuário ou senha inválidos" e o risco de
+  aprofundar um bloqueio de conta) continua com `Status: pendente` e `Resposta:` vazia — **não foi
+  respondida**. O que está `respondida` é a dúvida **anterior**, sem sufixo (`20260915123730-
+  criacao-operacao-servico`, sobre qual versão do roteiro seguir, resolvida ainda em 2026-09-15).
+  A pré-sincronização parece ter casado pelo prefixo do id e considerado a tarefa liberada com base
+  na dúvida errada (a antiga, já resolvida há dias), ignorando que existe uma segunda dúvida mais
+  recente sob o mesmo id ainda pendente. Isso é uma inconsistência do script de sincronização, não
+  uma decisão do Thiago — registrando em `docs/documentacao.md` e `CONHECIMENTO-SUPERVISORES.md`
+  como armadilha, pra não se repetir e pro Supervisor avaliar corrigir o `run-cycle.ps1`.
+- **Não retomei tentativas de login**: fazer isso agora repetiria exatamente o risco identificado
+  na rodada 97 (aprofundar um possível bloqueio de conta por força bruta) sem ter a orientação do
+  Thiago. Não executei nenhum `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (estado
+  correto, já que a dúvida bloqueante real segue sem resposta) — sem alterar `duvidas.md` (regra 8:
+  nunca respondo minha própria dúvida). `docs/status-resumo.md` já refletia corretamente o estado
+  "Bloqueado" com a dúvida `(2)`, então não precisou de correção adicional.
+
+## Execução — rodada 99 (2026-09-17, ciclo seguinte)
+
+- Ao iniciar o ciclo, encontrei esta tarefa de novo em `tarefas/executando/` (mesma
+  pré-sincronização determinística do `run-cycle.ps1` a moveu de volta, pelo mesmo motivo já
+  registrado na rodada 98: ela casa pela dúvida antiga sem sufixo, já `respondida`, ignorando que a
+  dúvida mais recente `(2)` — a que de fato bloqueia — continua `Status: pendente`, `Resposta:`
+  vazia, conferido agora em `duvidas.md`).
+- **Não retomei tentativas de login**: a dúvida `(2)` (risco de aprofundar um possível bloqueio de
+  conta por força bruta ao repetir tentativas de login) ainda não tem orientação do Thiago. Não
+  executei nenhum `npx cypress run` neste ciclo — seria repetir exatamente o risco identificado na
+  rodada 97.
+- **Corrigi o estado de novo**: movendo a tarefa de volta para `tarefas/aguardando-resposta/`. Não
+  alterei `duvidas.md` (regra 8). `docs/status-resumo.md` já refletia o estado "Bloqueado" com a
+  dúvida `(2)` corretamente, sem necessidade de ajuste.
+- **Nota para o Supervisor**: esta é a segunda vez consecutiva (rodadas 98 e 99) que a
+  pré-sincronização do `run-cycle.ps1` devolve esta tarefa para `executando/` incorretamente — a
+  correção documentada em `docs/documentacao.md`/`CONHECIMENTO-SUPERVISORES.md` (considerar a
+  dúvida mais recente sob um id, não a primeira que casar pelo prefixo) ainda não foi aplicada ao
+  script. Enquanto isso não for corrigido, cada ciclo seguinte vai repetir este mesmo padrão
+  (retomar → constatar dúvida `(2)` pendente → devolver sem agir) até a dúvida ser respondida.
+
+## Execução — rodada 100 (2026-09-17, ciclo seguinte)
+
+- Terceira vez consecutiva (rodadas 98, 99 e agora 100) que a pré-sincronização do `run-cycle.ps1`
+  devolve esta tarefa para `tarefas/executando/`. Conferi `duvidas.md` de novo: a dúvida
+  `20260915123730-criacao-operacao-servico (2)` (login falhando com "Usuário ou senha inválidos",
+  risco de aprofundar bloqueio de conta por força bruta) continua `Status: pendente`,
+  `Resposta:` vazia — a dúvida `respondida` continua sendo só a antiga, sem sufixo, resolvida em
+  2026-09-15.
+- **Não retomei tentativas de login** — mesmo motivo já registrado nas rodadas 98-99: repetir
+  tentativas sem orientação do Thiago aprofundaria o risco identificado na rodada 97. Não executei
+  nenhum `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (mesma pasta
+  de `20260915123730-criacao-operacao-servico.historico.md`, que a pré-sincronização não move
+  junto — outro sintoma do mesmo bug de sincronização). `docs/status-resumo.md` já refletia
+  corretamente o estado "Bloqueado" com a dúvida `(2)`, sem necessidade de ajuste.
+- Nenhum achado novo além do já registrado nas rodadas 98-99 — a pendência pro Supervisor
+  (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto.
+
+## Execução — rodada 101 (2026-09-17, ciclo seguinte)
+
+- Quarta vez consecutiva (rodadas 98, 99, 100 e agora 101) que a pré-sincronização do
+  `run-cycle.ps1` devolve esta tarefa para `tarefas/executando/`. Conferi `duvidas.md` de novo: a
+  dúvida `20260915123730-criacao-operacao-servico (2)` (login falhando com "Usuário ou senha
+  inválidos", risco de aprofundar bloqueio de conta por força bruta) continua `Status: pendente`,
+  `Resposta:` vazia.
+- **Não retomei tentativas de login** — mesmo motivo das rodadas 98-100: repetir tentativas sem
+  orientação do Thiago aprofundaria o risco identificado na rodada 97. Não executei nenhum
+  `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (junto com
+  `20260915123730-criacao-operacao-servico.historico.md`, que já estava lá desde ciclos
+  anteriores). `docs/status-resumo.md` já refletia corretamente o estado "Bloqueado" com a dúvida
+  `(2)`, sem necessidade de ajuste.
+- Nenhum achado novo além do já registrado nas rodadas 98-100 — a pendência pro Supervisor
+  (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
+  aconteceu 4 vezes seguidas.
+
+## Execução — rodada 102 (2026-09-17, ciclo seguinte)
+
+- Quinta vez consecutiva (rodadas 98-101 e agora 102) que a pré-sincronização do `run-cycle.ps1`
+  devolve esta tarefa para `tarefas/executando/`. Conferi `duvidas.md` de novo: a dúvida
+  `20260915123730-criacao-operacao-servico (2)` (login falhando com "Usuário ou senha inválidos",
+  risco de aprofundar bloqueio de conta por força bruta) continua `Status: pendente`,
+  `Resposta:` vazia.
+- **Não retomei tentativas de login** — mesmo motivo das rodadas 98-101: repetir tentativas sem
+  orientação do Thiago aprofundaria o risco identificado na rodada 97. Não executei nenhum
+  `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (junto com
+  `20260915123730-criacao-operacao-servico.historico.md`, já presente lá). Não alterei
+  `duvidas.md` (regra 8). `docs/status-resumo.md` já refletia corretamente o estado "Bloqueado" com
+  a dúvida `(2)`, sem necessidade de ajuste.
+- Nenhum achado novo além do já registrado nas rodadas 98-101 — a pendência pro Supervisor
+  (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
+  aconteceu 5 vezes seguidas.
+
+## Execução — rodada 104 (2026-09-17, ciclo seguinte — login autorizado de novo)
+
+- O Thiago respondeu a dúvida `(2)` em `duvidas.md`: "Pode tentar o login de novo agora." Tarefa
+  retomada normalmente em `tarefas/executando/` (desta vez a dúvida relevante estava mesmo
+  respondida, não é o bug de sincronização das rodadas 98-103).
+- Tentei rodar a spec completa de novo (`npx cypress run`, síncrono, timeout 300000ms) →
+  **AMBOS os testes falharam de novo, exatamente com o mesmo sintoma das rodadas 96-97**: travados
+  na tela de login do Keycloak, sem sair de `/login-actions/authenticate`, com a mensagem real
+  visível na screenshot de falha automática do Cypress: **"Usuário ou senha inválidos"**.
+  - Teste 1 (Beyond Banking, realm `beyondbanking-hml`, host `keycloak-new-2`): campo Login/E-mail
+    preenchido (`automacao`), mensagem de erro visível logo abaixo, campo Senha vazio.
+  - Teste 2 (Beyond BackOffice, realm `multiplicacapital`, mesmo host `keycloak-new-2`): mesma
+    mensagem de erro, mesmo padrão.
+- **Achado confirmado**: a falha de login **não foi resolvida pela simples nova tentativa** — é
+  reproduzível de forma consistente agora, nos dois realms, na primeira tentativa desta rodada.
+  Isso descarta a hipótese de bloqueio temporário por força bruta já ter passado sozinho, e torna
+  mais provável que a senha em uso (`HML_MASTER_PASSWORD` deste `.env`) esteja de fato desatualizada
+  (rotacionada/expirada) ou a conta `automacao` esteja bloqueada de forma persistente — algo que só
+  quem administra a credencial (fora do escopo deste subAgent) pode confirmar/corrigir.
+- **Decisão**: não repetir mais tentativas de login às cegas (mesmo risco de aprofundar um possível
+  bloqueio já levantado na rodada 97, e agora reforçado pelo fato de já termos usado a autorização
+  do Thiago para uma nova tentativa e ela ter falhado do mesmo jeito). Isso deixou de ser uma dúvida
+  que dependa de uma decisão sobre "tentar de novo ou não" — é um problema real e concreto
+  bloqueando a continuação (credencial/conta), então trato como **RESULTADO** (regra 6 do
+  `AGENTE.md`), não como nova dúvida.
+- Gerando o PDF do relatório e encerrando esta rodada com veredito de **cumprido parcialmente**
+  (ver `## Resultado` abaixo) — os passos 1-12 seguem validados como nas rodadas 74-93 (com
+  confirmação em banco), só os passos 13-14 (Monitor Diário) ficam bloqueados por este problema de
+  credencial.
+
+## Execução — rodada 103 (2026-09-17, ciclo seguinte)
+
+- Sexta vez consecutiva (rodadas 98-102 e agora 103) que a pré-sincronização do `run-cycle.ps1`
+  devolve esta tarefa para `tarefas/executando/`. Conferi `duvidas.md` de novo: a dúvida
+  `20260915123730-criacao-operacao-servico (2)` (login falhando com "Usuário ou senha inválidos",
+  risco de aprofundar bloqueio de conta por força bruta) continua `Status: pendente`,
+  `Resposta:` vazia — só a dúvida antiga sem sufixo (resolvida em 2026-09-15) está `respondida`.
+- **Não retomei tentativas de login** — mesmo motivo das rodadas 98-102: repetir tentativas de
+  login sem orientação do Thiago aprofundaria o risco de bloqueio de conta por força bruta
+  identificado na rodada 97. Não executei nenhum `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (junto com
+  `20260915123730-criacao-operacao-servico.historico.md`, já presente lá). Não alterei
+  `duvidas.md` (regra 8). `docs/status-resumo.md` já refletia corretamente o estado "Bloqueado" com
+  a dúvida `(2)`, sem necessidade de ajuste.
+- Nenhum achado novo além do já registrado nas rodadas 98-102 — a pendência pro Supervisor
+  (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
+  aconteceu 6 vezes seguidas.
+
+### Resultado anterior (histórico, superado — ver "## Resultado" no fim do arquivo para o veredito atual)
+
+**Veredito: cumprido parcialmente.**
+
+- **Passos 1-11 (criação da operação de serviço no Beyond Banking): CONCLUÍDOS e validados**, com
+  confirmação em banco de dados (não só na UI) nas rodadas 74-93 de 2026-09-16 — operações
+  88681, 88682 e 88683 criadas com sucesso (login → seleção do cedente kenerson → "Beyond Operação
+  Interno" → wizard de produto Aquisição → Antecipação de Duplicata → Duplicata → Serviço → Boleto
+  → conta pré-selecionada → "Digitação" → Cad Pessoa via CPF de teste → título com Documento único
+  (hash aleatória) e Valor R$ 100.000,00 → Salvar → Gerar Operação → Confirmar).
+- **Passo 12 (avançar a operação a partir do dashboard): CONCLUÍDO e validado em banco** —
+  confirmado nas rodadas 74-93 que `indVirouOperacao=true` + linha criada em `MC_MOP_OPERACAO` para
+  as 3 operações com Documento único (a hipótese do Thiago sobre Documento duplicado causando o 400
+  foi confirmada; a conclusão antiga de "bug real" está superada — ver `docs/documentacao.md`).
+- **Passos 13-14 (verificar no Monitor Diário do Beyond BackOffice que a etapa "Inclusão OPE"
+  aparece concluída): NÃO CONCLUÍDOS.** Bloqueados, nesta sessão (rodadas 94-104, 2026-09-17), por
+  uma falha de login persistente e reproduzível: o Keycloak (`keycloak-new-2.grupomultiplica.com.br`)
+  rejeita a credencial `master` (usuário `automacao`) com a mensagem real da tela **"Usuário ou
+  senha inválidos"**, em **ambos os realms** (`beyondbanking-hml` e `multiplicacapital`), de forma
+  consistente mesmo após o Thiago autorizar uma nova tentativa (rodada 104) — não é mais a
+  flakiness intermitente antiga do `cy.origin()` (essa já tinha sido distinguida e documentada
+  separadamente). O login havia funcionado normalmente até a rodada 94 desta sessão e ao longo de
+  toda a sessão anterior (74-93, 2026-09-16).
+- **Achado que precisa de ação fora do escopo deste subAgent**: a credencial `HML_MASTER_USERNAME`/
+  `HML_MASTER_PASSWORD` usada por este módulo (`.env` local, copiada do `SupE2eAutomation`) parece
+  ter parado de funcionar em algum momento entre a rodada 94 e a rodada 96 desta sessão (2026-09-17),
+  de forma consistente, nos dois realms. Recomendação: confirmar com quem administra o Keycloak/HML
+  se a senha da conta `automacao` foi rotacionada/expirou, ou se a conta está bloqueada por proteção
+  de força bruta — e, se for o caso, atualizar o `.env` (aqui e possivelmente no
+  `SupE2eAutomation`, que reaproveita a mesma credencial) antes de tentar os passos 13-14 de novo.
+- **Achado secundário ainda em aberto** (não bloqueia, mas fica registrado): a operação 88677
+  (rodada 89) apareceu na UI com "situação sucesso" mas a validação em banco (rodada 93) mostrou
+  `indVirouOperacao=false`, sem linha em `MC_MOP_OPERACAO` — divergência UI-vs-banco não explicada
+  (ver `docs/documentacao.md`, seção "Validação em banco de dados").
+- **Relatório em PDF**: `relatorios/20260915123730-criacao-operacao-servico.pdf` (screenshots desta
+  rodada mostram a tela de login com a mensagem "Usuário ou senha inválidos" nos dois realms;
+  screenshots das rodadas 1-93, que documentaram os passos 1-12 com sucesso, não foram preservadas
+  entre execuções do Cypress — a pasta `cypress/screenshots/` é sobrescrita a cada `npx cypress run`
+  e não havia, até esta tarefa, um passo de arquivamento entre rodadas; narrativa textual detalhada
+  desses passos permanece em `## Execução` acima e em
+  `20260915123730-criacao-operacao-servico.historico.md`).
+- **Próximo passo recomendado**: assim que a credencial for confirmada/corrigida, reabrir esta
+  tarefa (ou uma nova, referenciando esta) só para os passos 13-14 — os passos 1-12 já estão
+  validados e não precisam ser refeitos.
+
+
+## Execução — rodada 105-106 (2026-09-17, retomada da reabertura)
+
+- Ao retomar, estendi a spec (`cypress/e2e/criacao-operacao-servico.cy.js`) para cobrir os passos
+  13-14 de fato: depois de expandir o drawer (ponto onde a spec parava antes, screenshot
+  `26-apos-expandir-drawer`), reaproveitei os seletores já mapeados e validados pelo
+  `SupE2eAutomation` (`docs/documentacao.md` deste módulo aponta para
+  `SupE2eAutomation/subagents/mop/repo/cypress/support/pages/mop/MonitorDiarioPage.js`): clicar em
+  "Monitor Diário" (`cy.contains('.menu-MuiDrawer-paper *', 'Monitor Diário')`), confirmar
+  `pathname === '/mop/monitor'`, clicar "Buscar", e se a operação (lida de
+  `cypress/ultima-operacao.json`, gravado pelo teste 1) não aparecer na janela de data padrão,
+  ampliar para 29 dias (mesma técnica de setter nativo em `input[type=date]`) e buscar de novo.
+  Ao achar a linha (comparando a 1ª coluna "Op." com o número da operação), leio o texto do chip
+  `.mop-MuiChip-label` da coluna "Etapa" (cabeçalhos completos da tabela, confirmados via grep nos
+  discovery HTMLs do `SupE2eAutomation`: Op., Data Op., Fundo, Cedente, Banco Cedente, Agente, Qtd
+  Tít., Valor Bruto, Valor Líq., PMP D+, Taxa Final, Produto, **Etapa**, Tempo, MC, REM, Chat,
+  Ações).
+- Tentei rodar a spec completa (`cypress-run-105.log`, síncrono, timeout 300000ms) → **ambos os
+  testes falharam, mas por dois motivos NOVOS e distintos dos anteriores** (não mais a mensagem
+  "Usuário ou senha inválidos" genérica em ambos os realms — desta vez cada teste travou num ponto
+  diferente):
+  - **Teste 1 (Beyond Banking, realm `beyondbanking-hml`): login funcionou** (sem erro de
+    credencial) e o cedente kenerson apareceu selecionado no cabeçalho ("KENERSON INDUSTRIA E
+    COME..."), mas a **Home mudou de conteúdo**: em vez dos 3 cards já mapeados ("Beyond Comex",
+    "Beyond Operação Interno", "Beyond Portal"), a tela mostrou **"Bem-vindo ao Beyond Banking"**
+    com um dropdown **"Franquia"** e a mensagem **"Nenhuma franquia disponível para o seu
+    usuário"** — uma tela completamente diferente, sem nenhum dos cards necessários para navegar a
+    "Beyond Operação Interno" → "Criar Operação". `cy.contains('Beyond Operação Interno')` deu
+    timeout (elemento nunca existiu nesta tela). Screenshot de falha confirma visualmente
+    (`Exploracao ... acessa o Beyond Banking ... (failed).png`).
+  - **Teste 2 (Beyond BackOffice, realm `multiplicacapital`): login falhou** com a mesma mensagem
+    real da tela já vista antes, **"Usuário ou senha inválidos"** — campo Login/E-mail preenchido
+    (`automacao`), Senha vazia (Keycloak limpa após submit rejeitado). URL travada em
+    `/login-actions/authenticate`.
+- **Verifiquei o `.env`** (sem expor o valor, só metadado) antes de suspeitar que a correção do
+  Thiago não tivesse pegado: `HML_MASTER_USERNAME` (9 caracteres) e `HML_MASTER_PASSWORD` (13
+  caracteres), nenhum dos dois com espaço em branco no início/fim (`/^\s|\s$/` não bate em nenhum)
+  — a correção do espaço em branco continua aplicada, não foi revertida.
+- **Rodei de novo** (`cypress-run-106.log`, mesma spec, sem alteração) para checar reprodutibilidade
+  → **os dois mesmos sintomas se repetiram de forma idêntica**: teste 1 chegou de novo na tela
+  "Bem-vindo ao Beyond Banking" / "Nenhuma franquia disponível para o seu usuário" (mesmo texto,
+  mesmo cedente no cabeçalho), teste 2 travou de novo no login do Keycloak (`multiplicacapital`)
+  com "Usuário ou senha inválidos". **2 de 2 tentativas nesta sessão confirmam ambos os achados
+  como reproduzíveis**, não transitórios.
+- **Achado 1 (Beyond Banking): a mesma credencial `master`/`automacao` que funcionou nas rodadas
+  74-93/94 (2026-09-16/17, criando operações reais) agora leva a uma tela "Franquia" nova, que não
+  existia antes** — não é mais possível chegar ao card "Beyond Operação Interno" a partir daqui com
+  este usuário. Isso não é uma falha da automação (o login funcionou, a URL/cedente confirmam
+  sessão válida) — é uma mudança de comportamento real da aplicação/permissão do usuário
+  `automacao` neste ambiente HML.
+- **Achado 2 (Beyond BackOffice): login com a mesma credencial `master`/`automacao` continua sendo
+  rejeitado no realm `multiplicacapital`** mesmo depois da correção do espaço em branco e mesmo
+  essa MESMA credencial funcionando sem erro no realm `beyondbanking-hml` no mesmo run — ou seja,
+  **não é mais explicável só pelo espaço em branco do `.env`** (que já foi corrigido e confirmado
+  ausente). O fato de falhar especificamente no realm `multiplicacapital` e não no
+  `beyondbanking-hml` (mesmo usuário/senha, mesma execução) sugere um problema **isolado a este
+  realm específico** — mais consistente com um bloqueio de conta por proteção de força bruta
+  restrito a esse realm (rodadas 96, 97 e 104 da sessão anterior concentraram várias tentativas de
+  login mal-sucedidas justamente contra `multiplicacapital`) do que com uma senha errada de forma
+  geral.
+- **Decisão**: ambos são problemas reais e concretos da aplicação/ambiente/conta, reproduzidos de
+  forma consistente (2/2), não uma questão que dependa de uma decisão de "tentar de novo ou não" —
+  tratando como **RESULTADO** (regra 6 do `AGENTE.md`), não dúvida nova. Passos 13-14 continuam
+  **não concluídos**, agora por um motivo diferente do da sessão anterior (antes: credencial
+  rejeitada nos dois realms; agora: credencial rejeitada só em `multiplicacapital`, e um obstáculo
+  novo e distinto — tela de "Franquia" sem opções — bloqueando também o próprio fluxo de criação
+  no Beyond Banking, que antes funcionava). Gerando o PDF e encerrando esta rodada.
+
+
+### Resultado anterior (rodadas 105-106, superado — ver "## Resultado" no fim do arquivo para o veredito atual)
+
+**Veredito: cumprido parcialmente — passos 13-14 continuam bloqueados, agora por dois problemas
+novos e reproduzíveis (2/2), diferentes dos já superados pela correção do Thiago.**
+
+- **Passos 1-12 (criação e avanço da operação no Beyond Banking): seguem validados** pelas rodadas
+  74-93 de 2026-09-16 (confirmação em banco, operações 88681-88683) — não foram refeitos nesta
+  rodada nem precisam ser, mas **um achado novo torna incerto se seriam repetíveis hoje** (ver
+  achado 1 abaixo).
+- **Achado 1 (NOVO, bloqueia o fluxo de criação desde a Home do Beyond Banking)**: com a mesma
+  credencial `master`/`automacao` que criou as operações 88681-88683, a Home do Beyond Banking
+  deixou de mostrar os 3 cards já mapeados ("Beyond Comex", "Beyond Operação Interno", "Beyond
+  Portal") e passou a mostrar uma tela "Bem-vindo ao Beyond Banking" com um seletor "Franquia" e a
+  mensagem **"Nenhuma franquia disponível para o seu usuário"** — sem nenhum card, sem caminho
+  visível para "Beyond Operação Interno"/"Criar Operação". Reproduzido de forma idêntica em 2/2
+  tentativas (`cypress-run-105.log`, `cypress-run-106.log`). O login em si funciona (cedente
+  kenerson aparece confirmado no cabeçalho) — o bloqueio é especificamente essa tela nova de
+  "Franquia" sem opções.
+- **Achado 2 (recorrência parcial): login do Beyond BackOffice (realm `multiplicacapital`) continua
+  rejeitando a credencial `master`/`automacao` com "Usuário ou senha inválidos"**, reproduzido em
+  2/2 tentativas — mas, diferente da sessão anterior (rodada 104, onde os DOIS realms rejeitavam a
+  credencial), desta vez o realm `beyondbanking-hml` (Beyond Banking) aceitou a mesma credencial sem
+  erro na mesma execução. Isso descarta o `.env`/espaço em branco (já corrigido e confirmado ausente
+  nesta rodada) como explicação e torna mais provável um bloqueio **isolado ao realm
+  `multiplicacapital`**, possivelmente por proteção de força bruta (as rodadas 96, 97 e 104 da
+  sessão anterior concentraram várias tentativas de login mal-sucedidas justamente contra esse
+  realm).
+- **Passos 13-14 (verificar no Monitor Diário que a etapa "Inclusão OPE" aparece concluída): NÃO
+  CONCLUÍDOS** — a spec já foi estendida para cobri-los (reaproveitando os seletores do Monitor
+  Diário já mapeados/validados pelo `SupE2eAutomation`: navegação até `/mop/monitor`, busca com
+  ampliação de janela para 29 dias se necessário, e leitura do chip da coluna "Etapa" na linha cujo
+  "Op." bate com o número da operação), mas nunca chegou a executar de fato por causa do Achado 2
+  (login do Beyond BackOffice bloqueado antes de chegar ao Monitor Diário).
+- **Relatório em PDF**: `relatorios/20260915123730-criacao-operacao-servico.pdf` (screenshots desta
+  rodada mostram a tela "Bem-vindo ao Beyond Banking"/"Nenhuma franquia disponível" e a tela de
+  login do Beyond BackOffice com "Usuário ou senha inválidos").
+- **Achados que precisam de ação fora do escopo deste subAgent**:
+  1. Confirmar com quem administra o Beyond Banking/permissões se o usuário `automacao` deveria
+     mesmo ter uma "franquia" configurada para ver os cards normais da Home, ou se isso é uma
+     regressão/mudança de configuração recente que precisa ser revertida/corrigida.
+  2. Confirmar com quem administra o Keycloak se o usuário `automacao` está bloqueado
+     especificamente no realm `multiplicacapital` (proteção de força bruta) e, se for o caso,
+     desbloquear ou aguardar o tempo de expiração do bloqueio antes de tentar de novo.
+- **Próximo passo recomendado**: assim que qualquer um dos dois problemas acima for resolvido,
+  retomar esta tarefa (ou uma nova, referenciando esta) para os passos ainda pendentes. Se só o
+  Achado 2 for resolvido (login do Beyond BackOffice), os passos 13-14 podem ser tentados usando o
+  número de operação já validado em banco (88683, `cypress/ultima-operacao.json`), sem precisar
+  recriar uma operação nova — só se o Achado 1 (Franquia) também bloquear alguma dependência do
+  Monitor Diário é que passos 1-12 precisariam ser investigados de novo.
