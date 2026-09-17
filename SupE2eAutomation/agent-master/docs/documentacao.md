@@ -167,3 +167,12 @@ sempre em dia. As entradas individuais e idênticas desses ciclos foram removida
   não insistir sem instrução nova). `C:\multiplica\cypress-e2e` já estava no mesmo commit
   (`9f38a75`) e mesmo `.env` do Agent Master, working tree limpo — nenhuma sincronização/vídeo novo
   necessário (nenhum teste rodou neste ciclo).
+- **2026-09-17 (ciclo de rotina):** nada novo. Legado (`fila-merge/aguardando-aprovacao/`) vazio.
+  Único aviso em `pendentes/` (`20260917111432-migrar-video-para-relatorio-pdf`) segue bloqueado —
+  dúvida em `duvidas.md` com `Status: pendente`, sem resposta nova do Thiago; não reprocessado
+  (mesmo protocolo de não insistir sem instrução nova). `repo/` e `C:\multiplica\cypress-e2e` ambos
+  em `9f38a75` (mesmo commit, working tree limpo, `.env` idênticos), `repo/relatorios/` ainda não
+  existe (infra de PDF só chega com o merge deste mesmo aviso bloqueado) — nada para sincronizar
+  neste ciclo. Confirmação/criação do PR único `reviewAgents → main` já é feita
+  deterministicamente pelo `run-cycle.ps1` (função `Confirmar-PRUnico`) antes deste ciclo — não
+  reconferida aqui.
