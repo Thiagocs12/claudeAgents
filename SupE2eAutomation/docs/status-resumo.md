@@ -20,7 +20,9 @@ mesmo ciclo (evidência comparativa registrada, também em `../docs/conhecimento
 Aguardando decisão do Thiago: investigar infra/Keycloak vs. mudar teste vs. pausar. Código de
 produção já implementado e pushado (branch `feature/poc-criar-prospect-cedente-cnpj`, `9054e8b`),
 timeout do campo "Tipo de Prospect" já em 30s (60s pendente de aplicar) — falta rodar o autoteste
-final assim que o login for destravado.
+final assim que o login for destravado. Tarefa em `tarefas/aguardando-resposta/` (bug conhecido do
+`Test-DuvidaRespondida` moveu de volta pra `executando/` sozinho de novo — 3ª recorrência; conferido
+manualmente que a pergunta mais recente segue `Status: pendente`, nada tocado em `repo/`).
 
 ## agent-master
 Sem aviso pendente em `fila-merge/`. PR único `reviewAgents → main` mantido aberto; o PR legado

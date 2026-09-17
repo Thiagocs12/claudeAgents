@@ -61,6 +61,14 @@
   `run-cycle.ps1` (que olha só o **primeiro** bloco `## <id>` que bate, não o mais recente) considera
   o id "respondido para sempre" assim que a 1ª pergunta é respondida — mesmo que rodadas
   posteriores sigam pendentes.
+- **Nova recorrência (2026-09-17, retomada seguinte à 11ª pergunta registrada — evidência
+  comparativa `cy.origin`/`login.feature`):** a mesma falha mecânica moveu a tarefa de
+  `aguardando-resposta/` para `executando/` de novo, com a pergunta mais recente (11ª rodada,
+  pedindo decisão do Thiago entre investigar infra/Keycloak, mudar o teste, ou pausar) ainda
+  `Status: pendente` em `duvidas.md`. Confirmado manualmente (releitura de `duvidas.md` inteiro)
+  antes de agir. Mesmo protocolo de sempre: nada tocado em `repo/`, nenhum Cypress rodado, dúvida
+  não respondida por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Branch
+  segue limpa em `9054e8b`. Já são 3 recorrências consecutivas deste mesmo bug nesta tarefa.
 - **Recorrência (2026-09-16, esta retomada):** o mesmo bug moveu a tarefa de `aguardando-resposta/`
   para `executando/` de novo, com a pergunta mais recente (sobre insistir em retry de login vs.
   investigar causa raiz) ainda `Status: pendente`. Segui o mesmo protocolo da recorrência anterior:
