@@ -86,6 +86,25 @@ function Set-UtilizacaoConta {
         ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
 }
 
+# --- Pular conta com rate-limit ja conhecido (pedido do Thiago, 2026-09-17 tarde): se o ultimo
+# registro de ultima-utilizacao.json de uma conta mostra five_hour_utilization >=99% e o resetsAt
+# ainda nao passou, Adquirir-SlotConta tenta a OUTRA conta primeiro - evita gastar um ciclo inteiro
+# (invocacao real do claude -p, custo $0 mas tempo/log perdido) so pra redescobrir que a conta
+# selecionada esta sem sessao. Se as duas estiverem saturadas ao mesmo tempo, a ordem original
+# (contaA, contaB) e mantida - sem alternativa mesmo assim. Se resetsAt ja passou, a conta volta a
+# ser tratada como disponivel automaticamente (nao precisa de limpeza manual).
+function Test-ContaSaturada {
+    param([string]$Conta)
+    $caminho = "$env:USERPROFILE\.claude-accounts\$Conta\ultima-utilizacao.json"
+    if (-not (Test-Path $caminho)) { return $false }
+    try {
+        $info = Get-Content $caminho -Raw | ConvertFrom-Json
+        if (-not $info.five_hour_utilization -or $info.five_hour_utilization -lt 0.99) { return $false }
+        $resetsAt = [DateTimeOffset]::FromUnixTimeSeconds([long]$info.resetsAt).UtcDateTime
+        return ((Get-Date).ToUniversalTime() -lt $resetsAt)
+    } catch { return $false }
+}
+
 # --- Ordem global por antiguidade + prioridade manual (pedido do Thiago, 2026-09-17): "Gerente
 # controla a ordem das tarefas, sempre a mais antiga primeiro, a menos que peça prioridade em
 # alguma". Cada ciclo com trabalho pendente registra o id da sua tarefa/aviso mais antigo (o
@@ -174,7 +193,8 @@ function Adquirir-SlotConta {
         }
 
         if (-not $devoCeder) {
-            foreach ($conta in @("contaA","contaB")) {
+            $ordemTentativa = @("contaA","contaB") | Sort-Object { if (Test-ContaSaturada -Conta $_) { 1 } else { 0 } }
+            foreach ($conta in $ordemTentativa) {
                 $pastaConta = "$env:USERPROFILE\.claude-accounts\$conta"
                 $lockPath = "$pastaConta\em-uso.lock"
                 $livre = $true

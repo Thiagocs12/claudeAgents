@@ -321,6 +321,44 @@ com uma exceção manual pra quando o Thiago quer priorizar algo específico.
   registrada na fila — a mais antiga venceu; prioridade manual ativa numa tarefa mais nova — ela
   venceu mesmo assim). Todos os 8 `run-cycle.ps1` validados sintaticamente depois da edição.
 
+## Pular conta com rate-limit já conhecido ao escolher slot — criado em 2026-09-17 (mesmo dia, à noite)
+
+Pedido explícito do Thiago, depois de observar na prática o problema: a "Fila global de contas"
+(seção acima) escolhe slot só por lock de arquivo, ignorando rate-limit — então quando `contaA`
+bate no limite de sessão (`five_hour=100%`), os ciclos seguintes continuam tentando `contaA`
+primeiro (porque ela fica livre de lock assim que o ciclo anterior libera), gastando uma invocação
+real de `claude -p` só para descobrir de novo "You've hit your session limit" (custo $0, mas tempo e
+uma sessão desperdiçados, `contaB` livre e saudável do lado). Pedido do Thiago: **"Quando uma das
+contas bater no limite deve marcá-la de alguma forma para que os próximos ciclos peguem a outra se
+disponível."**
+
+- **Mecanismo** (função `Test-ContaSaturada`, mesmo padrão de bloco reaproveitado em cada
+  `run-cycle.ps1`, definida logo após `Set-UtilizacaoConta`): lê
+  `%USERPROFILE%\.claude-accounts\<conta>\ultima-utilizacao.json` (já gravado por
+  `Set-UtilizacaoConta` a cada ciclo que realmente chama `claude -p`, mesmo quando esse ciclo bate
+  no limite — não precisou de nenhum registro novo). Considera a conta saturada quando
+  `five_hour_utilization >= 0.99` **e** o `resetsAt` (epoch em segundos) ainda não passou. Sem
+  arquivo, ou dado antigo já com `resetsAt` no passado, conta como disponível — não precisa de
+  limpeza manual, se "desmarca" sozinha quando o rate-limit da conta reseta.
+- **Onde entra**: dentro de `Adquirir-SlotConta`, no laço que escolhe a conta livre — antes era
+  sempre `foreach ($conta in @("contaA","contaB"))` (contaA sempre tentada primeiro); agora a ordem
+  de tentativa é reordenada por `Sort-Object` colocando toda conta saturada por último
+  (`$ordemTentativa = @("contaA","contaB") | Sort-Object { if (Test-ContaSaturada -Conta $_) { 1 }
+  else { 0 } }`). Se só uma estiver saturada, a outra é tentada primeiro (e normalmente conseguida,
+  já que só está saturação de rate-limit, não lock real). Se as duas estiverem saturadas ao mesmo
+  tempo, a ordem original é mantida — sem alternativa mesmo assim, comportamento inalterado nesse
+  caso extremo.
+- **Não é uma volta à política antiga de "conta de casa"/alternância** (seção "Alternância de conta
+  por rate-limit", superada) — continua sendo só sobre concorrência de slot (1 tarefa por conta por
+  vez), esta mudança só reordena qual conta é tentada primeiro dentro do mecanismo de slot já
+  existente, usando um dado (`ultima-utilizacao.json`) que já era gravado por outro motivo
+  (informar o "status" da Gerente) e nunca tinha sido reaproveitado para decidir nada desde a troca
+  de 2026-09-17 cedo.
+- **Aplicado nos mesmos 8 `run-cycle.ps1` reais** (6 subAgents + 2 Agent Master). Testado
+  isoladamente com o estado real da máquina no momento (`contaA` saturada, resetsAt ~20:30,
+  `contaB` livre) — a ordem de tentativa saiu `contaB, contaA`, como esperado. Todos os 8 validados
+  sintaticamente (`[Parser]::ParseFile`) depois da edição.
+
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.
