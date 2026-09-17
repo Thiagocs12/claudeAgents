@@ -158,17 +158,17 @@ estavam em `contaB` e não precisaram mudar. Todos os 11 validados sintaticament
   - Os Supervisores ajustam cadência de forma independente entre si historicamente — não presuma
     que vão continuar sincronizados só porque coincidem agora; confira sempre a task real.
 
-## Cadência adaptativa (ociosa 1h / ativa 10-20min) — criado em 2026-09-17
+## Cadência adaptativa dos subAgents (ociosa 1h / ativa 10min) — criado em 2026-09-17
 
 Pedido explícito do Thiago (via Gerente): em vez de rodar sempre no intervalo cheio mesmo quando
-não há nada a fazer, cada `run-cycle.ps1` (subAgent + Agent Master, não Status Watcher — já
-desativados) agora se reagenda sozinho a cada ciclo:
+não há nada a fazer, cada `run-cycle.ps1` de **subAgent** (não Agent Master — ver seção seguinte;
+não Status Watcher, já desativados) agora se reagenda sozinho a cada ciclo:
 
 - **Ciclo ocioso** (a pré-checagem em PowerShell da seção 3.4 de cada `CLAUDE.md` não achou nada
   pendente/retomável, ou o `PAUSA-HML.flag` está ativo): ajusta a própria Scheduled Task para
   repetir de **1 em 1 hora**.
 - **Ciclo ativo** (achou algo e chamou o Claude, mesmo que o ciclo não termine todo o trabalho):
-  ajusta de volta para o intervalo normal — **10min** pra subAgent, **20min** pra Agent Master.
+  ajusta de volta para o intervalo normal de **10min**.
 
 Mecanismo: função `Set-CadenciaAdaptativa` (copiada em cada `run-cycle.ps1`, mesmo padrão de
 reaproveitar bloco já estabelecido nesta nota) lê a Scheduled Task pelo próprio nome
@@ -183,20 +183,52 @@ cada script: no branch do `PAUSA-HML.flag` (ocioso), no branch de "nada pendente
 ficou vazia no fim?", um módulo que termina toda a fila num ciclo só volta pra 1h no ciclo
 *seguinte* (que vai rodar ainda no intervalo ativo, constatar fila vazia, e só aí desacelerar) —
 uma tarefa nova que apareça durante a janela de 1h pode esperar até 1h pra ser pega, em vez dos
-10-20min de antes. Compensação deliberada pelo Thiago: menos gasto de token/rate-limit em ciclos
+10min de antes. Compensação deliberada pelo Thiago: menos gasto de token/rate-limit em ciclos
 ociosos, ao custo de reação mais lenta pra tarefa nova enquanto ocioso.
 
-**Aplicado nos 8 `run-cycle.ps1` reais** (não em Status Watcher, já desativado, nem em
+**Aplicado nos 6 `run-cycle.ps1` de subAgent** (não em Status Watcher, já desativado, nem em
 `SupTestesFrontEnd/subagents/contratos`, que ainda não tem Scheduled Task registrada):
-`SupE2eAutomation` (`geral`, `mop`, `POC`, `agent-master`), `SupAutomacaoUteis` (`cedente`,
-`keycloakUser`, `agent-master`), `SupTestesFrontEnd` (`mop`). Validados sintaticamente
-(`[Parser]::ParseFile`) e o mecanismo de troca de trigger testado ao vivo contra uma task real
-(`SupE2eAutomation-SubAgent-geral`, ida e volta, sem deixar alterado) antes de aplicar nos 8.
+`SupE2eAutomation` (`geral`, `mop`, `POC`), `SupAutomacaoUteis` (`cedente`, `keycloakUser`),
+`SupTestesFrontEnd` (`mop`). Validados sintaticamente (`[Parser]::ParseFile`) e o mecanismo de
+troca de trigger testado ao vivo contra uma task real (`SupE2eAutomation-SubAgent-geral`, ida e
+volta, sem deixar alterado) antes de aplicar.
 
-**Achado à parte, não relacionado a esta mudança**: no momento desta edição, as 8 Scheduled Tasks
-citadas acima estavam com `Enabled = False`, apesar de terem rodado normalmente até minutos antes
-— causa não identificada, não fui eu (Gerente) quem desativou. Não reabilitadas automaticamente;
-aguardando confirmação do Thiago.
+## Agent Master: agendamento diário no fim do dia, até zerar a fila — criado em 2026-09-17
+
+Pedido explícito do Thiago, na mesma conversa em que criou a cadência adaptativa acima: os 2 Agent
+Master (`SupE2eAutomation`, `SupAutomacaoUteis` — `SupTestesFrontEnd` não tem Agent Master) **não**
+usam a cadência adaptativa dos subAgents. Em vez disso, passaram a rodar **uma vez por dia, no fim
+do dia (18:00), repetindo a cada 20min por até 12h (até ~06:00) até a `fila-merge/` esvaziar** — o
+Thiago faz os testes manuais/aprovação no início do dia seguinte, começando um novo dia depois.
+
+- **Por que repetição em vez de um disparo único**: o Agent Master processa a fila inteira num só
+  ciclo (loop "para cada aviso em `fila-merge/pendentes/`"), mas pode deixar algo pra trás se travar
+  em conflito/teste falhando (vira dúvida bloqueante, item fica em `pendentes/`) ou se o ciclo
+  esgotar no meio. A repetição a cada 20min dá chances de retomar/drenar a fila ao longo da noite.
+  **Não precisou de nenhuma lógica nova em PowerShell**: a pré-checagem `Test-TrabalhoPendente` que
+  já existe (seção 3.4 de cada `CLAUDE.md`) já pula o ciclo (sem chamar o Claude) assim que
+  `fila-merge/pendentes/` e `fila-merge/aguardando-aprovacao/` estiverem vazias — então, uma vez
+  drenada, os disparos seguintes da mesma janela de 12h são de graça (só gravam `[ciclo pulado]`).
+- **Removida a cadência adaptativa que tinha acabado de ser aplicada nos 2 Agent Master** (função
+  `Set-CadenciaAdaptativa` e as 3 chamadas) — não fazia sentido com um trigger diário fixo; revertido
+  antes de virar código morto/conflitante com o novo trigger.
+- **Mecanismo do trigger** (Windows Task Scheduler via `Set-ScheduledTask`): `New-ScheduledTaskTrigger
+  -Daily -At "18:00"` mais um `Repetition` (`MSFT_TaskRepetitionPattern`, `Interval=PT20M`,
+  `Duration=PT12H`) atribuído manualmente ao objeto do trigger antes de `Set-ScheduledTask` — o
+  parâmetro `-RepetitionInterval` do `New-ScheduledTaskTrigger` **não é aceito junto com `-Daily`**
+  nesta versão do PowerShell (erro `AmbiguousParameterSet`); a única forma que funcionou foi criar o
+  trigger `-Daily` puro e depois setar `$trigger.Repetition` via `New-CimInstance -ClassName
+  MSFT_TaskRepetitionPattern -Namespace Root/Microsoft/Windows/TaskScheduler -ClientOnly -Property
+  @{Interval="PT20M"; Duration="PT12H"; StopAtDurationEnd=$false}`. Válido pra qualquer trigger
+  diário futuro que precise de repetição — copiar essa técnica em vez de tentar `-RepetitionInterval`
+  direto no `New-ScheduledTaskTrigger -Daily`.
+- **Enabled continua `False`** nas 2 tasks (ver achado abaixo) — só o agendamento foi trocado, não
+  reabilitei por pedido explícito do Thiago ("não, deixe desabilitadas por enquanto").
+
+**Achado à parte, ainda não explicado**: no momento desta edição, as 8 Scheduled Tasks de
+subAgent/Agent Master estavam com `Enabled = False`, apesar de terem rodado normalmente até minutos
+antes — causa não identificada, não fui eu (Gerente) quem desativou. Thiago já confirmou que, por
+ora, para deixar assim (não reabilitar automaticamente).
 
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
