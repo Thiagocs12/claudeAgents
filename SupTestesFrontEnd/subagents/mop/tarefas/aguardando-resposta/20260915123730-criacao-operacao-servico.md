@@ -269,3 +269,21 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   dúvida mais recente sob um id, não a primeira que casar pelo prefixo) ainda não foi aplicada ao
   script. Enquanto isso não for corrigido, cada ciclo seguinte vai repetir este mesmo padrão
   (retomar → constatar dúvida `(2)` pendente → devolver sem agir) até a dúvida ser respondida.
+
+## Execução — rodada 100 (2026-09-17, ciclo seguinte)
+
+- Terceira vez consecutiva (rodadas 98, 99 e agora 100) que a pré-sincronização do `run-cycle.ps1`
+  devolve esta tarefa para `tarefas/executando/`. Conferi `duvidas.md` de novo: a dúvida
+  `20260915123730-criacao-operacao-servico (2)` (login falhando com "Usuário ou senha inválidos",
+  risco de aprofundar bloqueio de conta por força bruta) continua `Status: pendente`,
+  `Resposta:` vazia — a dúvida `respondida` continua sendo só a antiga, sem sufixo, resolvida em
+  2026-09-15.
+- **Não retomei tentativas de login** — mesmo motivo já registrado nas rodadas 98-99: repetir
+  tentativas sem orientação do Thiago aprofundaria o risco identificado na rodada 97. Não executei
+  nenhum `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (mesma pasta
+  de `20260915123730-criacao-operacao-servico.historico.md`, que a pré-sincronização não move
+  junto — outro sintoma do mesmo bug de sincronização). `docs/status-resumo.md` já refletia
+  corretamente o estado "Bloqueado" com a dúvida `(2)`, sem necessidade de ajuste.
+- Nenhum achado novo além do já registrado nas rodadas 98-99 — a pendência pro Supervisor
+  (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto.
