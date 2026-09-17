@@ -287,3 +287,21 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   corretamente o estado "Bloqueado" com a dúvida `(2)`, sem necessidade de ajuste.
 - Nenhum achado novo além do já registrado nas rodadas 98-99 — a pendência pro Supervisor
   (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto.
+
+## Execução — rodada 101 (2026-09-17, ciclo seguinte)
+
+- Quarta vez consecutiva (rodadas 98, 99, 100 e agora 101) que a pré-sincronização do
+  `run-cycle.ps1` devolve esta tarefa para `tarefas/executando/`. Conferi `duvidas.md` de novo: a
+  dúvida `20260915123730-criacao-operacao-servico (2)` (login falhando com "Usuário ou senha
+  inválidos", risco de aprofundar bloqueio de conta por força bruta) continua `Status: pendente`,
+  `Resposta:` vazia.
+- **Não retomei tentativas de login** — mesmo motivo das rodadas 98-100: repetir tentativas sem
+  orientação do Thiago aprofundaria o risco identificado na rodada 97. Não executei nenhum
+  `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (junto com
+  `20260915123730-criacao-operacao-servico.historico.md`, que já estava lá desde ciclos
+  anteriores). `docs/status-resumo.md` já refletia corretamente o estado "Bloqueado" com a dúvida
+  `(2)`, sem necessidade de ajuste.
+- Nenhum achado novo além do já registrado nas rodadas 98-100 — a pendência pro Supervisor
+  (corrigir `run-cycle.ps1` para considerar a dúvida mais recente sob um id) segue em aberto e já
+  aconteceu 4 vezes seguidas.
