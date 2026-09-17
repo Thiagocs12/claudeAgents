@@ -26,7 +26,7 @@ Resposta: Manter somente a versão refinada (roteiro de 14 passos, cedente "kene
 o roteiro dela.
 
 ## 20260915123730-criacao-operacao-servico (2)
-Status: pendente
+Status: respondida
 Pergunta: Retomando a tarefa (rodadas 94-97, 2026-09-17) para tentar concluir os passos 13-14
 (Monitor Diário do Beyond BackOffice), corrigi três problemas de spec encontrados nesta sessão
 (screenshots derrubando o runner logo após redirects em telas com fundo animado — armadilha já
@@ -49,4 +49,4 @@ aprofundar um bloqueio se essa for a causa)? Parei de tentar login novamente at�
 orientação seguindo a regra de não confundir "ainda não é dúvida bloqueante" (a flakiness antiga já
 documentada do `cy.origin()`) com este caso novo, que parece diferente e me exige uma decisão sua
 para continuar com segurança.
-Resposta:
+Resposta: Pode tentar o login de novo agora.
