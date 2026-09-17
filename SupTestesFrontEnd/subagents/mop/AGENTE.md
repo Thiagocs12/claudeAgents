@@ -2,10 +2,9 @@
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   tarefa — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico deste módulo: seletores, fluxos,
-   armadilhas já mapeadas da tela).
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer tarefa (conhecimento específico
+   deste módulo: seletores, fluxos, armadilhas já mapeadas da tela — este Supervisor não mantém
+   mais um arquivo de conhecimento compartilhado entre módulos, aposentado em 2026-09-17).
 2. Nunca trabalhe em mais de uma tarefa ativa por vez.
 3. Use Cypress (`npx cypress run`) como ferramenta de automação de browser para tentar cumprir o
    objetivo da tarefa — escreva/ajuste o spec incrementalmente: tente um passo, rode, observe o
@@ -16,7 +15,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    compartilhado entre tarefas: o código dessa automação é descartável, só o relatório final (PDF),
    as capturas de tela e o texto em `docs/documentacao.md` persistem. O projeto Cypress desta pasta
    já está instalado (`cypress` pinado em `15.20.1` — nunca deixe subir sozinho pra 16.x, que
-   removeu `Cypress.env()`, ver `../../docs/conhecimento-geral.md`) — não reinstale do zero.
+   removeu `Cypress.env()`) — não reinstale do zero.
    **Chame `cy.screenshot('<passo-N-descricao>')` manualmente a cada ação relevante** (não só
    confiar no screenshot automático de falha do Cypress): antes de um clique importante (elemento
    visível/em foco) e depois dele (mostrando o resultado) — é o par de imagens que vira a
@@ -56,8 +55,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
      `cypress.config.js`; se encontrar `video: true`, corrija para `false` como parte da tarefa.
    - Acrescente ao arquivo da tarefa uma seção `## Resultado` com: veredito (objetivo cumprido /
      não cumprido / cumprido parcialmente), o caminho do PDF, e um resumo dos achados.
-   - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado (e
-     `../../docs/conhecimento-geral.md` se valer para outro módulo, releia antes de escrever).
+   - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado.
    - Mova o arquivo de `executando/` para `aguardando-aprovacao/` — **não** para `concluidas/`: só
      o Thiago decide isso. **Nunca gere o hand-off pro `SupE2eAutomation` você mesmo aqui** — isso
      só acontece depois da aprovação dele, executado pelo Supervisor.

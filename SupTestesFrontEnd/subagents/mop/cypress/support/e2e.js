@@ -2,7 +2,7 @@
 // módulo "mop" (Sup TestesFrontEnd), não uma suíte persistente. Evite acumular comandos/page
 // objects aqui: conhecimento reutilizável fica em texto, em ../docs/documentacao.md.
 
-// Armadilha de ambiente já conhecida (ver SupE2eAutomation/docs/conhecimento-geral.md): o widget
+// Armadilha de ambiente já conhecida (ver SupE2eAutomation/subagents/mop/docs/documentacao.md): o widget
 // de menu (mc-menu.js, beyond-hml.grupomultiplica.com.br) às vezes lança uma exceção não tratada
 // própria ao clicar em "Beyond BackOffice", que derrubaria o teste por padrão sem afetar a
 // navegação visual real.

@@ -284,8 +284,9 @@ pré-sincronização do `run-cycle.ps1` pode casar pelo prefixo do id e enxergar
 pra `aguardando-resposta/` sem retomar a ação que gerou a dúvida mais recente. **Pendência pro
 Supervisor**: corrigir o `run-cycle.ps1` pra considerar a dúvida mais recente sob um id (ou exigir
 todas `respondida`). Narrativa completa do caso original (2026-09-17) em
-`documentacao-historico.md`. Ver também `../../docs/conhecimento-geral.md` (mesma armadilha,
-registrada lá por valer pra qualquer módulo/Supervisor com esse padrão de script).
+`documentacao-historico.md`. Ver também `CONHECIMENTO-SUPERVISORES.md` (raiz de `claudeAgents`),
+seção "Bugs conhecidos no padrão compartilhado de `run-cycle.ps1`" (mesma armadilha, vale pra
+qualquer módulo/Supervisor com esse padrão de script).
 
 ## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
 

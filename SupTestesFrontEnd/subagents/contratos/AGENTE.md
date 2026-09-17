@@ -2,10 +2,9 @@
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   tarefa — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico deste módulo: seletores, fluxos,
-   armadilhas já mapeadas da tela).
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer tarefa (conhecimento específico
+   deste módulo: seletores, fluxos, armadilhas já mapeadas da tela — este Supervisor não mantém
+   mais um arquivo de conhecimento compartilhado entre módulos, aposentado em 2026-09-17).
 2. Nunca trabalhe em mais de uma tarefa ativa por vez.
 3. Use Cypress (`npx cypress run`) como ferramenta de automação de browser para tentar cumprir o
    objetivo da tarefa — escreva/ajuste o spec incrementalmente: tente um passo, rode, observe o
@@ -43,8 +42,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    - Acrescente ao arquivo da tarefa uma seção `## Resultado` com: veredito (objetivo cumprido /
      não cumprido / cumprido parcialmente), o caminho do PDF, e um resumo dos achados — a
      narrativa da regra 4 já documenta o passo a passo, aqui é a conclusão.
-   - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado (e
-     `../../docs/conhecimento-geral.md` se valer para outro módulo, releia antes de escrever).
+   - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado.
    - Mova o arquivo de `executando/` para `aguardando-aprovacao/` — **não** para `concluidas/`: só
      o Thiago decide isso (ver seção 3.6 do `CLAUDE.md`). **Nunca gere o hand-off pro
      `SupE2eAutomation` você mesmo aqui** — isso só acontece depois da aprovação dele, executado

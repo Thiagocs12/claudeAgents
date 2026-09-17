@@ -274,8 +274,11 @@ tarefas existam nem de qual Supervisor/módulo elas são.
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.
-- `docs/conhecimento-geral.md` — conhecimento cross-módulo/cross-agente **dentro** daquele
-  Supervisor (não confundir com este arquivo, que é cross-**Supervisor**).
+- **Sem `docs/conhecimento-geral.md`** (aposentado em 2026-09-17, pedido explícito do Thiago:
+  "Supervisores não precisam ter conhecimento próprio, só os subAgents" — ver seção "Aposentadoria
+  do conhecimento-geral.md por Supervisor" mais abaixo). Conhecimento mora só no
+  `docs/documentacao.md` de cada subAgent/Agent Master; cross-módulo genuíno vira regra fixa no
+  `AGENTE.md`/`CLAUDE.md`, ou fica só no módulo "dono" e os demais referenciam por caminho.
 - `subagents/<modulo>/` — um por módulo/domínio de demanda: `AGENTE.md`, `repo/` (clone do
   repositório do módulo), `docs/documentacao.md`, `duvidas.md`,
   `tarefas/{pendentes,executando,aguardando-resposta,concluidas}`.
@@ -467,11 +470,12 @@ muda nenhuma regra de negócio sobre quando um teste é considerado passou/falho
 
 Pedido explícito do Thiago, aplicado aos dois Supervisores: no início de **toda sessão nova** do
 Supervisor (a conversa interativa dele com o Thiago, não os ciclos automáticos de subAgent/Agent
-Master/Status Watcher — esses já releem `conhecimento-geral.md`/`documentacao.md` a cada ciclo por
-regra própria do `AGENTE.md`), antes de responder à primeira mensagem, o Supervisor deve reler por
-completo: este arquivo (`CONHECIMENTO-SUPERVISORES.md`), o `docs/conhecimento-geral.md` da sua
-própria pasta, e o `docs/documentacao.md` de cada subAgent + do `agent-master/`. Motivo: entre uma
-sessão interativa e outra, ciclos automáticos podem ter escrito conhecimento novo (aprendizado,
+Master/Status Watcher — esses já releem `documentacao.md` a cada ciclo por regra própria do
+`AGENTE.md`), antes de responder à primeira mensagem, o Supervisor deve reler por completo: este
+arquivo (`CONHECIMENTO-SUPERVISORES.md`) e o `docs/documentacao.md` de cada subAgent + do
+`agent-master/` (nenhum Supervisor mantém mais `docs/conhecimento-geral.md` próprio — ver seção
+"Aposentadoria do conhecimento-geral.md por Supervisor"). Motivo: entre uma sessão interativa e
+outra, ciclos automáticos podem ter escrito conhecimento novo (aprendizado,
 padrão descoberto, mudança de estado) que o Supervisor precisa conhecer antes de conversar com o
 Thiago — não vale confiar em memória de uma sessão anterior. Ver o parágrafo equivalente no início
 do `CLAUDE.md` de cada Supervisor (idêntico nos dois). Um Supervisor novo deve nascer já com esse
@@ -726,3 +730,70 @@ troca de política pra `contaB` como conta padrão. Achados principais:
   — não depende do LLM se comportar. Implementado assim em `SupTestesFrontEnd/subagents/mop/
   run-cycle.ps1` (função `Stop-ProcessosCypressOrfaos`) — usar como referência antes de reinventar
   em outro Supervisor.
+
+## Bugs conhecidos no padrão compartilhado de `run-cycle.ps1` — não corrigidos
+
+Bugs no **código compartilhado** (função copiada em todo `run-cycle.ps1` dos 3 Supervisores), não
+conhecimento de nenhum módulo específico — por isso moram aqui, não no `documentacao.md` de um
+subAgent.
+
+- **`Test-DuvidaRespondida` considera um id "respondido" para sempre a partir do primeiro bloco que
+  bate, ignorando rodadas posteriores ainda pendentes.** A função divide `duvidas.md` em blocos por
+  `## ` e retorna no **primeiro** bloco cujo cabeçalho bate com o id da tarefa. Tarefas com várias
+  rodadas de dúvida sob o mesmo id (comum neste projeto) sempre têm o primeiro bloco como o mais
+  antigo — uma vez que essa 1ª pergunta é respondida, a função retorna `true` **para sempre** para
+  aquele id, mesmo que rodadas mais recentes estejam `Status: pendente`. **Recorrido várias vezes,
+  descoberto de forma independente em dois módulos diferentes** (`POC`/`SupE2eAutomation`, ao menos
+  5 recorrências consecutivas numa mesma tarefa; `mop`/`SupTestesFrontEnd`, 2 recorrências
+  consecutivas) — mesmo sintoma, mesma causa raiz.
+  - **Mitigação já adotada nos `AGENTE.md`** (regra explícita em todo subAgent): se uma tarefa já
+    teve uma dúvida respondida e volta a bloquear por outro motivo, nunca criar um segundo bloco
+    `## <id>` — manter um único bloco por tarefa ao longo de toda a sua vida; perguntas/respostas já
+    resolvidas migram para campos com sufixo numérico (`Status-historico-1:`, `Pergunta-1:`,
+    `Resposta-1:`, depois `-2`, etc.) que não batem com o regex da pré-checagem. Isso evita o
+    sintoma na maioria dos casos, mas não corrige a função em si.
+  - **Correção real ainda não aplicada** (script compartilhado — precisa ser replicada em todo
+    `run-cycle.ps1`, coordenada de uma vez): iterar os blocos de `duvidas.md` em ordem reversa (ou
+    usar o **último** bloco que bate com o id, não o primeiro) para checar o `Status:` da rodada
+    mais recente.
+  - Até a correção: qualquer agente que encontrar uma tarefa recém-movida para `pendentes/`/
+    `executando/` por essa pré-checagem, numa tarefa com múltiplas rodadas de dúvida sob o mesmo
+    id, deve conferir manualmente se a rodada **mais recente** em `duvidas.md` está mesmo
+    `Status: respondida` antes de agir.
+- **Pré-checagem (seção 3.4 de cada `CLAUDE.md`) não distingue "pendente normal" de "pendente
+  deliberadamente parado".** Quando o Thiago responde uma dúvida bloqueante dizendo "não reprocesse
+  automaticamente até eu trazer instrução nova", mas o item continua fisicamente em
+  `fila-merge/pendentes/` (Agent Master) ou `tarefas/pendentes/` (subAgent) — em vez de ser movido
+  para um estado de espera — a pré-checagem continua achando "há arquivo em pendentes/" e chamando
+  o `claude -p` a cada ciclo, mesmo com a instrução de não fazer nada já registrada. Já gerou
+  dezenas de ciclos idênticos de "nada a fazer" num único dia (gasto de rate-limit sem trabalho
+  real). Mitigação pontual já usada: mover o item pra uma pasta fora do escopo da pré-checagem (ex.
+  `fila-merge/pausados/`), decisão caso a caso do Supervisor — não uma correção genérica no script.
+
+## Aposentadoria do `docs/conhecimento-geral.md` por Supervisor — criado em 2026-09-17
+
+Pedido explícito do Thiago: "Supervisores não precisam ter conhecimento próprio, só os subAgents
+— Supervisores só precisam seguir as regras." Cada Supervisor mantinha um `docs/conhecimento-geral.md`
+compartilhado, editado por qualquer subAgent/Agent Master a cada ciclo e relido INTEIRO por todos —
+exatamente o padrão que cresce sem controle (os dois maiores chegaram a 563 e 373 linhas, e
+precisaram de compactação forçada nesta mesma sessão, mais cedo em 2026-09-17).
+
+- **Removido dos 3 Supervisores**: os 6 arquivos (`docs/conhecimento-geral.md` + `-historico.md` ×
+  3) foram deletados depois do conteúdo ser redistribuído — nada foi perdido, só relocado (git
+  history preserva as versões antigas de qualquer forma).
+- **Regra de destino aplicada a cada seção que existia**: regra fixa/procedimento (nunca ecoar
+  `GH_TOKEN`, título de `duvidas.md` = id exato, `git fetch` antes de assumir que uma branch não
+  existe, nunca `npm ci`, etc.) → virou regra permanente no `AGENTE.md` do(s) módulo(s) afetado(s);
+  conhecimento específico de 1 módulo → foi pro `docs/documentacao.md` desse módulo; conhecimento
+  cross-módulo mas não fixo (ex.: catálogo de instabilidade de login/Keycloak do
+  `SupE2eAutomation`) → ficou só no módulo "dono" (quem descobriu primeiro/mantém a infra), os
+  demais módulos referenciam **pelo caminho do arquivo**, nunca copiando — mesmo padrão já usado
+  pelo `AgenteEspecificacao` (material de apoio referenciado por caminho); bug no padrão
+  compartilhado de `run-cycle.ps1` → foi pra seção "Bugs conhecidos" acima.
+- **Cada agente (subAgent/Agent Master) agora só lê o próprio `docs/documentacao.md`** antes de
+  cada ciclo — removida a instrução de ler/escrever em `conhecimento-geral.md` do `AGENTE.md`,
+  `CLAUDE.md` (seções 3.1/3.2/3.3) e do prompt de cada `run-cycle.ps1` dos 3 Supervisores.
+- **Qualquer Supervisor novo nasce sem `docs/conhecimento-geral.md`** — não recriar esse padrão.
+  Se surgir um aprendizado genuinamente cross-módulo no futuro, o Supervisor decide o destino na
+  hora (regra fixa em `AGENTE.md`, módulo dono + referência por caminho, ou esta nota se for um bug
+  no script compartilhado) em vez de reabrir um arquivo compartilhado vivo.

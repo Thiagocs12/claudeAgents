@@ -5,9 +5,11 @@
 **Leitura obrigatória antes de qualquer coisa, sempre no início de uma sessão nova (antes da
 primeira resposta):** `C:\Multiplica\claudeAgents\CONHECIMENTO-SUPERVISORES.md` (conhecimento
 compartilhado entre Supervisores — pool de contas, convenções de Scheduled Task, armadilhas já
-descobertas), este `CLAUDE.md`, `docs/conhecimento-geral.md` desta pasta, e o
-`docs/documentacao.md` de cada subAgent existente — ciclos automáticos podem ter escrito
-conhecimento novo desde a última conversa. Ao aprender algo relevante para outro Supervisor,
+descobertas), este `CLAUDE.md`, e o `docs/documentacao.md` de cada subAgent existente (este
+Supervisor não mantém mais um `docs/conhecimento-geral.md` compartilhado — aposentado em
+2026-09-17, conhecimento agora mora no `documentacao.md` de cada módulo) — ciclos automáticos
+podem ter escrito conhecimento novo desde a última conversa. Ao aprender algo relevante para outro
+Supervisor,
 atualize `CONHECIMENTO-SUPERVISORES.md` (releia antes de escrever).
 
 ## 1. Papel e escopo — **diferente dos outros dois Supervisores**
@@ -159,9 +161,8 @@ ciente da concorrência extra de rate-limit entre os três Supervisores — ver
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   tarefa — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico deste módulo: seletores, fluxos,
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer tarefa (conhecimento específico
+   deste módulo: seletores, fluxos,
    armadilhas já mapeadas da tela).
 2. Nunca trabalhe em mais de uma tarefa ativa por vez.
 3. Use Cypress (`npx cypress run`) como ferramenta de automação de browser para tentar cumprir o
@@ -200,8 +201,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    - Acrescente ao arquivo da tarefa uma seção `## Resultado` com: veredito (objetivo cumprido /
      não cumprido / cumprido parcialmente), o caminho do PDF, e um resumo dos achados — a
      narrativa da regra 4 já documenta o passo a passo, aqui é a conclusão.
-   - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado (e
-     `../../docs/conhecimento-geral.md` se valer para outro módulo, releia antes de escrever).
+   - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado.
    - Mova o arquivo de `executando/` para `aguardando-aprovacao/` — **não** para `concluidas/`: só
      o Thiago decide isso (ver seção 3.6). **Nunca gere o hand-off pro `SupE2eAutomation` você
      mesmo aqui** — isso só acontece depois da aprovação dele, executado pelo Supervisor.
@@ -232,7 +232,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 3. Se `tarefas/executando/` estiver vazia e houver algo em `tarefas/pendentes/` → mova a mais
    antiga para `tarefas/executando/`.
 4. Se não houver nada a fazer → encerre o ciclo.
-5. Leia `../../docs/conhecimento-geral.md` e `docs/documentacao.md`.
+5. Leia `docs/documentacao.md` inteiro.
 6. Tente cumprir o objetivo via Cypress, narrando cada tentativa (regras 3-4 do `AGENTE.md`).
 7. Ao concluir (objetivo cumprido ou travado como resultado): gere o PDF do relatório, registre
    `## Resultado`,
@@ -274,9 +274,9 @@ desatualizada. Sem Agent Master aqui, então não há seção equivalente a ele.
   (`duvidas.md`: `<id>`) — <resumo>.", "Em execução (`<id>`) — <feito> — falta: <falta>.", ou
   "Aguardando aprovação do Thiago (`<id>`) — <veredito>."
 - Cada subAgent só edita a própria seção — releia o arquivo inteiro antes de escrever, mesma
-  disciplina já usada para `conhecimento-geral.md`.
+  disciplina já usada para `docs/documentacao.md`.
 - Este arquivo é sobre **estado atual**, não conhecimento (isso continua em
-  `docs/documentacao.md`/`conhecimento-geral.md`) — mantenha-o sempre pequeno, sem histórico.
+  `docs/documentacao.md` de cada módulo) — mantenha-o sempre pequeno, sem histórico.
 
 ### 3.6 Aprovação do Thiago e hand-off para o `SupE2eAutomation`
 

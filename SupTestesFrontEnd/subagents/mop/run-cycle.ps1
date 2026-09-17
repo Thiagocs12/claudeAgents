@@ -279,9 +279,8 @@ ciclo da lógica operacional:
    RETOME-A: leia a seção "## Execução" já escrita nela para saber onde parou (não recomece do
    zero, não descarte o que já foi descoberto). Se não houver nenhuma seção "## Execução" ainda,
    trate como se estivesse começando agora.
-2. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
-   inteiro (inclui o ponteiro pro conhecimento já mapeado pelo SupE2eAutomation — leia aquele
-   arquivo também antes de explorar do zero).
+2. Leia docs/documentacao.md inteiro (inclui o ponteiro pro conhecimento já mapeado pelo
+   SupE2eAutomation — leia aquele arquivo também antes de explorar do zero).
 3. Tente cumprir o objetivo da tarefa via Cypress (npx cypress run), incrementalmente: escreva um
    passo, rode, observe o resultado, decida o próximo passo. Narre CADA tentativa relevante na
    seção "## Execução" do arquivo da tarefa, no formato "Tentei <ação> → <o que aconteceu>", à
@@ -293,8 +292,7 @@ ciclo da lógica operacional:
    aplicação — isso é RESULTADO, não dúvida): grave vídeo Cypress (cypress/videos/) e copie o
    .mp4 gerado para ../videos/<id-da-tarefa>.mp4; acrescente a seção "## Resultado" (veredito,
    caminho do vídeo, resumo dos achados); atualize docs/documentacao.md com qualquer
-   seletor/fluxo novo mapeado (e ../../docs/conhecimento-geral.md se valer pra outro módulo,
-   releia antes de escrever); mova o arquivo de tarefas/executando/ para
+   seletor/fluxo novo mapeado; mova o arquivo de tarefas/executando/ para
    tarefas/aguardando-aprovacao/ — NUNCA para tarefas/concluidas/, e NUNCA gere hand-off nenhum
    pro SupE2eAutomation você mesmo (isso só acontece depois de aprovação do Thiago, feito pelo
    Supervisor).

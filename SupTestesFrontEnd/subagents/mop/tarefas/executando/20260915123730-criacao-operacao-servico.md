@@ -239,7 +239,7 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   A pré-sincronização parece ter casado pelo prefixo do id e considerado a tarefa liberada com base
   na dúvida errada (a antiga, já resolvida há dias), ignorando que existe uma segunda dúvida mais
   recente sob o mesmo id ainda pendente. Isso é uma inconsistência do script de sincronização, não
-  uma decisão do Thiago — registrando em `docs/documentacao.md` e `../../docs/conhecimento-geral.md`
+  uma decisão do Thiago — registrando em `docs/documentacao.md` e `CONHECIMENTO-SUPERVISORES.md`
   como armadilha, pra não se repetir e pro Supervisor avaliar corrigir o `run-cycle.ps1`.
 - **Não retomei tentativas de login**: fazer isso agora repetiria exatamente o risco identificado
   na rodada 97 (aprofundar um possível bloqueio de conta por força bruta) sem ter a orientação do
@@ -265,7 +265,7 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   dúvida `(2)` corretamente, sem necessidade de ajuste.
 - **Nota para o Supervisor**: esta é a segunda vez consecutiva (rodadas 98 e 99) que a
   pré-sincronização do `run-cycle.ps1` devolve esta tarefa para `executando/` incorretamente — a
-  correção documentada em `docs/documentacao.md`/`../../docs/conhecimento-geral.md` (considerar a
+  correção documentada em `docs/documentacao.md`/`CONHECIMENTO-SUPERVISORES.md` (considerar a
   dúvida mais recente sob um id, não a primeira que casar pelo prefixo) ainda não foi aplicada ao
   script. Enquanto isso não for corrigido, cada ciclo seguinte vai repetir este mesmo padrão
   (retomar → constatar dúvida `(2)` pendente → devolver sem agir) até a dúvida ser respondida.
