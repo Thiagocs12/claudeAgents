@@ -13,10 +13,15 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    decida o próximo passo com base nisso, e assim por diante, até completar o objetivo ou travar
    de vez. Use o que já está documentado em `docs/documentacao.md` para não redescobrir
    seletores/fluxos já mapeados, mas **não** crie nem dependa de um módulo de comandos/page-objects
-   compartilhado entre tarefas: o código dessa automação é descartável, só o relatório final, o
-   vídeo e o texto em `docs/documentacao.md` persistem. O projeto Cypress desta pasta já está
-   instalado (`cypress` pinado em `15.20.1` — nunca deixe subir sozinho pra 16.x, que removeu
-   `Cypress.env()`, ver `../../docs/conhecimento-geral.md`) — não reinstale do zero.
+   compartilhado entre tarefas: o código dessa automação é descartável, só o relatório final (PDF),
+   as capturas de tela e o texto em `docs/documentacao.md` persistem. O projeto Cypress desta pasta
+   já está instalado (`cypress` pinado em `15.20.1` — nunca deixe subir sozinho pra 16.x, que
+   removeu `Cypress.env()`, ver `../../docs/conhecimento-geral.md`) — não reinstale do zero.
+   **Chame `cy.screenshot('<passo-N-descricao>')` manualmente a cada ação relevante** (não só
+   confiar no screenshot automático de falha do Cypress): antes de um clique importante (elemento
+   visível/em foco) e depois dele (mostrando o resultado) — é o par de imagens que vira a
+   "demonstração de click" no relatório da regra 6. Nomeie o screenshot de forma que a ordem fique
+   óbvia (`01-tela-inicial`, `02-antes-clicar-avancar`, `03-depois-clicar-avancar`, ...).
 4. **Narre cada tentativa à medida que for acontecendo**, direto no corpo da tarefa (seção
    `## Execução`, criar se não existir): uma entrada por tentativa relevante, no formato "Tentei
    <ação> → <o que aconteceu>". Isso não é o relatório final (regra 6) — é o rascunho vivo da
@@ -39,12 +44,18 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    seguir esta regra.)
 6. **Ao terminar** (objetivo cumprido, ou travado sem ser uma dúvida que precise de decisão do
    Thiago — bug real impedindo continuar é RESULTADO, não dúvida):
-   - Grave um vídeo Cypress da execução relevante (`video: true` já cobre isso automaticamente em
-     `npx cypress run`) e copie o `.mp4` gerado em `cypress/videos/` para
-     `../videos/<id-da-tarefa>.mp4` (a pasta `videos/` é irmã de `tarefas/`, um nível acima de
-     `cypress/`).
+   - **Gere um PDF do relatório em vez de vídeo (política mudou em 2026-09-17, pedido explícito do
+     Thiago)**: monte/reaproveite o script `scripts/gerar-relatorio-pdf.cjs` (Node, lib `pdfkit` —
+     `npm install pdfkit` na primeira vez; script é infraestrutura reaproveitável entre tarefas,
+     diferente do código de automação em si) que recebe o id da tarefa e gera
+     `relatorios/<id-da-tarefa>.pdf` (pasta irmã de `tarefas/`) com: capa (objetivo, módulo, data),
+     uma seção por entrada da narrativa `## Execução` (regra 4) com o texto "Tentei X → aconteceu
+     Y" seguido dos screenshots relevantes daquele passo (par antes/depois do clique, regra 3, em
+     ordem pelo nome do arquivo em `cypress/screenshots/`), e uma página final com o `## Resultado`
+     (regra abaixo). **Não gere mais vídeo** — `video: false` já deve estar setado em
+     `cypress.config.js`; se encontrar `video: true`, corrija para `false` como parte da tarefa.
    - Acrescente ao arquivo da tarefa uma seção `## Resultado` com: veredito (objetivo cumprido /
-     não cumprido / cumprido parcialmente), o caminho do vídeo, e um resumo dos achados.
+     não cumprido / cumprido parcialmente), o caminho do PDF, e um resumo dos achados.
    - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado (e
      `../../docs/conhecimento-geral.md` se valer para outro módulo, releia antes de escrever).
    - Mova o arquivo de `executando/` para `aguardando-aprovacao/` — **não** para `concluidas/`: só

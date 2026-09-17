@@ -253,12 +253,16 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    `reviewAgents` (não há mais branch de PR-por-tarefa pra testar antes de aprovar — o ponto único
    de revisão do Thiago passou a ser o PR contínuo pra `main`). Copie `repo/.env` por cima do
    `.env` dessa pasta — nunca exponha o conteúdo do `.env`/token em `docs/documentacao.md`,
-   `duvidas.md` ou logs. **Copie também os vídeos gerados pelos testes que você rodou neste ciclo**
-   (`repo/cypress/videos/*.mp4`, se existirem) para `cypress/videos/` dentro de
-   `C:\multiplica\cypress-e2e` — o Thiago quer poder assistir a gravação da execução ali, sem
-   precisar abrir o Cypress interativo nem ir procurar dentro da pasta do agente; o vídeo fica só
-   no clone do Agent Master até você copiar, nunca "mora" lá por padrão. Se o pull/checkout falhar
-   (working tree suja, divergência), não force nada — registre em `duvidas.md`.
+   `duvidas.md` ou logs. **Copie também os relatórios em PDF gerados pelos testes que você rodou
+   neste ciclo** (`repo/relatorios/*.pdf`, se existirem — substituiu `cypress/videos/*.mp4` em
+   2026-09-17, pedido explícito do Thiago) para `relatorios/` dentro de `C:\multiplica\cypress-e2e`
+   — o Thiago quer poder abrir o PDF (screenshots + narrativa) ali, sem precisar procurar dentro da
+   pasta do agente; o PDF fica só no clone do Agent Master até você copiar, nunca "mora" lá por
+   padrão. **Essa infra de PDF ainda não existe no repositório** — enquanto a tarefa de
+   `subagents/geral/tarefas/` que a implementa não for concluída, `repo/relatorios/` não existirá;
+   nesse caso não há nada pra copiar, siga em frente sem tratar isso como dúvida. Se o
+   pull/checkout falhar (working tree suja, divergência), não force nada — registre em
+   `duvidas.md`.
 8. Registre em `docs/documentacao.md` o que foi feito (merges feitos direto na `reviewAgents`,
    conflitos resolvidos, variáveis de `.env` novas — só o nome — estado do PR único pra `main`, e o
    estado da sincronização da pasta de teste manual). Se o aprendizado valer para qualquer módulo,

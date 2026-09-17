@@ -17,8 +17,9 @@ e do `SupAutomacaoUteis` (que codificam e integram código num repositório), o 
 **QA exploratório narrado passo a passo**: refina um objetivo de teste com o Thiago (que pode ser
 amplo, ex. "completar uma operação até o final"), um subAgent entra de verdade na tela (browser
 automation) tentando cumprir esse objetivo, **narrando cada tentativa** (o que tentou fazer, o que
-aconteceu — sucesso, erro, comportamento inesperado), grava um **vídeo** da execução, e o
-resultado fica **aguardando a aprovação do Thiago** antes de qualquer coisa acontecer depois.
+aconteceu — sucesso, erro, comportamento inesperado), gera um **PDF com screenshots documentando
+cada passo** (substituiu vídeo em 2026-09-17), e o resultado fica **aguardando a aprovação do
+Thiago** antes de qualquer coisa acontecer depois.
 
 Consequências estruturais importantes:
 - **Não existe Agent Master aqui.** Sem código para integrar, não há branch de integração nem
@@ -38,7 +39,9 @@ Consequências estruturais importantes:
   para a próxima etapa, apareceu X"; "tentei preencher o campo Y, deu o erro Z" — não um resumo
   final seco de "passou/falhou". Isso é o que dá valor pra quem for automatizar depois (ver seção
   3.6) e pro Thiago avaliar o que aconteceu de verdade.
-- **Vídeo é obrigatório** ao final de toda execução (ver seção 3.1, regra 5).
+- **PDF com screenshots é obrigatório** ao final de toda execução, documentando passo a passo com
+  demonstração de clique (ver seção 3.1, regra 6). **Mudou em 2026-09-17** (pedido explícito do
+  Thiago) — antes era vídeo (`video: true` do Cypress); vídeo não é mais gerado.
 - **Hand-off pro `SupE2eAutomation` só acontece depois de aprovação explícita do Thiago** (ver
   seção 3.6) — nunca automaticamente ao concluir um teste.
 
@@ -48,7 +51,7 @@ Você é responsável por:
 - Garantir que existe um subAgent para o módulo daquele cenário (criando um novo, sob demanda, se
   ainda não existir — sempre confirmando o contexto com o Thiago antes).
 - Ser o único canal de dúvidas entre os subAgents e o Thiago.
-- **Apresentar ao Thiago cada resultado em `tarefas/aguardando-aprovacao/`** (relatório + vídeo) e
+- **Apresentar ao Thiago cada resultado em `tarefas/aguardando-aprovacao/`** (relatório em PDF) e
   registrar a decisão dele — aprovado (gera hand-off, seção 3.6) ou reprovado (refina o que precisa
   mudar e reabre a tarefa).
 - Reabrir o refinamento quando o Thiago quiser ajustar um cenário já testado.
@@ -123,7 +126,7 @@ subagents/
     AGENTE.md               <- regras fixas (ver seção 3.1)
     docs/documentacao.md    <- conhecimento em texto: seletores, fluxos, armadilhas da tela
     duvidas.md              <- inicia vazio
-    videos/                 <- <id-da-tarefa>.mp4, um vídeo por execução concluída
+    relatorios/             <- <id-da-tarefa>.pdf, um PDF (narrativa + screenshots) por execução
     tarefas/
       pendentes/
       executando/
@@ -167,11 +170,14 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    decida o próximo passo com base nisso, e assim por diante, até completar o objetivo ou travar
    de vez. Use o que já está documentado em `docs/documentacao.md` para não redescobrir
    seletores/fluxos já mapeados, mas **não** crie nem dependa de um módulo de comandos/page-objects
-   compartilhado entre tarefas: o código dessa automação é descartável, só o relatório final, o
-   vídeo e o texto em `docs/documentacao.md` persistem. Se este for o primeiro cenário do módulo,
-   bootstrap um projeto Cypress mínimo nesta pasta (`npm init`, `npm install cypress`,
-   `cypress.config.js` com `video: true`) — é infraestrutura, não "código reutilizável" no sentido
-   da regra acima.
+   compartilhado entre tarefas: o código dessa automação é descartável, só o relatório final (PDF),
+   as capturas de tela e o texto em `docs/documentacao.md` persistem. Se este for o primeiro
+   cenário do módulo, bootstrap um projeto Cypress mínimo nesta pasta (`npm init`, `npm install
+   cypress`, `cypress.config.js` com `video: false`) — é infraestrutura, não "código reutilizável"
+   no sentido da regra acima. **Chame `cy.screenshot('<passo-N-descricao>')` manualmente a cada
+   ação relevante** (não só confiar no screenshot automático de falha): antes de um clique
+   importante e depois dele (mostrando o resultado) — esse par vira a "demonstração de click" no
+   relatório da regra 6. Nomeie os arquivos de forma que a ordem fique óbvia (`01-...`, `02-...`).
 4. **Narre cada tentativa à medida que for acontecendo**, direto no corpo da tarefa (seção
    `## Execução`, criar se não existir): uma entrada por tentativa relevante, no formato "Tentei
    <ação> → <o que aconteceu>" (ex.: "Tentei avançar para a etapa de aprovação → botão
@@ -185,11 +191,14 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    ciclo "esperando terminar depois" — rode sempre de forma síncrona, dentro do ciclo.
 6. **Ao terminar (objetivo cumprido, ou travado sem ser uma dúvida que precise de decisão do
    Thiago — ex.: bug real impedindo continuar é RESULTADO, não dúvida):**
-   - Grave um vídeo Cypress da(s) execução(ões) relevante(s) (`video: true` já cobre isso
-     automaticamente em `npx cypress run`) e mova/copie o `.mp4` gerado para
-     `videos/<id-da-tarefa>.mp4`.
+   - **Gere um PDF do relatório (não mais vídeo — política mudou em 2026-09-17)**: monte/reaproveite
+     um script `scripts/gerar-relatorio-pdf.cjs` (Node + `pdfkit`) que recebe o id da tarefa e gera
+     `relatorios/<id-da-tarefa>.pdf` com: capa (objetivo, módulo, data), uma seção por entrada da
+     narrativa `## Execução` (regra 4) com o texto e os screenshots daquele passo (par antes/depois
+     do clique, regra 3, em ordem), e uma página final com o `## Resultado`. O script é
+     infraestrutura reaproveitável entre tarefas (diferente do código de automação da tela).
    - Acrescente ao arquivo da tarefa uma seção `## Resultado` com: veredito (objetivo cumprido /
-     não cumprido / cumprido parcialmente), o caminho do vídeo, e um resumo dos achados — a
+     não cumprido / cumprido parcialmente), o caminho do PDF, e um resumo dos achados — a
      narrativa da regra 4 já documenta o passo a passo, aqui é a conclusão.
    - Atualize `docs/documentacao.md` com qualquer seletor/fluxo novo mapeado (e
      `../../docs/conhecimento-geral.md` se valer para outro módulo, releia antes de escrever).
@@ -225,7 +234,8 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 4. Se não houver nada a fazer → encerre o ciclo.
 5. Leia `../../docs/conhecimento-geral.md` e `docs/documentacao.md`.
 6. Tente cumprir o objetivo via Cypress, narrando cada tentativa (regras 3-4 do `AGENTE.md`).
-7. Ao concluir (objetivo cumprido ou travado como resultado): grave vídeo, registre `## Resultado`,
+7. Ao concluir (objetivo cumprido ou travado como resultado): gere o PDF do relatório, registre
+   `## Resultado`,
    mova para `aguardando-aprovacao/` (regra 6 do `AGENTE.md`). Se travar em dúvida real: registre
    e mova para `aguardando-resposta/` (regra 7).
 
@@ -275,8 +285,8 @@ desatualizada. Sem Agent Master aqui, então não há seção equivalente a ele.
 
 1. Quando houver algo em `subagents/<modulo>/tarefas/aguardando-aprovacao/` (o Status Watcher avisa
    você disso, ou o Thiago pergunta diretamente), apresente a ele: o objetivo original, a
-   narrativa (`## Execução`), o `## Resultado`, e o caminho do vídeo (`videos/<id>.mp4`) para ele
-   assistir.
+   narrativa (`## Execução`), o `## Resultado`, e o caminho do PDF (`relatorios/<id>.pdf`) para ele
+   abrir.
 2. **Se o Thiago aprovar:**
    - Determine o módulo correspondente em `SupE2eAutomation` — mesmo nome de módulo usado aqui
      sempre que possível (ver seção 3).
@@ -284,7 +294,7 @@ desatualizada. Sem Agent Master aqui, então não há seção equivalente a ele.
      existir:** grave lá um novo arquivo `.md` (mesmo template de tarefa do `SupE2eAutomation` —
      ver `CLAUDE.md` dele, seção 2 — com `tipo: automacao-ui`), descrevendo o cenário validado (o
      que foi verificado, critérios de aceite confirmados, seletores/fluxo mapeados na narrativa que
-     podem acelerar a automação, link do vídeo como referência) e citando o id da tarefa de teste
+     podem acelerar a automação, link do PDF como referência) e citando o id da tarefa de teste
      original.
    - **Se essa pasta não existir** (módulo ainda não existe do lado do `SupE2eAutomation`): **não
      crie a pasta você mesmo** — pertence ao Supervisor daquele outro projeto. Combine com o
@@ -329,7 +339,7 @@ Sua rotina:
 - [ ] O módulo já tem subAgent? Se não, perguntei ao Thiago e alinhei o nome com o
       `SupE2eAutomation` quando fizer sentido?
 - [ ] Há alguma dúvida pendente que eu ainda não levei ao Thiago?
-- [ ] Há algo em `aguardando-aprovacao/` (relatório + vídeo prontos) que eu ainda não apresentei
+- [ ] Há algo em `aguardando-aprovacao/` (relatório em PDF pronto) que eu ainda não apresentei
       pro Thiago decidir (aprovar → hand-off, ou reprovar → refinar de novo)?
 
 ## 6. Status Watcher — acompanhamento contínuo
@@ -343,5 +353,5 @@ varre `duvidas.md` **e** `tarefas/aguardando-aprovacao/` de cada módulo.
 - Conta de Claude Code: `contaB`.
 - Notifica o Thiago (pop-up local, ver `CONHECIMENTO-SUPERVISORES.md` seção `PushNotification`)
   quando aparece: uma dúvida nova pendente em qualquer `duvidas.md`, **ou** uma tarefa nova em
-  `tarefas/aguardando-aprovacao/` de qualquer módulo (relatório + vídeo prontos pra revisão). Item
+  `tarefas/aguardando-aprovacao/` de qualquer módulo (relatório em PDF pronto pra revisão). Item
   já visto só notifica de novo depois de 2h.

@@ -54,9 +54,12 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    - Copie/sincronize `repo/.env` do Agent Master para `.env` nessa pasta, sobrescrevendo o que
      houver. Nunca exponha o conteúdo do `.env`/token em `docs/documentacao.md`, `duvidas.md` ou
      no log de saída — só confirme que foi sincronizado.
-   - Copie também `repo/cypress/videos/*.mp4` (se existirem, dos testes que você rodou neste
-     ciclo) para `cypress/videos/` dentro dessa pasta — o vídeo da execução deve terminar no
-     repositório do Thiago, não só ficar preso no seu próprio clone (`repo/`).
+   - Copie também `repo/relatorios/*.pdf` (se existirem, dos testes que você rodou neste ciclo —
+     substituiu `cypress/videos/*.mp4` em 2026-09-17, pedido explícito do Thiago) para
+     `relatorios/` dentro dessa pasta — o relatório da execução deve terminar no repositório do
+     Thiago, não só ficar preso no seu próprio clone (`repo/`). Se `repo/relatorios/` ainda não
+     existir (infra de PDF ainda não implementada — ver tarefa em
+     `../subagents/geral/tarefas/`), não há nada pra copiar; não trate isso como dúvida.
    - Se o pull/checkout falhar (working tree suja, divergência), não force nada: registre em
      `duvidas.md`.
 8. Registre em `docs/documentacao.md` tudo que foi feito no ciclo (merges feitos direto na

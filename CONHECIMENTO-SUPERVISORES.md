@@ -48,7 +48,8 @@ redirecione todas as funções que partem de uma conversa minha com os superviso
   diferente dos outros dois**: não codifica/integra num repositório, faz QA exploratório —
   refina um objetivo de teste com o Thiago, um subAgent tenta cumprir esse objetivo navegando de
   verdade na aplicação (Cypress só como ferramenta de execução, código descartável por tarefa, sem
-  suíte persistente), narra cada tentativa passo a passo, grava vídeo, e o resultado fica
+  suíte persistente), narra cada tentativa passo a passo, gera um PDF com screenshots (não mais
+  vídeo, desde 2026-09-17), e o resultado fica
   aguardando aprovação do Thiago antes de qualquer coisa. Só depois de aprovado é que vira uma
   tarefa nova no `SupE2eAutomation` (hand-off manual, feito pelo Supervisor, nunca automático).
   Sem `agent-master`, sem `repo/` — ver seção "Padrão estrutural" abaixo pra variação completa.
@@ -203,7 +204,8 @@ qualquer Supervisor futuro cujo trabalho seja validar/testar em vez de codificar
 - **Relatório é narrativo, passo a passo** ("tentei X → aconteceu Y"), registrado dentro do
   próprio arquivo de tarefa à medida que a execução acontece (não só um veredito no final) — dá
   contexto de verdade pra quem for revisar ou automatizar depois.
-- **Toda execução concluída gera vídeo** (Cypress: `video: true`) e vai para
+- **Toda execução concluída gera um PDF** com screenshots documentando passo a passo (política
+  mudou em 2026-09-17 — antes era vídeo, `video: true`; ver seção "Vídeo → PDF" abaixo) e vai para
   `tarefas/aguardando-aprovacao/` — nunca direto para `concluidas/`. Só o Supervisor, numa
   conversa com o humano responsável, decide aprovar (segue pro passo seguinte) ou reprovar (volta
   pra refinamento). O subAgent nunca decide isso sozinho, mesmo que o teste tenha "passado".
@@ -487,6 +489,40 @@ desatualizada (ex.: aponta tarefa que já não existe mais na pasta).
 Qualquer Supervisor novo deve nascer já com esse arquivo (mesmo que vazio/com só cabeçalho) e a
 regra correspondente no `AGENTE.md` de cada subAgent/Agent Master — copiar o padrão de um dos 3
 `CLAUDE.md` existentes em vez de reinventar.
+
+## Vídeo → PDF como formato de documentação de execução — criado em 2026-09-17
+
+Pedido explícito do Thiago à Gerente: em vez de gravar vídeo de uma execução de teste, gerar um
+**PDF documentando tudo o que foi feito, com screenshots e demonstração de clique** (par de
+screenshot antes/depois de cada clique relevante, junto da narrativa passo a passo). Vídeos
+antigos já foram apagados (locais dos 3 Supervisores + as pastas de teste manual do Thiago,
+`C:\multiplica\cypress-e2e`/`cypress-uteis` — incluindo uma pasta corrompida por um bug antigo de
+aspas num `cp`, achada e removida no processo).
+
+- **Escopo:** `SupTestesFrontEnd` (onde o PDF passa a ser o entregável principal de cada tarefa,
+  ver seção 3.5 do `CLAUDE.md` dele) e `SupE2eAutomation` (onde o Agent Master vai copiar PDFs em
+  vez de vídeos pra pasta de teste manual do Thiago, ver seção 3.3 do `CLAUDE.md` dele). **Não
+  se aplica a `SupAutomacaoUteis`**: esse repositório não é uma suíte de UI — é uma ferramenta de
+  orquestração de dados via API/SQL (ver `CLAUDE.md` do próprio repositório,
+  `subagents/*/repo/CLAUDE.md`), sem fluxo de tela/clique que valha a pena documentar assim, e
+  nunca gerou vídeo pra revisão do Thiago (confirmado: não há `cypress/videos/` na pasta de teste
+  manual `C:\multiplica\cypress-uteis`).
+- **Mecanismo prescrito** (concreto o bastante pra qualquer subAgent implementar sem reinventar):
+  `video: false` no `cypress.config.js`; `cy.screenshot('<passo-N-descricao>')` chamado
+  manualmente antes/depois de cada clique relevante (não só o automático de falha do Cypress); um
+  script Node reaproveitável (`pdfkit`) que junta a narrativa (`## Execução`) + os screenshots em
+  ordem num PDF por tarefa/execução.
+- **`SupTestesFrontEnd`: já implementado nos arquivos de política** (`AGENTE.md` do `mop`,
+  `CLAUDE.md`, `cypress.config.js` já com `video: false`) — o próprio subAgent ainda precisa
+  escrever o script `gerar-relatorio-pdf.cjs` na próxima vez que concluir uma tarefa (é
+  infraestrutura, não foi implementada pela Gerente, que não implementa código).
+- **`SupE2eAutomation`: registrado como tarefa nova** em
+  `subagents/geral/tarefas/pendentes/` (módulo `geral` porque essa infra é cross-módulo, reusada
+  por `POC`/`mop`/futuros) — a Gerente não edita o repositório clonado (`automacaoUiMultiplica`)
+  diretamente, isso é trabalho do subAgent, incluindo atualizar o próprio `CLAUDE.md` do
+  repositório (hoje lista "relatórios (mochawesome/Allure)" como fora de escopo — isso muda). Até
+  essa tarefa ser processada, o Agent Master continua copiando vídeo normalmente (a regra nova no
+  `AGENTE.md` dele já aponta pro novo formato, mas só passa a valer quando a infra existir).
 
 ## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
 
