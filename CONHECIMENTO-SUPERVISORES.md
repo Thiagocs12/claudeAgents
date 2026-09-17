@@ -79,22 +79,16 @@ Supervisor/módulo (referenciadas pelo caminho do arquivo, nunca copiadas). Ver
 `contaA` = `taina.ribeiro@grupomultiplica.com.br`. `contaB` = `thiago.santos@grupomultiplica.com.br`
 (a conta pessoal do Thiago).
 
-**Política atual (2026-09-17, pedido explícito do Thiago — substitui o revezamento por módulo
-descrito na seção anterior desta mesma nota): `contaB` é a conta padrão pra praticamente tudo**
-(todo subAgent, Agent Master, Status Watcher, e a sessão interativa de cada Supervisor). `contaA`
-deixou de ser "casa" de qualquer agente — ela só é acionada pela lógica de alternância por
-rate-limit já existente (ver mais abaixo) quando `contaB` estiver perto do limite (`>=99%` na
-janela `five_hour`), e só naquele ciclo específico (não persiste). Aplicado nos 5 `run-cycle.ps1`
-que ainda tinham `contaA` como casa: `SupE2eAutomation/subagents/geral`,
-`SupE2eAutomation/subagents/POC`, `SupE2eAutomation/status-watcher`,
-`SupTestesFrontEnd/subagents/mop`, `SupAutomacaoUteis/subagents/keycloakUser` — os outros 6 já
-estavam em `contaB` e não precisaram mudar. Todos os 11 validados sintaticamente
-(`[Parser]::ParseFile`) depois da edição.
+**Política 2026-09-17 (manhã), já SUPERADA pela seção "Fila global de contas" mais abaixo (mesmo
+dia, à tarde) — mantida aqui só como histórico do raciocínio:** `contaB` virou a conta padrão pra
+praticamente tudo (todo subAgent, Agent Master, e a sessão interativa de cada Supervisor), com
+`contaA` só como fallback quando `contaB` estivesse perto do limite (`>=99%` na janela
+`five_hour`). **Essa política de "conta de casa + fallback por rate-limit" não existe mais** — foi
+substituída no mesmo dia por uma fila global baseada em concorrência (no máximo 1 tarefa por conta
+ao mesmo tempo, sem "casa" nenhuma), pedido do Thiago depois de notar tarefas demais rodando ao
+mesmo tempo. Ver a seção "Fila global de contas" para o mecanismo atual — não reaplique a lógica
+de `contaDeCasa`/`contaAlternativa`/rate-limit descrita aqui em nenhum `run-cycle.ps1` novo.
 
-- **Consequência esperada, não é bug**: com quase tudo concorrendo pela mesma conta, `contaB` deve
-  saturar bem mais rápido que antes — é justamente o `contaA` entrando como fallback que absorve
-  esse excesso, exatamente como pedido ("contaA só deve ser acionada quando estivermos perto do
-  limite da B").
 - Um Supervisor novo que precisar de conta própria deve criar uma nova (`contaC`, `contaD`, ...) em
   vez de empilhar em `contaA`/`contaB` — isso exige um login interativo do Thiago na máquina na
   hora de criar. Ao reservar uma conta nova, registre aqui: nome da conta, quem é dona dela.
@@ -229,6 +223,53 @@ Thiago faz os testes manuais/aprovação no início do dia seguinte, começando 
 subAgent/Agent Master estavam com `Enabled = False`, apesar de terem rodado normalmente até minutos
 antes — causa não identificada, não fui eu (Gerente) quem desativou. Thiago já confirmou que, por
 ora, para deixar assim (não reabilitar automaticamente).
+
+## Fila global de contas — no máximo 1 tarefa por conta ao mesmo tempo — criado em 2026-09-17
+
+Pedido explícito do Thiago ("não vamos mais rodar tantas coisas ao mesmo tempo"), na mesma tarde em
+que as duas cadências acima foram criadas: **substitui completamente** a política de "conta de
+casa" + fallback por rate-limit (seções "Pool de contas" e "Alternância de conta por rate-limit"
+acima, ambas marcadas como superadas). Não é mais sobre qual conta um módulo "pertence" nem sobre
+saturação de rate-limit — é puramente sobre **concorrência**: `contaA` e `contaB` são 2 slots, cada
+um processa **uma tarefa por vez, do início ao fim, sem alternar no meio**, não importa quantas
+tarefas existam nem de qual Supervisor/módulo elas são.
+
+- **Regra**: a primeira tarefa (de qualquer subAgent/Agent Master, de qualquer Supervisor) que
+  pedir um slot pega `contaA`; a segunda pega `contaB`; uma terceira tarefa que peça um slot
+  enquanto as duas primeiras ainda estiverem rodando **espera** — não faz o ciclo tentar de novo
+  imediatamente, apenas registra `[fila-global] ... aguarda a proxima execucao` no `run-log.txt` e
+  encerra o ciclo (`exit 0`, sem chamar `claude -p`); a Scheduled Task tenta de novo sozinha no
+  próximo disparo natural dela (10min pra subAgent em cadência ativa, 20min pra Agent Master).
+- **Onde entra no fluxo de cada `run-cycle.ps1`**: só depois da pré-checagem determinística
+  (`Test-TrabalhoPendente`) já confirmar que há trabalho real — pedir um slot antes disso seria
+  desperdício (tarefa nenhuma pra fazer, não faz sentido reservar conta). Ou seja: sem
+  trabalho → nem tenta slot (comportamento de sempre). Com trabalho, mas sem slot livre → aguarda
+  (novidade desta seção). Com trabalho e slot livre → roda normalmente.
+- **Mecanismo** (funções `Adquirir-SlotConta`/`Liberar-SlotConta`, copiadas em cada `run-cycle.ps1`,
+  mesmo padrão de reaproveitar bloco já estabelecido nesta nota): um arquivo de lock por conta,
+  `%USERPROFILE%\.claude-accounts\<conta>\em-uso.lock` (JSON: `ocupado_por` = nome do módulo, `pid`,
+  `desde`). Verificar-e-reservar é atômico via `Mutex` nomeado global
+  (`Global\ClaudeAgentsContaSlot`, mesma técnica do `Sync-RepoRaizClaudeAgents`) — dentro do mutex,
+  tenta `contaA` primeiro, depois `contaB`; se as duas já tiverem lock válido (não expirado),
+  devolve `$null` (nenhum slot obtido). Um lock com mais de **4h** é tratado como travado (processo
+  que crashou sem liberar) e pode ser reclamado por outra tarefa — não deveria acontecer num ciclo
+  normal, é só rede de segurança.
+- **Liberação**: logo depois do `claude -p` terminar e o `rate_limit_event` (se houver) ser
+  gravado em `ultima-utilizacao.json` — antes do `git push` final, que não depende da conta. Chamada
+  sempre, sucesso ou falha do ciclo (não há cenário em que o script continua sem liberar, exceto
+  crash de processo, coberto pela expiração de 4h acima).
+- **`ultima-utilizacao.json` continua sendo gravado por informação** (usado pelo "status" da
+  Gerente pra mostrar utilização de rate-limit) — só não decide mais qual conta usar. As funções
+  `Get-UtilizacaoConta`/o bloco de decisão por `>=99%` foram removidos dos 8 scripts.
+- **Cadência ao encontrar as duas contas ocupadas**: subAgent mantém a cadência **ativa** (não
+  desacelera pra 1h — há trabalho real esperando, só não conseguiu conta agora) chamando
+  `Set-CadenciaAdaptativa -Estado 'ativo'` antes do `exit 0`; Agent Master não tem cadência
+  adaptativa (agendamento diário fixo), só sai e tenta nos próximos 20min da mesma janela.
+- **Aplicado nos mesmos 8 `run-cycle.ps1` reais** de sempre (6 subAgents + 2 Agent Master).
+  Validado: mecanismo testado isoladamente (reserva sequencial de 2 slots, 3ª tentativa nula,
+  liberação e reserva do slot liberado) antes de aplicar nos 8 scripts reais; todos os 8 validados
+  sintaticamente (`[Parser]::ParseFile`) depois da edição; conferido que não sobrou nenhum
+  `em-uso.lock` órfão nas pastas de conta reais.
 
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
@@ -437,6 +478,11 @@ do `CLAUDE.md` de cada Supervisor (idêntico nos dois). Um Supervisor novo deve 
 parágrafo.
 
 ## Alternância de conta por rate-limit — pool `contaA`/`contaB` (2026-09-15, `SupE2eAutomation`; estendida a todos os 3 Supervisores em 2026-09-16)
+
+> **SUPERADO em 2026-09-17** pela seção "Fila global de contas" (mais acima neste arquivo) — os 8
+> `run-cycle.ps1` reais não têm mais `contaDeCasa`/`contaAlternativa`/`Get-UtilizacaoConta` nem essa
+> lógica de troca por `>=99%`. Seção mantida só como histórico de como o mecanismo evoluiu; não
+> copie o padrão descrito abaixo em nenhum `run-cycle.ps1` novo.
 
 Como `contaA`/`contaB` são um pool **compartilhado entre os três Supervisores**, o Thiago pediu
 pra aproveitar melhor a capacidade ociosa: além da conta "de casa" fixa de cada agente (rotação de

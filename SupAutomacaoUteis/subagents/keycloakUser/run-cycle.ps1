@@ -99,31 +99,13 @@ if (Test-Path "C:\Multiplica\claudeAgents\PAUSA-HML.flag") {
     exit 0
 }
 
-# Conta do Claude Code dedicada a este subAgent — contaB é a conta padrão (pedido explícito do
-# Thiago em 2026-09-17: contaB é dele, deve ser usada pra maioria das coisas). contaA só entra
-# como fallback de rate-limit (lógica abaixo) quando contaB estiver perto do limite.
-#
-# --- Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15; estendida aos 3
-# Supervisores em 2026-09-16) ---
-# Cada conta grava sua última utilização conhecida (janela five_hour) em
-# %USERPROFILE%\.claude-accounts\<conta>\ultima-utilizacao.json a cada ciclo que a usa, de
-# qualquer agente/Supervisor (pool compartilhado contaA/contaB). Antes de começar, se a conta "de
-# casa" deste agente estiver >=99% nessa janela (e o reset ainda não passou), tenta a conta
-# alternativa. Não persiste a troca: no próximo ciclo, tenta a conta de casa de novo primeiro. Ver
-# CONHECIMENTO-SUPERVISORES.md.
-function Get-UtilizacaoConta {
-    param([string]$Conta)
-    $caminho = "$env:USERPROFILE\.claude-accounts\$Conta\ultima-utilizacao.json"
-    if (-not (Test-Path $caminho)) { return $null }
-    try {
-        $dado = Get-Content $caminho -Raw | ConvertFrom-Json
-        if ($dado.resetsAt -and ([DateTimeOffset]::FromUnixTimeSeconds($dado.resetsAt).UtcDateTime -lt (Get-Date).ToUniversalTime())) {
-            return $null
-        }
-        return [double]$dado.five_hour_utilization
-    } catch { return $null }
-}
-
+# --- Fila global de contas (pedido do Thiago, 2026-09-17): substitui a politica anterior de
+# "conta de casa" + fallback por rate-limit. Agora e so sobre concorrencia: no maximo 1 tarefa por
+# conta ao mesmo tempo, em qualquer Supervisor/modulo - nao importa quantas tarefas existam nem de
+# qual Supervisor. contaA pega a primeira tarefa que pedir um slot, contaB pega a segunda; uma
+# terceira tarefa (de qualquer modulo) espera uma das duas liberar, sem alternar no meio do
+# caminho. `ultima-utilizacao.json` continua sendo gravado, mas so pra fins informativos (status
+# da Gerente) - nao decide mais qual conta usar.
 function Set-UtilizacaoConta {
     param([string]$Conta, [double]$Utilizacao, [long]$ResetsAt)
     $pasta = "$env:USERPROFILE\.claude-accounts\$Conta"
@@ -132,22 +114,54 @@ function Set-UtilizacaoConta {
         ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
 }
 
-$contaDeCasa = "contaB"
-$contaAlternativa = "contaA"
-$contaEfetiva = $contaDeCasa
-$utilDeCasa = Get-UtilizacaoConta -Conta $contaDeCasa
-if ($null -ne $utilDeCasa -and $utilDeCasa -ge 0.99) {
-    $utilAlternativa = Get-UtilizacaoConta -Conta $contaAlternativa
-    if ($null -eq $utilAlternativa -or $utilAlternativa -lt 0.99) {
-        $contaEfetiva = $contaAlternativa
-        "$(Get-Date -Format 'HH:mm:ss') | [alternancia] $contaDeCasa em $([math]::Round($utilDeCasa*100,1))% (five_hour) - usando $contaAlternativa neste ciclo" |
-            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
-    } else {
-        "$(Get-Date -Format 'HH:mm:ss') | [alternancia] $contaDeCasa e $contaAlternativa ambas >=99% (five_hour) - seguindo com $contaDeCasa mesmo assim" |
-            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+# Lock por arquivo (%USERPROFILE%\.claude-accounts\<conta>\em-uso.lock), claim atomico via Mutex
+# nomeado global (mesma tecnica do Sync-RepoRaizClaudeAgents). Lock considerado travado/liberavel
+# depois de 4h (processo que crashou sem liberar) - nao deveria acontecer num ciclo normal.
+function Adquirir-SlotConta {
+    param([string]$NomeModulo, [string]$LogPath)
+    $mutex = New-Object System.Threading.Mutex($false, "Global\ClaudeAgentsContaSlot")
+    $contaObtida = $null
+    try {
+        $mutex.WaitOne(30000) | Out-Null
+        foreach ($conta in @("contaA","contaB")) {
+            $pastaConta = "$env:USERPROFILE\.claude-accounts\$conta"
+            $lockPath = "$pastaConta\em-uso.lock"
+            $livre = $true
+            if (Test-Path $lockPath) {
+                try {
+                    $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+                    if (((Get-Date).ToUniversalTime() - [datetime]$lock.desde) -lt (New-TimeSpan -Hours 4)) {
+                        $livre = $false
+                    }
+                } catch { $livre = $true }
+            }
+            if ($livre) {
+                if (-not (Test-Path $pastaConta)) { New-Item -ItemType Directory -Force -Path $pastaConta | Out-Null }
+                @{ ocupado_por = $NomeModulo; pid = $PID; desde = (Get-Date).ToUniversalTime().ToString("o") } |
+                    ConvertTo-Json | Set-Content -Path $lockPath -Encoding utf8
+                $contaObtida = $conta
+                break
+            }
+        }
+    } finally {
+        $mutex.ReleaseMutex()
     }
+    if ($contaObtida) {
+        "$(Get-Date -Format 'HH:mm:ss') | [fila-global] slot obtido: $contaObtida (modulo=$NomeModulo)" |
+            Add-Content -Path $LogPath -Encoding utf8
+    } else {
+        "$(Get-Date -Format 'HH:mm:ss') | [fila-global] contaA e contaB ocupadas por outro modulo agora - ciclo aguarda a proxima execucao" |
+            Add-Content -Path $LogPath -Encoding utf8
+    }
+    return $contaObtida
 }
-$env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\$contaEfetiva"
+
+function Liberar-SlotConta {
+    param([string]$Conta, [string]$LogPath)
+    if (-not $Conta) { return }
+    Remove-Item -Path "$env:USERPROFILE\.claude-accounts\$Conta\em-uso.lock" -Force -ErrorAction SilentlyContinue
+    "$(Get-Date -Format 'HH:mm:ss') | [fila-global] slot liberado: $Conta" | Add-Content -Path $LogPath -Encoding utf8
+}
 
 # Checagem determinística (sem custo de chamada ao Claude) do que a Scheduled Task faria via LLM
 # nos passos 1-4 da seção 3.2 do CLAUDE.md: só vale a pena chamar `claude -p` se houver algo
@@ -201,6 +215,13 @@ if (-not (Test-TrabalhoPendente)) {
     Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
+
+$contaEfetiva = Adquirir-SlotConta -NomeModulo "SupAutomacaoUteis/keycloakUser" -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+if (-not $contaEfetiva) {
+    Set-CadenciaAdaptativa -Estado 'ativo' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+    exit 0
+}
+$env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\$contaEfetiva"
 
 $prompt = @'
 Você é o SubAgent do módulo "keycloakUser" (automação utilitária). Leia AGENTE.md nesta pasta e
@@ -295,6 +316,7 @@ $prompt | claude -p --permission-mode bypassPermissions --output-format stream-j
 if ($script:ultimoRateLimit) {
     Set-UtilizacaoConta -Conta $contaEfetiva -Utilizacao $script:ultimoRateLimit.utilization -ResetsAt $script:ultimoRateLimit.resetsAt
 }
+Liberar-SlotConta -Conta $contaEfetiva -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 
 # Publica no remoto tudo que este ciclo escreveu/moveu no repo raiz (docs, duvidas, tarefas) — ver
 # função Sync-RepoRaizClaudeAgents definida no início deste script.
