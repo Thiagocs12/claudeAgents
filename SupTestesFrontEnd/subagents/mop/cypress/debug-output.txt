@@ -184,3 +184,475 @@ ELEMENTOS APOS CLICAR ANTECIPACAO DE DUPLICATA:
   "CPR FISICA",
   "CTE"
 ]
+ELEMENTOS APOS CLICAR DUPLICATA:
+[
+  "INPUT[name=null,placeholder=Buscar]",
+  "Dashboard",
+  "Recibo Pêndencia",
+  "Recibo Recompra",
+  "Importar XML",
+  "Consulta de Títulos",
+  "Instrução Bancária Lote",
+  "Instruções Bancárias",
+  "Emissão de Boletos",
+  "Ordem Pagamento",
+  "Tour Virtual",
+  "Faq",
+  "Logout",
+  "Olá",
+  "COBRANCA SIMPLES",
+  "AQUISICAO",
+  "AQUISICAO ANCORA",
+  "AQUISICAO FORNECEDOR ANCORA",
+  "AQUISICAO FIDUCIARIA",
+  "AQUISICAO JUDICIAL",
+  "AQUISICAO ANCORA RISCO SACADO",
+  "AQUISICAO FORNECEDOR RISCO SACADO",
+  "AQUISICAO FINANCEIRA DOLAR",
+  "testes hml",
+  "CESSAO FIDUCIARIA DE DIREITO",
+  "AQUISICAO LARCA",
+  "AQUISIÇÃO COMEX - LARCA",
+  "GARANTIA",
+  "ANTECIPACAO DE DUPLICATA",
+  "ANTECIPACAO DE CONTRATO",
+  "AQUISICAO DE CHEQUE",
+  "NPL",
+  "NOTA PROMISSORIA",
+  "ANTECIPACAO DE EXPORTACAO",
+  "COBRANÇA SIMPLES",
+  "IMOVEL",
+  "ANTECIPACAO DE CARTOES",
+  "CCB",
+  "ANTECIPACAO DE DUPLICATA PETROBRAS",
+  "DUPLICATA",
+  "DUPLICATA INTERCOMPANY",
+  "DUPLICTA INTERCOMPANY",
+  "CPR FISICA",
+  "CTE",
+  "PRODUTO",
+  "SERVICO"
+]
+ELEMENTOS APOS CLICAR SERVICO:
+[
+  "INPUT[name=null,placeholder=Buscar]",
+  "Dashboard",
+  "Recibo Pêndencia",
+  "Recibo Recompra",
+  "Importar XML",
+  "Consulta de Títulos",
+  "Instrução Bancária Lote",
+  "Instruções Bancárias",
+  "Emissão de Boletos",
+  "Ordem Pagamento",
+  "Tour Virtual",
+  "Faq",
+  "Logout",
+  "Olá",
+  "COBRANCA SIMPLES",
+  "AQUISICAO",
+  "AQUISICAO ANCORA",
+  "AQUISICAO FORNECEDOR ANCORA",
+  "AQUISICAO FIDUCIARIA",
+  "AQUISICAO JUDICIAL",
+  "AQUISICAO ANCORA RISCO SACADO",
+  "AQUISICAO FORNECEDOR RISCO SACADO",
+  "AQUISICAO FINANCEIRA DOLAR",
+  "testes hml",
+  "CESSAO FIDUCIARIA DE DIREITO",
+  "AQUISICAO LARCA",
+  "AQUISIÇÃO COMEX - LARCA",
+  "GARANTIA",
+  "ANTECIPACAO DE DUPLICATA",
+  "ANTECIPACAO DE CONTRATO",
+  "AQUISICAO DE CHEQUE",
+  "NPL",
+  "NOTA PROMISSORIA",
+  "ANTECIPACAO DE EXPORTACAO",
+  "COBRANÇA SIMPLES",
+  "IMOVEL",
+  "ANTECIPACAO DE CARTOES",
+  "CCB",
+  "ANTECIPACAO DE DUPLICATA PETROBRAS",
+  "DUPLICATA",
+  "DUPLICATA INTERCOMPANY",
+  "DUPLICTA INTERCOMPANY",
+  "CPR FISICA",
+  "CTE",
+  "PRODUTO",
+  "SERVICO",
+  "BOLETO",
+  "ESCROW SEM TRAVA",
+  "ESCROW COM TRAVA",
+  "PRE-IMPRESSO",
+  "COMISSARIA",
+  "BOLETO ESPECIAL"
+]
+ELEMENTOS APOS CLICAR BOLETO:
+[
+  "INPUT[name=null,placeholder=Buscar]",
+  "Dashboard",
+  "Recibo Pêndencia",
+  "Recibo Recompra",
+  "Importar XML",
+  "Consulta de Títulos",
+  "Instrução Bancária Lote",
+  "Instruções Bancárias",
+  "Emissão de Boletos",
+  "Ordem Pagamento",
+  "Tour Virtual",
+  "Faq",
+  "Logout",
+  "Olá",
+  "COBRANCA SIMPLES",
+  "AQUISICAO",
+  "AQUISICAO ANCORA",
+  "AQUISICAO FORNECEDOR ANCORA",
+  "AQUISICAO FIDUCIARIA",
+  "AQUISICAO JUDICIAL",
+  "AQUISICAO ANCORA RISCO SACADO",
+  "AQUISICAO FORNECEDOR RISCO SACADO",
+  "AQUISICAO FINANCEIRA DOLAR",
+  "testes hml",
+  "CESSAO FIDUCIARIA DE DIREITO",
+  "AQUISICAO LARCA",
+  "AQUISIÇÃO COMEX - LARCA",
+  "GARANTIA",
+  "ANTECIPACAO DE DUPLICATA",
+  "ANTECIPACAO DE CONTRATO",
+  "AQUISICAO DE CHEQUE",
+  "NPL",
+  "NOTA PROMISSORIA",
+  "ANTECIPACAO DE EXPORTACAO",
+  "COBRANÇA SIMPLES",
+  "IMOVEL",
+  "ANTECIPACAO DE CARTOES",
+  "CCB",
+  "ANTECIPACAO DE DUPLICATA PETROBRAS",
+  "DUPLICATA",
+  "DUPLICATA INTERCOMPANY",
+  "DUPLICTA INTERCOMPANY",
+  "CPR FISICA",
+  "CTE",
+  "PRODUTO",
+  "SERVICO",
+  "BOLETO",
+  "ESCROW SEM TRAVA",
+  "ESCROW COM TRAVA",
+  "PRE-IMPRESSO",
+  "COMISSARIA",
+  "BOLETO ESPECIAL",
+  "Voltar",
+  "Continuar"
+]
+ELEMENTOS APOS CLICAR CONTINUAR:
+[
+  "INPUT[name=null,placeholder=Buscar]",
+  "Dashboard",
+  "Recibo Pêndencia",
+  "Recibo Recompra",
+  "Importar XML",
+  "Consulta de Títulos",
+  "Instrução Bancária Lote",
+  "Instruções Bancárias",
+  "Emissão de Boletos",
+  "Ordem Pagamento",
+  "Tour Virtual",
+  "Faq",
+  "Logout",
+  "Olá",
+  "COBRANCA SIMPLES",
+  "AQUISICAO",
+  "AQUISICAO ANCORA",
+  "AQUISICAO FORNECEDOR ANCORA",
+  "AQUISICAO FIDUCIARIA",
+  "AQUISICAO JUDICIAL",
+  "AQUISICAO ANCORA RISCO SACADO",
+  "AQUISICAO FORNECEDOR RISCO SACADO",
+  "AQUISICAO FINANCEIRA DOLAR",
+  "testes hml",
+  "CESSAO FIDUCIARIA DE DIREITO",
+  "AQUISICAO LARCA",
+  "AQUISIÇÃO COMEX - LARCA",
+  "GARANTIA",
+  "ANTECIPACAO DE DUPLICATA",
+  "ANTECIPACAO DE CONTRATO",
+  "AQUISICAO DE CHEQUE",
+  "NPL",
+  "NOTA PROMISSORIA",
+  "ANTECIPACAO DE EXPORTACAO",
+  "COBRANÇA SIMPLES",
+  "IMOVEL",
+  "ANTECIPACAO DE CARTOES",
+  "CCB",
+  "ANTECIPACAO DE DUPLICATA PETROBRAS",
+  "DUPLICATA",
+  "DUPLICATA INTERCOMPANY",
+  "DUPLICTA INTERCOMPANY",
+  "CPR FISICA",
+  "CTE",
+  "PRODUTO",
+  "SERVICO",
+  "BOLETO",
+  "ESCROW SEM TRAVA",
+  "ESCROW COM TRAVA",
+  "PRE-IMPRESSO",
+  "COMISSARIA",
+  "BOLETO ESPECIAL",
+  "Voltar",
+  "Continuar"
+]
+URL APOS CLICAR CONTINUAR: https://beyondbanking-ope-hml.grupomultiplica.com.br/operation
+
+TEXTO BRUTO COMPLETO DO BODY APOS CONTINUAR:
+You need to enable JavaScript to run this app. KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDAAutomacaoDashboardRecibo PêndenciaRecibo RecompraImportar XMLConsulta de TítulosInstrução Bancária LoteInstruções BancáriasEmissão de BoletosOrdem PagamentoTour VirtualFaqLogoutVoltarNova OperaçãoAQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Olá, eu sou o Beyond, assistente virtual do Grupo Multiplica. É um prazer te atender. Vamos começar sua nova operação?OláOláVamos começar identificando o produto da operação. Para isso, me conta: qual o foco de negócio você está buscando hoje, Automacao?COBRANCA SIMPLESAQUISICAOAQUISICAO ANCORAAQUISICAO FORNECEDOR ANCORAAQUISICAO FIDUCIARIA AQUISICAO JUDICIAL AQUISICAO ANCORA RISCO SACADOAQUISICAO FORNECEDOR RISCO SACADOAQUISICAO FINANCEIRA DOLARtestes hmlCESSAO FIDUCIARIA DE DIREITOAQUISICAO LARCAAQUISIÇÃO COMEX - LARCAAQUISICAOBacana. E qual o tipo de produto deste negócio?GARANTIAANTECIPACAO DE DUPLICATAANTECIPACAO DE CONTRATO AQUISICAO DE CHEQUENPL NOTA PROMISSORIAANTECIPACAO DE EXPORTACAOCOBRANÇA SIMPLESIMOVELANTECIPACAO DE CARTOESCCBANTECIPACAO DE DUPLICATA PETROBRASANTECIPACAO DE DUPLICATAEste produto tem algumas sub categorias. Qual delas é a que você procura?DUPLICATADUPLICATA INTERCOMPANYDUPLICTA INTERCOMPANYCPR FISICACTEDUPLICATAEste produto tem algumas classificações. Qual delas é a que você procura?PRODUTOSERVICOSERVICOEste produto tem alguns tipos de recebimento. Qual deles é a que você procura?BOLETOESCROW SEM TRAVAESCROW COM TRAVAPRE-IMPRESSOCOMISSARIABOLETO ESPECIALBOLETOJá consegui identificar! O produto da operação é AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Deseja continuar?VoltarContinuarAQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Sua conta de recebimento é: ITAU - Agência: 6200 - Conta: 01013-7. Deseja continuar? Caso a conta de recebimento não estiver listada abaixo, solicite o cadastro através do email: formalizacao@grupomultiplica.com.brVoltarContinuar
+CANDIDATOS A ELEMENTO DE CONTA (por classe):
+[
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> Olá",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> COBRANCA SIMPLES",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO ANCORA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO FORNECEDOR ANCORA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO FIDUCIARIA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO JUDICIAL",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO ANCORA RISCO SACADO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO FORNECEDOR RISCO SACADO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO FINANCEIRA DOLAR",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> testes hml",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> CESSAO FIDUCIARIA DE DIREITO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO LARCA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISIÇÃO COMEX - LARCA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> GARANTIA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ANTECIPACAO DE DUPLICATA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ANTECIPACAO DE CONTRATO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> AQUISICAO DE CHEQUE",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> NPL",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> NOTA PROMISSORIA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ANTECIPACAO DE EXPORTACAO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> COBRANÇA SIMPLES",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> IMOVEL",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ANTECIPACAO DE CARTOES",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> CCB",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ANTECIPACAO DE DUPLICATA PETROBRAS",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> DUPLICATA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> DUPLICATA INTERCOMPANY",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> DUPLICTA INTERCOMPANY",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> CPR FISICA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> CTE",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> PRODUTO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> SERVICO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> BOLETO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ESCROW SEM TRAVA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> ESCROW COM TRAVA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> PRE-IMPRESSO",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> COMISSARIA",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> BOLETO ESPECIAL",
+  "<button class=\"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-1u2r1cd\"> Continuar"
+]
+TEXTO BRUTO COMPLETO DO BODY APOS CONFIRMAR CONTA:
+You need to enable JavaScript to run this app. KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDAAutomacaoDashboardRecibo PêndenciaRecibo RecompraImportar XMLConsulta de TítulosInstrução Bancária LoteInstruções BancáriasEmissão de BoletosOrdem PagamentoTour VirtualFaqLogoutVoltarNova OperaçãoAQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Olá, eu sou o Beyond, assistente virtual do Grupo Multiplica. É um prazer te atender. Vamos começar sua nova operação?OláOláVamos começar identificando o produto da operação. Para isso, me conta: qual o foco de negócio você está buscando hoje, Automacao?COBRANCA SIMPLESAQUISICAOAQUISICAO ANCORAAQUISICAO FORNECEDOR ANCORAAQUISICAO FIDUCIARIA AQUISICAO JUDICIAL AQUISICAO ANCORA RISCO SACADOAQUISICAO FORNECEDOR RISCO SACADOAQUISICAO FINANCEIRA DOLARtestes hmlCESSAO FIDUCIARIA DE DIREITOAQUISICAO LARCAAQUISIÇÃO COMEX - LARCAAQUISICAOBacana. E qual o tipo de produto deste negócio?GARANTIAANTECIPACAO DE DUPLICATAANTECIPACAO DE CONTRATO AQUISICAO DE CHEQUENPL NOTA PROMISSORIAANTECIPACAO DE EXPORTACAOCOBRANÇA SIMPLESIMOVELANTECIPACAO DE CARTOESCCBANTECIPACAO DE DUPLICATA PETROBRASANTECIPACAO DE DUPLICATAEste produto tem algumas sub categorias. Qual delas é a que você procura?DUPLICATADUPLICATA INTERCOMPANYDUPLICTA INTERCOMPANYCPR FISICACTEDUPLICATAEste produto tem algumas classificações. Qual delas é a que você procura?PRODUTOSERVICOSERVICOEste produto tem alguns tipos de recebimento. Qual deles é a que você procura?BOLETOESCROW SEM TRAVAESCROW COM TRAVAPRE-IMPRESSOCOMISSARIABOLETO ESPECIALBOLETOJá consegui identificar! O produto da operação é AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Deseja continuar?VoltarContinuarAQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Sua conta de recebimento é: ITAU - Agência: 6200 - Conta: 01013-7. Deseja continuar? Caso a conta de recebimento não estiver listada abaixo, solicite o cadastro através do email: formalizacao@grupomultiplica.com.brVoltarContinuarITAU - Agência: 6200 - Conta: 01013-7Certo. Qual o tipo de entrada você vai utilizar nesta operação?VoltarUpload de arquivoDigitação
+URL APOS CONFIRMAR CONTA: https://beyondbanking-ope-hml.grupomultiplica.com.br/operation
+
+TEXTO BRUTO COMPLETO DO BODY APOS CLICAR DIGITACAO:
+You need to enable JavaScript to run this app. KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDAAutomacaoDashboardRecibo PêndenciaRecibo RecompraImportar XMLConsulta de TítulosInstrução Bancária LoteInstruções BancáriasEmissão de BoletosOrdem PagamentoTour VirtualFaqLogoutVoltarNova OperaçãoSe desejar alterar o produto ou a conta bancária, clique aqui.AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Gerar OperaçãoAdicionar TítulosTítulosCNPJ/CPFCNPJ/CPFNomeNomeTelefoneTelefoneEmailEmailCEPCEPLogradouroLogradouroNúmeroNúmeroBairroBairroCidadeCidadeUFUFDocumentoDocumentoChave NF-eChave NF-eValorR$ValorVencimentoVencimentoDescontoR$DescontoData Limite DescontoData Limite DescontoVoltarSalvar
+URL APOS CLICAR DIGITACAO: https://beyondbanking-ope-hml.grupomultiplica.com.br/operation
+
+INPUTS NA TELA ADICIONAR TITULOS:
+[
+  {
+    "name": null,
+    "placeholder": "Buscar",
+    "ariaLabel": null,
+    "id": "",
+    "type": null
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-52",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-53",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-54",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-55",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-56",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-57",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-58",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-59",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-61",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-63",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-64",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-65",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-66",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-67",
+    "type": "date"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-68",
+    "type": "text"
+  },
+  {
+    "name": null,
+    "placeholder": null,
+    "ariaLabel": null,
+    "id": "mui-69",
+    "type": "date"
+  }
+]
+ID DO INPUT CNPJ/CPF: mui-52
+
+TEXTO BRUTO APOS CLICAR BUSCAR CPF:
+You need to enable JavaScript to run this app. KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDAAutomacaoDashboardRecibo PêndenciaRecibo RecompraImportar XMLConsulta de TítulosInstrução Bancária LoteInstruções BancáriasEmissão de BoletosOrdem PagamentoTour VirtualFaqLogoutVoltarNova OperaçãoSe desejar alterar o produto ou a conta bancária, clique aqui.AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Gerar OperaçãoAdicionar TítulosTítulosCNPJ/CPFCNPJ/CPFNomeNomeTelefoneTelefoneEmailEmailCEPCEPLogradouroLogradouroNúmeroNúmeroBairroBairroCidadeCidadeUFUFDocumentoDocumentoChave NF-eChave NF-eValorR$ValorVencimentoVencimentoDescontoR$DescontoData Limite DescontoData Limite DescontoVoltarSalvar
+LABELS->FOR NA TELA ADICIONAR TITULOS:
+[
+  {
+    "texto": "CNPJ/CPF",
+    "for": "mui-52"
+  },
+  {
+    "texto": "Nome",
+    "for": "mui-53"
+  },
+  {
+    "texto": "Telefone",
+    "for": "mui-54"
+  },
+  {
+    "texto": "Email",
+    "for": "mui-55"
+  },
+  {
+    "texto": "CEP",
+    "for": "mui-56"
+  },
+  {
+    "texto": "Logradouro",
+    "for": "mui-57"
+  },
+  {
+    "texto": "Número",
+    "for": "mui-58"
+  },
+  {
+    "texto": "Bairro",
+    "for": "mui-59"
+  },
+  {
+    "texto": "Cidade",
+    "for": "mui-61"
+  },
+  {
+    "texto": "UF",
+    "for": "mui-63"
+  },
+  {
+    "texto": "Documento",
+    "for": "mui-64"
+  },
+  {
+    "texto": "Chave NF-e",
+    "for": "mui-65"
+  },
+  {
+    "texto": "Valor",
+    "for": "mui-66"
+  },
+  {
+    "texto": "Vencimento",
+    "for": "mui-67"
+  },
+  {
+    "texto": "Desconto",
+    "for": "mui-68"
+  },
+  {
+    "texto": "Data Limite Desconto",
+    "for": "mui-69"
+  }
+]
+DOCUMENTO GERADO PARA ESTA EXECUCAO (hash aleatoria, correcao do Thiago): 1o2qdgoy07
+
+TEXTO BRUTO APOS PREENCHER TITULO:
+You need to enable JavaScript to run this app. KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDAAutomacaoDashboardRecibo PêndenciaRecibo RecompraImportar XMLConsulta de TítulosInstrução Bancária LoteInstruções BancáriasEmissão de BoletosOrdem PagamentoTour VirtualFaqLogoutVoltarNova OperaçãoSe desejar alterar o produto ou a conta bancária, clique aqui.AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Gerar OperaçãoAdicionar TítulosTítulosCNPJ/CPFCNPJ/CPFNomeNomeTelefoneTelefoneEmailEmailCEPCEPLogradouroLogradouroNúmeroNúmeroBairroBairroCidadeCidadeUFUFDocumentoDocumentoChave NF-eChave NF-eValorR$ValorVencimentoVencimentoDescontoR$DescontoData Limite DescontoData Limite DescontoVoltarSalvar
+TEXTO BRUTO APOS CLICAR SALVAR:
+You need to enable JavaScript to run this app. KENERSON INDUSTRIA E COMERCIO DE PRODUTOS OPTICOS LTDAAutomacaoDashboardRecibo PêndenciaRecibo RecompraImportar XMLConsulta de TítulosInstrução Bancária LoteInstruções BancáriasEmissão de BoletosOrdem PagamentoTour VirtualFaqLogoutVoltarNova OperaçãoSe desejar alterar o produto ou a conta bancária, clique aqui.AQUISICAO - ANTECIPACAO DE DUPLICATA - DUPLICATA - SERVICO - BOLETO Gerar OperaçãoAdicionar TítulosTítulosCNPJ/CPFDocumentoValorVencimentoDescontoData Limite DescontoChave NF-eAções111.444.777-351o2qdgoy07R$ 100.000,0031/12/2026---VoltarSalvar
