@@ -12,10 +12,13 @@ Sem tarefa ativa (as 6 tarefas do módulo já estão em `concluidas/`).
 ## cedente
 Em execução (`20260915130215-clonar-cedente-completo-prod-hml`) — clonagem completa PROD→HML
 (prospect→POC→comitê→cedente). Grafo de FK das 4 fases mapeado por inteiro, 9 dúvidas de
-escopo/negócio já resolvidas, resolvedor genérico de dependência de catálogo implementado e testado
-ponta a ponta. Falta aplicar o padrão de auditoria (`Resposta-9`) em todo INSERT do domínio e
-implementar os comandos de leitura/INSERT/DELETE estruturais das 4 fases — trabalho ainda local na
-branch, não pushado.
+escopo/negócio já resolvidas, resolvedores genéricos de dependência de catálogo E de INSERT
+estrutural (não-catálogo) implementados e testados (catálogo testado ponta a ponta contra HML real;
+estrutural só com lógica pura por enquanto, decisão deliberada — ver `docs/documentacao.md`). Falta
+a orquestração que percorre a ordem de dependência tabela por tabela para um cedente real
+(buscar satélites em PROD, acumular ids já inseridos em HML), resolver a dependência `cascata`
+(cedente vinculado) e implementar o DELETE (apaga-e-refaz) — trabalho ainda local na branch, não
+pushado.
 
 ## agent-master
 Sem aviso pendente em `fila-merge/`. PR único `reviewAgents → master` mantido aberto; o item legado

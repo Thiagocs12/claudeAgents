@@ -733,3 +733,87 @@ Commit (branch da tarefa, ainda não pushado): `cypress/utils/mapeamentoCedente.
 - Nenhum arquivo temporário de investigação ficou para trás (`investigar-catalogo.cjs`
   e a saída de lint/test removidos antes do commit; `git status` confirmou working
   tree limpa).
+
+### Ciclo 14 (2026-09-16) — resolvedor genérico de catálogo implementado e testado; caminho "criar" bloqueado (colunas de auditoria NOT NULL)
+
+> Arquivado do `docs/documentacao.md` em 2026-09-17 (Ciclo 16). O bloqueio de auditoria
+> descrito abaixo foi respondido (Resposta-9) e implementado no Ciclo 15 (resumo
+> compacto mantido no arquivo principal) — mantido aqui só como registro histórico
+> completo, nada foi descartado.
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `13a6ac1`,
+working tree limpa), teste de conectividade não foi repetido antes de começar (mesmo
+critério do Ciclo 12 — o primeiro `SELECT` já serve de teste). Sem dúvida pendente
+(`duvidas.md` com `Status: respondida`). Ataca o próximo passo pendente do Ciclo 13
+("o resolvedor genérico de dependência de catálogo... testado fim a fim contra um
+catálogo real de PROD/HML").
+
+Commit `e41cdf5`: `cypress/support/shared/clonagemCedente.js`
+(`COLUNAS_AUDITORIA_CEDENTE`, `formatarValorSql`, `montarInsertCatalogo` — funções
+puras) + `cypress/support/commands/catalogoCedente.js` (novo — `cy.resolverIdCatalogoEmHml`
+e os 3 comandos que ele orquestra) + `commands/index.js` (registra o módulo) +
+`cypress/e2e/features/gerenciamentoDoCedente.feature`/`step_definitions/gerenciamentoDoCedente.js`
+(novo cenário `@cedente`, parametrizado via `--env catalogoTabela=...,catalogoIdProducao=...`)
++ 4 testes novos em `__tests__/clonagemCedente.test.js`. `npm run lint` (0 erros, os
+mesmos 4 warnings pré-existentes) e `npm run test:safety` (100/100) passam.
+
+- **`cy.resolverIdCatalogoEmHml(tabela, idProducao)`**: busca a linha de origem em
+  PROD (`buscarRegistroCatalogoPorIdEmProd`), procura em HML um registro com a mesma
+  chave natural (`buscarRegistroCatalogoPorChaveNaturalEmHml`, usando
+  `METADADOS_CATALOGO_CEDENTE[tabela].campoChaveNatural`, comparação `LTRIM(RTRIM(...))`
+  tolerante a espaço nas pontas) e, se não encontrar, cria a cópia
+  (`criarRegistroCatalogoEmHml` → `montarInsertCatalogo`, exclui
+  `COLUNAS_AUDITORIA_CEDENTE`, usa `OUTPUT INSERTED.id` para devolver o novo id na
+  mesma instrução). Uma tabela sem entrada em `METADADOS_CATALOGO_CEDENTE` lança erro
+  explícito (nunca decide sozinho tratar uma tabela de catálogo nova/não mapeada).
+- **Testado fim a fim contra PROD/HML reais, caminho "já existe"**: `MC_CAD_SITUACAO`
+  id 1 (PROD, `descricao = "ATIVA"`) resolvido para id 1 (já existente em HML, mesma
+  `descricao`) — confirma que a busca por chave natural funciona mesmo quando o id
+  numérico coincide por acaso (não é o que garante o match, só a `descricao`).
+  Reforçado por uma segunda checagem manual (fora do autoteste, script `.cjs`
+  temporário removido antes do commit): `MC_CAD_SITUACAO` id 8 em PROD
+  (`descricao = "EM DIGITACAO"`) tem id **9** em HML para a mesma `descricao` — os
+  ids numéricos dessa tabela já divergem de fato entre PROD/HML hoje, exatamente o
+  cenário que a busca por chave natural (em vez de por id) existe para resolver.
+- **Caminho "criar" bloqueado — descoberta real, não presumida**: tentar criar em HML
+  um valor de catálogo ausente lá (`MC_CAD_SITUACAO` id 43 PROD, `descricao =
+  "MAJORADO"`) falhou com erro real do SQL Server: `Cannot insert the value NULL into
+  column 'usuarioUltimaAlteracao'... column does not allow nulls`. Investigação
+  (`INFORMATION_SCHEMA.COLUMNS` contra HML, script `.cjs` temporário removido antes do
+  commit) confirmou que isso não é peculiaridade de uma tabela: as 4 colunas de
+  auditoria (`dataCadastro`, `dataUltimaAlteracao`, `usuarioCadastro`,
+  `usuarioUltimaAlteracao`) são **NOT NULL em 38 das 38 tabelas de catálogo
+  verificadas** (praticamente universal no schema do domínio cedente).
+  `usuarioCadastro`/`usuarioUltimaAlteracao` são `varchar`, guardam username de quem
+  criou/alterou (amostra real de `MC_CAD_SITUACAO`: `"henrique"`, `"tiago.roque"`,
+  e também o valor literal `"sistema"` numa linha, aparentando já ser usado hoje para
+  registros gerados automaticamente). **Causa raiz**: todos os outros domínios do
+  repo (Produtos/Esteiras/Vínculos/Grupos e Permissões) criam em HML via **API REST**
+  (`mc-cadastro-ms`, `criarItensInexistentesPorNivel`), que preenche essas colunas no
+  servidor — o domínio `cedente` usa SQL direto (`dbClient.cjs`) por não haver
+  endpoint REST mapeado para as ~122 tabelas do grafo, então nada preenche essas
+  colunas automaticamente; **todo** INSERT que este domínio fizer (catálogo agora, e
+  as tabelas estruturais quando essa etapa for implementada) vai precisar declarar
+  valores explícitos para elas. Não decidido sozinho (regra 8 do `AGENTE.md` — "qual
+  padrão do projeto seguir", decisão que se propaga para o resto da tarefa, não é uma
+  peculiaridade isolada desta tabela) — dúvida bloqueante registrada em `duvidas.md`
+  (`colunas-auditoria-not-null-insert-direto-sql-catalogo-20260916`, mesmo bloco
+  `## <id>` já existente, `Pergunta-9`), com as opções de valor fixo levantadas
+  (`'sistema'`, uma string mais identificável, ou o nome/login do próprio Thiago).
+  Nenhuma linha ficou de fato criada em HML pela tentativa que falhou (o `INSERT`
+  inteiro não foi efetivado pelo SQL Server ao dar erro de `NOT NULL`) — o caminho
+  "já existe" (achar por chave natural) não é afetado e continua funcionando.
+- **Por que a resposta anterior a este tipo de bloqueio (mesmo padrão de
+  `aplicarValoresFixos`/`valoresFixos`) não se aplica direto aqui**: `valoresFixos`
+  sobrescreve colunas de **negócio** já presentes na linha de PROD com um valor
+  confirmado pelo Thiago (ex. "votado e aprovado") — aqui as colunas nem têm valor
+  de origem utilizável (são preenchidas pelo servidor da API noutros domínios, não
+  fazem parte do "dado de negócio" da linha em si), e a decisão é sobre um valor de
+  **infraestrutura de auditoria**, não sobre replicar/alterar um dado do cedente.
+  Tratamento (campo `valoresFixos` vs. constante de auditoria dedicada) só será
+  definido depois da resposta chegar.
+- Tarefa movida para `tarefas/aguardando-resposta/`. Branch não pushada (regra 8 do
+  `AGENTE.md` — só push ao concluir com sucesso, regra 7).
+- Nenhum arquivo temporário de investigação ficou para trás (`investigar-catalogo-teste.cjs`
+  e as saídas de lint/test/cypress removidas antes do commit; `git status` confirmou
+  working tree limpa).
