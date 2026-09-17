@@ -3,17 +3,79 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **executando** (Ciclo 19) — o comando/feature que
-encadeia `cy.resolverEstrategiaClonagemCedente` -> `cy.clonarGrafoEstruturalCedente`
-(`cy.clonarCedenteCompleto`) já existe e agora sabe descobrir múltiplas raízes
-(prospect+proposta+comitê, ver Ciclo 19 abaixo). Branch
-`cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
-pushada). Falta: a resolução da dependência `cascata` (`MC_CED_CEDENTE_VINCULADO`,
-ainda não tratada) e o DELETE (apaga-e-refaz, `ordenarTabelasParaExclusaoEstrutural`,
-única coisa que falta para a estratégia "apagar-e-recriar" deixar de ser
-"pendente"/só-log em `cy.clonarCedenteCompleto`) — o DELETE tem o mesmo problema de
-"múltiplas raízes" que o Ciclo 19 resolveu para o INSERT (ver nota no fim do Ciclo 19),
-ainda não resolvido para o lado da exclusão.
+`AGENTE.md`). Estado atual: **executando** (Ciclo 20) — `cy.clonarCedenteCompleto`
+(`commands/cedente.js`) agora cobre as 3 ações inteiras: `bloqueado` (só log),
+`inserir` e `apagar-e-recriar` (apaga o grafo estrutural do cedente em HML e
+insere de novo a partir de PROD — ver Ciclo 20 abaixo). Branch
+`cedente/clonar-cedente-completo-prod-hml`, pushada (commit `77d60a6`), aviso
+ainda **não** enviado a `agent-master/fila-merge/pendentes/` — falta a
+dependência `cascata` (ver "Próximo passo pendente" abaixo) antes de considerar
+a tarefa concluída.
+
+### Ciclo 20 (2026-09-17) — DELETE (apaga-e-refaz) do grafo estrutural em HML
+
+Implementado o item (1) do "próximo passo pendente" do Ciclo 19: o DELETE que
+faltava para a estratégia `apagar-e-recriar` deixar de ser só-log.
+
+- **Generalização por ambiente** (`commands/estruturaCedente.js`): os 3
+  comandos que antes só liam PROD (`buscarLinhasSatelitesEmProd`,
+  `buscarPropostasRelacionadasAoProspectEmProd`,
+  `buscarComitesRelacionadosEmProd`) agora recebem `ambiente` (`prod`/`hml`)
+  como primeiro parâmetro (renomeados para `...EmAmbiente`) — mesma query,
+  reaproveitada pelos dois lados (INSERT a partir de PROD, DELETE a partir de
+  HML) sem duplicar lógica. Único ponto de atualização: `cy.clonarGrafoEstruturalCedente`
+  (chamador existente) passou a passar `'prod'` explicitamente.
+- **Descoberta do grafo a apagar** (`cy.descobrirGrafoEstruturalCedenteEmHml`,
+  novo em `estruturaCedente.js`): mesma travessia de
+  `cy.clonarGrafoEstruturalCedente` (semente conhecida vs. busca de satélite
+  via `montarCondicaoBuscaSatelite`), mas só leitura — em vez de inserir,
+  acumula os ids já existentes em HML por tabela (`{ [tabela]: Set<id> }`).
+  Como já estamos em HML, não precisa de dois mapas separados
+  (`idsHmlPorTabela`/`idsProdPorTabela`) como o INSERT — o id do pai já é o
+  valor usado pela FK das tabelas filhas no próprio HML.
+- **Sementes do lado HML** (`cy.apagarCedenteEmHml`, novo em `commands/cedente.js`):
+  resolvido o achado do Ciclo 19 ("O DELETE tem o mesmo problema de raiz
+  única") usando as colunas próprias de `cedenteHmlExistente`
+  (`idProspect`/`idProposta`, nullable) como ponto de partida — busca TODAS as
+  propostas relacionadas ao prospect em HML
+  (`cy.buscarPropostasRelacionadasAoProspectEmAmbiente('hml', ...)`) e todos
+  os comitês relacionados a elas (`cy.buscarComitesRelacionadosEmAmbiente('hml', ...)`),
+  mesmo raciocínio "tudo relacionado" já usado no INSERT. `idProspect`/`idProposta`
+  nulos em `cedenteHmlExistente` simplesmente não semeiam aquela fase (não é
+  erro — só significa que este cedente em HML não tem prospect/proposta
+  vinculada).
+- **Execução do DELETE** (`cy.executarExclusaoEstruturalEmHml` +
+  `montarDeleteEmLote`, este último em `shared/clonagemCedente.js`, pura/testada
+  via `node:test`): um `DELETE FROM tabela WHERE id IN (...)` por tabela, na
+  ordem de `ordenarTabelasParaExclusaoEstrutural` (filhas antes de pais, regra
+  12 do `AGENTE.md`). Tabelas de catálogo nunca são apagadas (compartilhadas
+  entre cedentes).
+- **`cy.clonarCedenteCompleto` religado**: a ação (renomeada de
+  `ACAO_CLONAGEM_APAGAR_E_RECRIAR_PENDENTE` para `ACAO_CLONAGEM_APAGAR_E_RECRIAR`,
+  já que deixou de ser "pendente") agora chama `cy.apagarCedenteEmHml` e, em
+  seguida, `cy.inserirGrafoCompletoCedenteEmHml` (lógica de INSERT do Ciclo 19,
+  extraída para um comando próprio para ser compartilhada entre as ações
+  `inserir` e `apagar-e-recriar` sem duplicar código).
+- **`npm run lint`** (0 erros, mesmos 4 warnings pré-existentes, não
+  relacionados a este módulo) e **`npm run test:safety`** (123/123, +3 testes
+  novos para `montarDeleteEmLote`) passam.
+- **`npx cypress run` não pôde ser exercitado neste ciclo** — problema de
+  ambiente (não de código): `npx cypress install`/`cypress install --force`
+  baixa o binário mas o unzip nunca termina de verdade (só
+  `browser_v8_context_snapshot.bin`, ~117MB, aparece no cache;
+  `Cypress.exe` nunca é extraído, `cypress verify` continua reportando "No
+  version of Cypress is installed" mesmo depois de limpar o cache e
+  reinstalar do zero duas vezes). Um `df -h` simples no mesmo diretório
+  também travou e foi movido para segundo plano pela ferramenta de shell —
+  sinal de disco/IO anormalmente lento nesta máquina neste momento, não
+  específico do Cypress. Não é um bloqueio de decisão de negócio (por isso
+  não virou dúvida em `duvidas.md`, regra 8 do `AGENTE.md`) — os critérios de
+  aceite da tarefa citam explicitamente `lint`+`test:safety` como a cobertura
+  automatizada exigida da lógica pura; o teste fim a fim com dado de negócio
+  real já vinha sendo deliberadamente adiado desde os Ciclos 16-18. Registrado
+  aqui para o caso de outro módulo esbarrar no mesmo sintoma — se persistir em
+  um próximo ciclo, considerar registrar como dúvida bloqueante (mesmo
+  precedente do "SQL Server inacessível" de 2026-09-15).
 
 ### Resumo do que ficou decidido/implementado nos Ciclos 1-13 (arquivados)
 
