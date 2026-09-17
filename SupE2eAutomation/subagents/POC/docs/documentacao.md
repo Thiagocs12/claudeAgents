@@ -69,6 +69,15 @@
   antes de agir. Mesmo protocolo de sempre: nada tocado em `repo/`, nenhum Cypress rodado, dúvida
   não respondida por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Branch
   segue limpa em `9054e8b`. Já são 3 recorrências consecutivas deste mesmo bug nesta tarefa.
+- **Nova recorrência (2026-09-17, retomada seguinte à 12ª pergunta registrada — evidência
+  comparativa `cy.origin`/`login.feature`, ainda sem resposta do Thiago):** a mesma falha mecânica
+  moveu a tarefa de `aguardando-resposta/` para `executando/` de novo, com a pergunta mais recente
+  (12ª rodada, pedindo decisão entre investigar infra/Keycloak, mudar o teste, ou pausar) ainda
+  `Status: pendente` em `duvidas.md` (a 11ª pergunta, essa sim, já está `respondida`). Confirmado
+  manualmente (releitura de `duvidas.md` inteiro) antes de agir. Mesmo protocolo de sempre: nada
+  tocado em `repo/` (branch segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida
+  por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Já são 4 recorrências
+  consecutivas deste mesmo bug nesta tarefa.
 - **Recorrência (2026-09-16, esta retomada):** o mesmo bug moveu a tarefa de `aguardando-resposta/`
   para `executando/` de novo, com a pergunta mais recente (sobre insistir em retry de login vs.
   investigar causa raiz) ainda `Status: pendente`. Segui o mesmo protocolo da recorrência anterior:
