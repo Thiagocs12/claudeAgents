@@ -416,3 +416,12 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
 - **Próximo passo recomendado**: assim que a credencial for confirmada/corrigida, reabrir esta
   tarefa (ou uma nova, referenciando esta) só para os passos 13-14 — os passos 1-12 já estão
   validados e não precisam ser refeitos.
+
+## Reabertura (2026-09-17, decisão do Thiago)
+
+**Causa raiz da falha de login encontrada e corrigida pelo Thiago**: havia um espaço em branco no
+início do valor de `HML_MASTER_PASSWORD` no `.env` deste módulo (erro de digitação dele mesmo ao
+editar o arquivo) — não é rotação/expiração de senha nem bloqueio de conta por força bruta, as duas
+hipóteses levantadas na dúvida `(2)`. Corrigido diretamente no `.env`. Reabrindo a tarefa **só para
+os passos 13-14** (Monitor Diário do Beyond BackOffice) — passos 1-12 continuam validados, não
+refazer. Se o login voltar a falhar mesmo assim, é um problema novo, não mais este.
