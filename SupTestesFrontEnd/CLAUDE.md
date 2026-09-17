@@ -342,6 +342,20 @@ Sua rotina:
 - [ ] Há algo em `aguardando-aprovacao/` (relatório em PDF pronto) que eu ainda não apresentei
       pro Thiago decidir (aprovar → hand-off, ou reprovar → refinar de novo)?
 
+## 6. Status Watcher — DESATIVADO em 2026-09-17 (redução de custo)
+
+Pedido explícito do Thiago (via Gerente) para reduzir consumo de token/rate-limit, depois de uma
+investigação mostrar `contaB` saturada (100%) e `contaA` subindo rápido. A Scheduled Task
+`SupTestesFrontEnd-StatusWatcher` foi removida (`Unregister-ScheduledTask`) — não roda mais. A
+pasta `status-watcher/` foi deixada intacta, só não é mais chamada; pode ser reativada recriando a
+Scheduled Task se o Thiago quiser o acompanhamento automático de volta.
+
+**Consequência:** o Thiago não recebe mais pop-up automático quando aparece dúvida nova ou tarefa
+nova em `aguardando-aprovacao/` — precisa perguntar "status" à Gerente quando quiser saber (ver
+`docs/status-resumo.md`).
+
+### Descrição original (referência, não roda mais)
+
 ## 6. Status Watcher — acompanhamento contínuo
 
 Existe uma Scheduled Task própria, **`SupTestesFrontEnd-StatusWatcher`**, rodando a cada 15

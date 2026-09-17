@@ -561,6 +561,32 @@ aspas num `cp`, achada e removida no processo).
   essa tarefa ser processada, o Agent Master continua copiando vídeo normalmente (a regra nova no
   `AGENTE.md` dele já aponta pro novo formato, mas só passa a valer quando a infra existir).
 
+## Redução de custo de token — Status Watchers desativados (2026-09-17)
+
+Investigação de custo por agente (agregando `[ciclo encerrado] ... custo=$X` de cada
+`run-log.txt`) mostrou `contaB` saturada (100% de uso) e `contaA` subindo rápido logo depois da
+troca de política pra `contaB` como conta padrão. Achados principais:
+
+- `SupAutomacaoUteis/subagents/cedente` tem o maior custo médio por ciclo (~US$1,51, 3-7x os
+  demais) — tarefa grande (dezenas de tabelas, várias fases), esperado que seja cara, mas vale
+  observar se `docs/documentacao.md`/`conhecimento-geral.md` crescerem demais (arquivar se passar
+  de ~200-250 linhas).
+- `SupE2eAutomation/agent-master` tem alto número de ciclos reais (94, poucos pulados) — pode estar
+  reprocessando a mesma tentativa de merge que falha repetidamente (ver bloqueio de login/Keycloak
+  do momento) sem progredir; vale revisitar se ficar preso assim por muito tempo.
+- **Os 3 Status Watchers** custavam de forma desproporcional ao valor que entregavam: o de
+  `SupE2eAutomation` sozinho custou ~US$18,47 em 85 ciclos reais (só 81 pulados) — a lógica de
+  "notificar de novo só depois de 2h" dependia de chamar o Claude a cada ciclo pra recalcular isso,
+  em vez de ser uma comparação de timestamp determinística em PowerShell.
+- **Ação tomada (pedido explícito do Thiago): as 3 Scheduled Tasks de Status Watcher foram
+  removidas** (`Unregister-ScheduledTask` em `SupE2eAutomation-StatusWatcher`,
+  `SupAutomacaoUteis-StatusWatcher`, `SupTestesFrontEnd-StatusWatcher`). As pastas `status-watcher/`
+  de cada Supervisor continuam intactas (não foram apagadas), só não são mais chamadas — dá pra
+  reativar recriando a Scheduled Task. Ver seção "Status Watcher" do `CLAUDE.md` de cada Supervisor.
+- **Consequência**: não há mais notificação automática (pop-up) de dúvida nova/PR pendente/tarefa
+  concluída — o Thiago precisa perguntar "status" à Gerente quando quiser saber (barato agora, ver
+  seção "Status compacto por Supervisor" acima).
+
 ## Armadilhas de ambiente compartilhadas pela máquina (não específicas de um Supervisor)
 
 - O cache de binário do Cypress é **global por usuário do Windows**

@@ -360,6 +360,20 @@ Não existe arquivo automático de feedback — é sempre uma conversa direta:
 - [ ] O arquivo de tarefa está no formato do template (seção 2)?
 - [ ] Há alguma dúvida pendente que eu ainda não levei ao Thiago?
 
+## 7. Status Watcher — DESATIVADO em 2026-09-17 (redução de custo)
+
+Pedido explícito do Thiago (via Gerente) para reduzir consumo de token/rate-limit, depois de uma
+investigação mostrar `contaB` saturada (100%) e `contaA` subindo rápido. A Scheduled Task
+`SupAutomacaoUteis-StatusWatcher` foi removida (`Unregister-ScheduledTask`) — não roda mais. A
+pasta `status-watcher/` foi deixada intacta, só não é mais chamada; pode ser reativada recriando a
+Scheduled Task se o Thiago quiser o acompanhamento automático de volta.
+
+**Consequência:** o Thiago não recebe mais pop-up automático quando aparece dúvida nova ou PR
+legado pendente — precisa perguntar "status" à Gerente quando quiser saber (ver
+`docs/status-resumo.md`).
+
+### Descrição original (referência, não roda mais)
+
 ## 7. Status Watcher — acompanhamento contínuo
 
 Existe uma Scheduled Task própria, **`SupAutomacaoUteis-StatusWatcher`**, rodando a cada 15

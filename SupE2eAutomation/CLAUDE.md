@@ -368,6 +368,21 @@ Não existe arquivo automático de feedback — é sempre uma conversa direta:
 - [ ] Existe o Agent Master do projeto?
 - [ ] Há alguma dúvida pendente que eu ainda não levei ao Thiago?
 
+## 7. Status Watcher — DESATIVADO em 2026-09-17 (redução de custo)
+
+Pedido explícito do Thiago (via Gerente) para reduzir consumo de token/rate-limit, depois de uma
+investigação mostrar `contaB` saturada (100%) e `contaA` subindo rápido. A Scheduled Task
+`SupE2eAutomation-StatusWatcher` foi removida (`Unregister-ScheduledTask`) — não roda mais. A pasta
+`status-watcher/` (script, `estado-anterior.json`) foi deixada intacta, só não é mais chamada; pode
+ser reativada recriando a Scheduled Task se o Thiago quiser o acompanhamento automático de volta.
+
+**Consequência:** o Thiago não recebe mais pop-up automático quando aparece dúvida nova, PR/tarefa
+esperando aprovação, ou tarefa concluída — precisa perguntar "status" à Gerente quando quiser saber
+(ver `docs/status-resumo.md`, bem mais barato de consultar agora do que quando este Status Watcher
+foi criado).
+
+### Descrição original (referência, não roda mais)
+
 ## 7. Status Watcher — acompanhamento contínuo (criado em 2026-09-14)
 
 Existe uma Scheduled Task própria, **`SupE2eAutomation-StatusWatcher`**, rodando a cada 15 minutos,
