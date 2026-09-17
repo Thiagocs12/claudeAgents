@@ -256,7 +256,7 @@ ambiente confirmado estável, aí sim registre como suspeita de causa raiz nova 
 instabilidade pontual.
 
 ## 20260915131339-criar-prospect-cedente-cnpj
-Status: pendente
+Status: respondida
 Pergunta: Segui a sua orientação anterior: confirmei VPN/ambiente ok antes de começar (`curl
 --max-time 20` em `beyond-hml` retornou `200`, tempo de resposta ~0.4s — nada de instável) e
 tentei de novo. **A primeira tentativa já falhou de novo**, mesmo sintoma exato:
@@ -291,4 +291,10 @@ consegue investigar (ex.: log do Keycloak, config de CORS/CSP específica para e
 algo que eu deveria mudar no teste (embora eu não tenha achado diferença de código até agora), ou
 (c) você prefere que eu pause esta tarefa até uma investigação mais profunda ser feita por outra
 via.
-Resposta:
+Resposta: Thiago confirmou (via Gerente, 2026-09-17): ambiente segue de pé. Suspeita de causa raiz
+era cache — o cache global de binários do Cypress (`%LOCALAPPDATA%\Cypress\Cache`, compartilhado
+por todos os projetos desta máquina) foi limpo, incluindo uma versão `16.0.0` que estava cacheada
+ali por engano (nunca deveria subir sozinha — projeto é pinado em `15.20.1`, ver
+`conhecimento-geral.md`) e podia estar interferindo. O binário do Cypress já foi reinstalado neste
+clone. Pode tentar de novo; se o mesmo sintoma se repetir mesmo com cache limpo e ambiente
+confirmado estável, aí sim é causa raiz de verdade (infra/Keycloak) e não mais suspeita de cache.
