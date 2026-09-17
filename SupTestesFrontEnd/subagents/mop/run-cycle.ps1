@@ -36,6 +36,25 @@ function Set-CadenciaAdaptativa {
     }
 }
 
+# --- Scheduled Task sob demanda (pedido do Thiago, 2026-09-17 noite): substitui a cadencia ociosa
+# quando a fila fica vazia de verdade - em vez de so desacelerar pra 1h, desabilita a propria
+# Scheduled Task (Disable-ScheduledTask). So volta a rodar quando alguem reabilitar: o Supervisor,
+# ao gravar uma tarefa nova em tarefas/pendentes/ ou marcar uma duvida como respondida em
+# duvidas.md, e responsavel por chamar Enable-ScheduledTask no mesmo passo (ver
+# CONHECIMENTO-SUPERVISORES.md, secao "Scheduled Task sob demanda"). Nao se aplica ao branch de
+# PAUSA-HML.flag (ambiente fora do ar) - esse continua so com cadencia ociosa, sem desabilitar.
+function Disable-TaskSobDemanda {
+    param([string]$LogPath)
+    try {
+        Disable-ScheduledTask -TaskName $nomeTaskAgendada -ErrorAction Stop | Out-Null
+        "$(Get-Date -Format 'HH:mm:ss') | [sob-demanda] $nomeTaskAgendada desabilitada (fila vazia)" |
+            Add-Content -Path $LogPath -Encoding utf8
+    } catch {
+        "$(Get-Date -Format 'HH:mm:ss') | [sob-demanda] nao foi possivel desabilitar $nomeTaskAgendada - $($_.Exception.Message)" |
+            Add-Content -Path $LogPath -Encoding utf8
+    }
+}
+
 # --- Sincronização automática do repo raiz (claudeAgents) ---
 # O .git deste repo (raiz C:\Multiplica\claudeAgents) é compartilhado por todos os
 # Supervisores/agentes/Status Watchers rodando nesta máquina (mesmo working tree, mesmo remoto
@@ -362,7 +381,7 @@ if (-not (Test-TrabalhoPendente)) {
     "$ts | [ciclo pulado] sem tarefa pendente/retomavel/respondida - claude nao foi chamado" |
         Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     Atualizar-FilaTarefas -NomeModulo "SupTestesFrontEnd/mop" -IdTarefa $null
-    Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+    Disable-TaskSobDemanda -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
 
