@@ -103,6 +103,22 @@ confirmar o nome real da tabela antes de assumir um nome — nomes de tabela cit
 podem não bater exatamente com o schema real. Ver `subagents/mop/docs/documentacao.md` para o caso
 completo (tabelas `MC_MOP_PRE_OPERACAO`/`MC_MOP_OPERACAO`).
 
+## Armadilha: pré-sincronização pode ignorar uma dúvida mais recente sob o mesmo id (2026-09-17)
+
+Descoberto no módulo `mop`, mas vale pra qualquer `run-cycle.ps1` (aqui e nos outros dois
+Supervisores) que faz a pré-checagem determinística de "dúvida respondida → devolve tarefa pra
+`pendentes/`/`executando/`". Quando uma tarefa acumula **mais de uma** dúvida sob o mesmo id em
+`duvidas.md` (ex.: uma reaberta como `<id> (2)` depois que a primeira já foi respondida e resolvida
+há tempos), a pré-sincronização observada casou pelo prefixo do id e considerou a tarefa liberada
+com base na dúvida **antiga** (`respondida`), mesmo havendo uma dúvida **mais recente** sob o
+mesmo id ainda `pendente` — a tarefa foi movida de volta pra `executando/` sem que a pergunta que
+de fato bloqueia (a mais recente) tivesse resposta. **Correção aplicada manualmente** (subAgent
+`mop`, rodada 98): não retomar a ação arriscada que motivou a dúvida, devolver a tarefa pro estado
+correto (`aguardando-resposta/`), e registrar a inconsistência em vez de prosseguir. **Pendência
+pra quem mantém os `run-cycle.ps1`**: ajustar a lógica de pré-checagem pra considerar a dúvida mais
+recente sob um id (ou exigir todas `respondida`), não a primeira que casar pelo prefixo. Ver
+`subagents/mop/docs/documentacao.md` para o caso completo.
+
 ## Scheduled Tasks (Windows Task Scheduler)
 
 - `SupTestesFrontEnd-SubAgent-<modulo>`: a cada 5 minutos.

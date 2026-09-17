@@ -282,6 +282,23 @@ considerar RESULTADO (bug/config real, bloqueia passos 13-14), não dúvida.
 (Texto original, mais detalhado, do bug do 400 antes desta correção — arquivado em
 `documentacao-historico.md`.)
 
+## Armadilha: pré-sincronização pode devolver tarefa pra `executando/` com base na dúvida errada quando há mais de uma dúvida sob o mesmo id (2026-09-17)
+
+Esta tarefa teve **duas** dúvidas registradas ao longo do tempo sob o mesmo id base
+(`20260915123730-criacao-operacao-servico`, sem sufixo, e `... (2)`, mais recente). A primeira foi
+respondida e resolvida ainda em 2026-09-15; a segunda (sobre o login falhando com "Usuário ou senha
+inválidos", rodadas 96-97) ficou pendente. Mesmo assim, a pré-sincronização determinística do
+`run-cycle.ps1` devolveu a tarefa de `tarefas/aguardando-resposta/` pra `tarefas/executando/` no
+ciclo seguinte — aparentemente casando pelo prefixo do id e enxergando a dúvida **antiga**
+(`respondida`) em vez da mais recente (`(2)`, ainda `pendente`), que é a que de fato bloqueia a
+continuação. Corrigido manualmente pelo subAgent (rodada 98): tarefa devolvida pra
+`aguardando-resposta/` sem retomar tentativas de login (que repetiriam o risco de aprofundar um
+possível bloqueio de conta). **Pendência pro Supervisor**: avaliar corrigir o `run-cycle.ps1` pra
+considerar a dúvida **mais recente** sob um id (ou todas, exigindo todas `respondida`) em vez de
+qualquer uma que bata no prefixo — relevante pra qualquer módulo/task que reabra uma dúvida sob o
+mesmo id (sufixo `(2)`, `(3)`, ...). Ver também `../../docs/conhecimento-geral.md` (mesma
+armadilha, registrada lá por valer pra qualquer módulo/Supervisor com esse padrão de script).
+
 ## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
 
 Este módulo agora consegue consultar o banco HML (`beyondhml`) em modo **somente leitura**,

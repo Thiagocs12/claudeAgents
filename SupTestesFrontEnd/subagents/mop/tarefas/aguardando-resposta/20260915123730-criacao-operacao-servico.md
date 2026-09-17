@@ -225,3 +225,26 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   movida para `tarefas/aguardando-resposta/` — aguardando o Thiago confirmar se é rotação de senha,
   bloqueio de conta por força bruta (efeito colateral das minhas próprias tentativas), ou
   instabilidade pontual do ambiente, antes de tentar login de novo.
+
+## Execução — rodada 98 (2026-09-17, ciclo seguinte)
+
+- Ao iniciar o ciclo, encontrei esta tarefa de volta em `tarefas/executando/` (movida pela
+  pré-sincronização determinística do `run-cycle.ps1`, que devolve pra `executando/`/`pendentes/`
+  quando a dúvida do id está `respondida`).
+- **Achado**: conferi `duvidas.md` e a dúvida realmente bloqueante (`20260915123730-criacao-
+  operacao-servico (2)`, sobre o login falhando com "Usuário ou senha inválidos" e o risco de
+  aprofundar um bloqueio de conta) continua com `Status: pendente` e `Resposta:` vazia — **não foi
+  respondida**. O que está `respondida` é a dúvida **anterior**, sem sufixo (`20260915123730-
+  criacao-operacao-servico`, sobre qual versão do roteiro seguir, resolvida ainda em 2026-09-15).
+  A pré-sincronização parece ter casado pelo prefixo do id e considerado a tarefa liberada com base
+  na dúvida errada (a antiga, já resolvida há dias), ignorando que existe uma segunda dúvida mais
+  recente sob o mesmo id ainda pendente. Isso é uma inconsistência do script de sincronização, não
+  uma decisão do Thiago — registrando em `docs/documentacao.md` e `../../docs/conhecimento-geral.md`
+  como armadilha, pra não se repetir e pro Supervisor avaliar corrigir o `run-cycle.ps1`.
+- **Não retomei tentativas de login**: fazer isso agora repetiria exatamente o risco identificado
+  na rodada 97 (aprofundar um possível bloqueio de conta por força bruta) sem ter a orientação do
+  Thiago. Não executei nenhum `npx cypress run` neste ciclo.
+- **Corrigi o estado**: movendo a tarefa de volta para `tarefas/aguardando-resposta/` (estado
+  correto, já que a dúvida bloqueante real segue sem resposta) — sem alterar `duvidas.md` (regra 8:
+  nunca respondo minha própria dúvida). `docs/status-resumo.md` já refletia corretamente o estado
+  "Bloqueado" com a dúvida `(2)`, então não precisou de correção adicional.
