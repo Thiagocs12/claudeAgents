@@ -693,6 +693,70 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
         cy.writeFile('cypress/debug-output.txt', '\nCANDIDATOS "MONITOR" APOS EXPANDIR DRAWER:\n' + JSON.stringify([...new Set(textos)], null, 2), { flag: 'a+' })
       })
       cy.screenshot('26-apos-expandir-drawer', { capture: 'fullPage' })
+
+      // Retomada 2026-09-17 (reabertura do Thiago so para os passos 13-14): reaproveitando o
+      // seletor ja mapeado e validado pelo SupE2eAutomation (docs/documentacao.md,
+      // MonitorDiarioPage.js) - `cy.contains('.menu-MuiDrawer-paper *', 'Monitor Diário')` com o
+      // `*` (sem ele o contains casa com o proprio container do drawer, que nao tem onClick, nao
+      // com o item interno clicavel).
+      cy.contains('.menu-MuiDrawer-paper *', 'Monitor Diário', { timeout: 10000 })
+        .should('be.visible')
+        .click({ force: true })
+      cy.location('pathname', { timeout: 15000 }).should('eq', '/mop/monitor')
+      cy.get('input[type="date"]', { timeout: 30000 }).should('have.length.at.least', 1)
+      cy.screenshot('27-tela-monitor-diario', { capture: 'fullPage' })
+
+      // Cabecalhos da tabela (mapeados pelo SupE2eAutomation, ver docs/documentacao.md): Op.,
+      // Data Op., Fundo, Cedente, Banco Cedente, Agente, Qtd Tit., Valor Bruto, Valor Liq.,
+      // PMP D+, Taxa Final, Produto, Etapa, Tempo, MC, REM, Chat, Acoes - a 1a coluna ("Op.") tem
+      // o numero da operacao, e "Etapa" (chip .mop-MuiChip-label) tem o status atual.
+      cy.contains('button', 'Buscar').click()
+      cy.wait(5000)
+      cy.get('body').then(($body) => {
+        const linhas = $body.find('table.MuiTable-root tbody tr').length
+        cy.writeFile('cypress/debug-output.txt', '\nLINHAS NA BUSCA PADRAO DO MONITOR DIARIO: ' + linhas + '\n', { flag: 'a+' })
+      })
+      cy.screenshot('28-apos-buscar-janela-padrao', { capture: 'fullPage' })
+
+      // A operacao acabou de ser criada agora mesmo - a janela de data padrao (provavelmente "hoje")
+      // deveria bastar, mas por seguranca (mesma logica da MonitorDiarioPage.js do
+      // SupE2eAutomation) ampliamos pra 29 dias se a operacao nao aparecer na primeira busca, em vez
+      // de assumir que a janela padrao sempre cobre "hoje".
+      cy.get('body').then(($body) => {
+        const acharLinha = () => [...$body.find('table.MuiTable-root tbody tr')]
+          .find((tr) => tr.querySelectorAll('td')[0]?.textContent.trim() === numeroOperacao)
+        if (!acharLinha()) {
+          cy.writeFile('cypress/debug-output.txt', '\nOPERACAO ' + numeroOperacao + ' NAO ENCONTRADA NA JANELA PADRAO - AMPLIANDO PARA 29 DIAS\n', { flag: 'a+' })
+          cy.get('input[type="date"]').eq(0).then(($el) => {
+            const input = $el[0]
+            const dataFinal = new Date(input.value)
+            const dataInicial = new Date(dataFinal)
+            dataInicial.setDate(dataInicial.getDate() - 28)
+            const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+            nativeSetter.call(input, dataInicial.toISOString().slice(0, 10))
+            input.dispatchEvent(new Event('input', { bubbles: true }))
+            input.dispatchEvent(new Event('change', { bubbles: true }))
+          })
+          cy.contains('button', 'Buscar').click()
+          cy.wait(5000)
+          cy.screenshot('29-apos-ampliar-janela-29-dias', { capture: 'fullPage' })
+        }
+      })
+
+      // Passo 14 do roteiro: localizar a linha da operacao pelo numero (coluna "Op.") e ler o
+      // status na coluna "Etapa" (chip .mop-MuiChip-label) - confirmar que mostra "Inclusão OPE".
+      cy.get('table.MuiTable-root tbody tr', { timeout: 15000 }).then(($rows) => {
+        const linha = [...$rows].find((tr) => tr.querySelectorAll('td')[0]?.textContent.trim() === numeroOperacao)
+        if (!linha) {
+          const numerosVistos = [...$rows].map((tr) => tr.querySelectorAll('td')[0]?.textContent.trim())
+          cy.writeFile('cypress/debug-output.txt', '\nOPERACAO ' + numeroOperacao + ' NAO ENCONTRADA NEM NA JANELA DE 29 DIAS. Numeros vistos na tabela: ' + JSON.stringify(numerosVistos), { flag: 'a+' })
+          throw new Error('Operacao ' + numeroOperacao + ' nao encontrada no Monitor Diario (janela de 29 dias)')
+        }
+        const etapa = linha.querySelector('.mop-MuiChip-label')?.textContent.trim()
+        cy.writeFile('cypress/debug-output.txt', '\nOPERACAO ' + numeroOperacao + ' ENCONTRADA NO MONITOR DIARIO. Etapa: ' + etapa, { flag: 'a+' })
+        cy.wrap(linha).scrollIntoView()
+      })
+      cy.screenshot('30-linha-da-operacao-no-monitor-diario', { capture: 'fullPage' })
     })
   })
 })

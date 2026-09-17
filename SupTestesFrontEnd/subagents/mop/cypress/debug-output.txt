@@ -1,35 +1,3 @@
-URL APOS VISIT: https://keycloak-new-2.grupomultiplica.com.br/auth/realms/beyondbanking-hml/protocol/openid-connect/auth?client_id=autenticacao&redirect_uri=https%3A%2F%2Fbeyondbanking-hml.grupomultiplica.com.br%2F&state=232fc514-f975-44b6-8bf8-3a8cd5ada90a&response_mode=fragment&response_type=code&scope=openid&nonce=936562a9-c658-4804-8c53-ae6868a7f142&code_challenge=wkAS-ZLwoiXDKVjqH-xoGZAdJSUvLJVn3FdCX2n5Dy4&code_challenge_method=S256
+URL APOS VISIT: https://keycloak-new-2.grupomultiplica.com.br/auth/realms/beyondbanking-hml/protocol/openid-connect/auth?client_id=autenticacao&redirect_uri=https%3A%2F%2Fbeyondbanking-hml.grupomultiplica.com.br%2F&state=1a0ab2ac-dbaa-4d4a-91a7-3e07d4e32452&response_mode=fragment&response_type=code&scope=openid&nonce=424c7edf-b723-4a2f-9d09-976a28bfe68b&code_challenge=1SnnVPISQj-1Q-MQbS_dDkClgXLbLQlqqWg7p0-OZJw&code_challenge_method=S256
 
 FOI PRA KEYCLOAK: true
-
-URL APOS LOGIN: https://beyondbanking-hml.grupomultiplica.com.br/
-
-ELEMENTOS NA TELA APOS LOGIN:
-[]
-
-CHAMADAS COM ERRO:
-[
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3",
-  "401 POST https://unitedstates.smartscreen.microsoft.com/api/browser/edge/navigate/3"
-]
-
-ERROS JS CAPTURADOS:
-[]
-CENARIO: sessao ja tinha kenerson selecionado, Home direto
-
-URL APOS SELECIONAR KENERSON E AVANCAR: https://beyondbanking-hml.grupomultiplica.com.br/
-
-ELEMENTOS APOS SELECIONAR KENERSON:
-[
-  "Bem-vindo ao Beyond Banking",
-  "Franquia",
-  "INPUT[name=null,placeholder=null]"
-]
