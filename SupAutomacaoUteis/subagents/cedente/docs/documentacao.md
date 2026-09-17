@@ -3,15 +3,16 @@
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do
-`AGENTE.md`). Estado atual: **executando** (Ciclo 16) — o resolvedor genérico de
-INSERT ESTRUTURAL (tabelas não-catálogo) foi implementado e testado (só lógica pura,
-ainda sem exercício fim a fim contra HML real — ver Ciclo 16 abaixo). Branch
-`cedente/clonar-cedente-completo-prod-hml` (a partir de `reviewAgents`, ainda não
-pushada). Falta: a orquestração que percorre `ordenarTabelasPorDependenciaEstrutural`
-tabela por tabela para um cedente real (buscando as linhas satélite em PROD por
-tabela-pai, acumulando `idsHmlPorTabela`, chamando `cy.inserirLinhaEstruturalEmHml`
-em ordem), a resolução da dependência `cascata` (`MC_CED_CEDENTE_VINCULADO`, ainda
-não tratada) e o DELETE (apaga-e-refaz, `ordenarTabelasParaExclusaoEstrutural`).
+`AGENTE.md`). Estado atual: **executando** (Ciclo 17) — o orquestrador de INSERT
+ESTRUTURAL (`cy.clonarGrafoEstruturalCedente`, percorre `ordemTabelas` buscando
+satélites em PROD e inserindo em HML) foi implementado e testado (só lógica pura das
+funções de apoio, ainda sem exercício fim a fim contra HML real — ver Ciclo 17
+abaixo). Branch `cedente/clonar-cedente-completo-prod-hml` (a partir de
+`reviewAgents`, ainda não pushada). Falta: ligar esse orquestrador a um cedente real
+(a tabela-raiz — prospect — vem de `cy.resolverEstrategiaClonagemCedente`, ainda não
+encadeado num único comando/feature), a resolução da dependência `cascata`
+(`MC_CED_CEDENTE_VINCULADO`, ainda não tratada) e o DELETE (apaga-e-refaz,
+`ordenarTabelasParaExclusaoEstrutural`).
 
 ### Resumo do que ficou decidido/implementado nos Ciclos 1-13 (arquivados)
 
@@ -117,4 +118,67 @@ mesmos 4 warnings pré-existentes) e `npm run test:safety` (107/107) passam.
   `ordenarTabelasParaExclusaoEstrutural`).
 - Nenhum arquivo temporário ficou para trás (`git status` confirmou working
   tree limpa após o commit).
+
+### Ciclo 17 (2026-09-17) — orquestrador de INSERT estrutural (percorre o grafo)
+
+Ao retomar (branch `cedente/clonar-cedente-completo-prod-hml`, commit `c85c25b`,
+working tree limpa, sem dúvida pendente — as 9 dúvidas registradas até aqui já
+estavam todas `respondida`), ataca o "próximo passo pendente" deixado pelo Ciclo 16:
+a orquestração que percorre a ordem de dependência estrutural tabela por tabela.
+
+Commit `675bc69`: 2 funções puras novas em `clonagemCedente.js` +
+`cy.clonarGrafoEstruturalCedente`/`cy.buscarLinhasSatelitesEmProd` em
+`estruturaCedente.js` + 6 testes novos em `__tests__/clonagemCedente.test.js`.
+`npm run lint` (0 erros, mesmos 4 warnings pré-existentes) e `npm run test:safety`
+(113/113) passam.
+
+- **`dependenciasEstruturaisResolviveis(tabela, mapeamento, tabelasJaProcessadas)`**:
+  filtra, de `dependeDe`, só as `estrutural` cuja tabela-pai já está em
+  `tabelasJaProcessadas` (um `Set`, alimentado pelo orquestrador conforme avança na
+  ordem topológica) — uma tabela sem nenhuma dependência estrutural resolvível assim
+  (ex.: `MC_CAD_MODELO_ATA_COMITE`, só catálogo) não é satélite de nada já
+  processado.
+- **`montarCondicaoBuscaSatelite(tabela, mapeamento, tabelasJaProcessadas,
+  idsProdPorTabela)`**: monta o `WHERE` (`campo IN (ids...)` por dependência,
+  unidas por `AND`) que localiza em PROD as linhas satélite de uma tabela para as
+  tabelas-pai já processadas. **Decisão de implementação (não de escopo/negócio,
+  não registrada como dúvida)**: unir por `AND` em vez de considerar só um pai —
+  necessário para tabelas de junção com mais de um pai estrutural já processado
+  (ex.: `MC_CAD_COMITE_PROPOSTA`, depende de `MC_CAD_COMITE` **e**
+  `MC_POC_PROPOSTA`); filtrar só por um dos dois traria linhas de outros
+  comitês/propostas não relacionados ao cedente sendo clonado. Devolve `null`
+  quando a tabela não é satélite de nada já processado (orquestrador pula, não
+  insere às cegas) e `'1 = 0'` para a parte de um pai já processado mas sem
+  nenhuma linha (nada a buscar, evita gerar um `IN ()` inválido).
+- **`cy.buscarLinhasSatelitesEmProd(tabela, condicaoWhere)`**: `SELECT *` simples
+  com a condição já pronta — nenhuma lógica adicional aqui, a decisão já foi tomada
+  antes de chamar.
+- **`cy.clonarGrafoEstruturalCedente(ordemTabelas, tabelaRaiz, linhaRaiz,
+  mapeamento)`**: insere a linha-raiz (a tabela-âncora, ex. o prospect de origem já
+  resolvido por `cy.resolverEstrategiaClonagemCedente`), inicia
+  `idsHmlPorTabela`/`idsProdPorTabela` com ela, e então percorre as tabelas
+  restantes de `ordemTabelas` (pulando tabelas de catálogo, resolvidas à parte por
+  `cy.resolverIdCatalogoEmHml`): para cada uma, monta a condição de busca satélite,
+  busca em PROD, insere cada linha encontrada via `cy.inserirLinhaEstruturalEmHml`
+  já existente (reaproveitado, não duplicado) e acumula os ids. Encadeado
+  inteiramente via `reduce` sobre `cy.wrap(...)` — tanto para percorrer as tabelas
+  em ordem quanto, dentro de cada tabela, para suas várias linhas satélite (mesma
+  armadilha de Promise nativa vs. `cy.` já documentada em `conhecimento-geral.md`).
+- **Só testado com lógica pura desta vez** (`node:test`), mesma decisão deliberada
+  do Ciclo 16: o comando orquestrador em si (`cy.clonarGrafoEstruturalCedente`)
+  ainda não foi exercitado contra PROD/HML reais — faria sentido rodar isso já
+  criando dados de negócio reais em HML (um cedente inteiro), o que só deve
+  acontecer quando o Thiago confirmar qual cedente real usar para o teste fim a
+  fim completo (mesmo raciocínio já registrado no Ciclo 16).
+- **Próximo passo pendente**: (1) um comando/feature que encadeie
+  `cy.resolverEstrategiaClonagemCedente` (já existe) →
+  `cy.clonarGrafoEstruturalCedente` (novo) usando
+  `ordenarTabelasPorDependenciaEstrutural(construirGrafoEstrutural(MAPEAMENTO_CEDENTE_UNIFICADO))`
+  como `ordemTabelas`; (2) resolver a execução real da dependência `cascata`
+  (`MC_CED_CEDENTE_VINCULADO` — buscar o cedente vinculado em HML por CNPJ/CPF,
+  disparar a clonagem recursiva se ausente, detectar ciclo A-vinculado-a-B-
+  vinculado-a-A, conforme Resposta-7/item 2); (3) o DELETE (apaga-e-refaz,
+  `ordenarTabelasParaExclusaoEstrutural`, um cedente por execução, regra 12 do
+  `AGENTE.md`). Nenhum arquivo temporário ficou para trás (`git status` confirmou
+  working tree limpa após o commit).
 
