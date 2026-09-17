@@ -40,8 +40,9 @@ resolvido sozinho).
 ## Contas de Claude Code por agente
 
 Ver `CONHECIMENTO-SUPERVISORES.md` (raiz de `C:\Multiplica\claudeAgents`) para o registro
-completo. Resumo: sessão interativa deste Supervisor = `contaA`; subAgents revezam `contaA`/
-`contaB` pela ordem de criação; Status Watcher = `contaB`.
+completo. Resumo (mudou em 2026-09-17, pedido explícito do Thiago): `contaB` é a conta padrão de
+tudo (sessão interativa deste Supervisor, todo subAgent, Status Watcher) — `contaB` é a conta
+pessoal dele. `contaA` só entra como fallback de rate-limit.
 
 ## Armadilha: `npx cypress run` sem timeout explícito vira processo órfão (2026-09-15)
 

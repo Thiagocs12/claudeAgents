@@ -55,8 +55,10 @@ function Sync-RepoRaizClaudeAgents {
 
 Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 
-# Reaproveita a conta do subAgent "geral" (contaA "de casa") — decisão do Thiago em 2026-09-14,
-# ciente da concorrência de rate-limit com os subAgents que também usam essa conta.
+# Conta padrão: contaB (pedido explícito do Thiago em 2026-09-17: contaB é dele, deve ser usada
+# pra maioria das coisas) — decisão anterior de reaproveitar a conta do subAgent "geral" (2026-09-14)
+# continua valendo, só que o "de casa" daquele subAgent também virou contaB. contaA só entra como
+# fallback de rate-limit (lógica abaixo) quando contaB estiver perto do limite.
 #
 # --- Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15) ---
 # Cada conta grava sua última utilização conhecida (janela five_hour) em
@@ -86,8 +88,8 @@ function Set-UtilizacaoConta {
         ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
 }
 
-$contaDeCasa = "contaA"
-$contaAlternativa = "contaB"
+$contaDeCasa = "contaB"
+$contaAlternativa = "contaA"
 $contaEfetiva = $contaDeCasa
 $utilDeCasa = Get-UtilizacaoConta -Conta $contaDeCasa
 if ($null -ne $utilDeCasa -and $utilDeCasa -ge 0.99) {

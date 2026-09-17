@@ -120,9 +120,12 @@ variável precisa ser setada **antes** do `claude` iniciar (não dá pra fazer i
 `settings.json`, que só é lido depois que as credenciais já foram carregadas). As pastas de conta
 ficam em `%USERPROFILE%\.claude-accounts\<conta>` (ex.: `contaA`, `contaB`), já com login salvo.
 
-- **Agent Master**: sempre fixo em `contaB` (não entra no revezamento).
-- **SubAgents de módulo**: revezam entre `contaA`/`contaB` na ordem de criação — 1º módulo criado
-  (`geral`) = `contaA`, 2º módulo = `contaB`, 3º = `contaA`, e assim por diante.
+- **`contaB` é a conta padrão de tudo** (Agent Master, todo subAgent, Status Watcher) — pedido
+  explícito do Thiago em 2026-09-17 (`contaB` é a conta pessoal dele). **`contaA` deixou de ser
+  "casa" de qualquer agente** — só é usada pela alternância por rate-limit (ver
+  `CONHECIMENTO-SUPERVISORES.md`) quando `contaB` estiver perto do limite (`>=99%` na janela
+  `five_hour`), e só naquele ciclo. Antes disso (até 2026-09-17) era revezamento por ordem de
+  criação — histórico, não usar mais como referência.
 
 No `run-cycle.ps1` do subAgent/Agent Master, logo após o `Set-Location`, adicionar:
 ```powershell
@@ -373,8 +376,8 @@ acompanhamento contínuo do status de tudo (subAgents + Agent Master), não só 
 pergunta.
 
 - Script: `status-watcher/run-cycle.ps1` (mesma pasta-irmã de `subagents/` e `agent-master/`).
-- Conta de Claude Code: **`contaA`** (reaproveitada — decisão explícita do Thiago em 2026-09-14,
-  ciente de que compete por rate-limit com os subAgents que também usam essa conta).
+- Conta de Claude Code: **`contaB`** (mudou em 2026-09-17 — era `contaA`; agora é a conta padrão de
+  tudo, ver seção 3.0. `contaA` só entra como fallback de rate-limit).
 - Papel: **somente leitura + notificação**. Nunca implementa, nunca mexe em `repo/` de ninguém,
   nunca responde `duvidas.md`, nunca move arquivo de tarefa — só lê o estado de todos os módulos e
   do Agent Master.
@@ -394,6 +397,6 @@ pergunta.
   perguntar "qual o status" toda vez que uma notificação chega. Ver o passo 4/7 do prompt em
   `status-watcher/run-cycle.ps1` pro formato exato.
 - Registrado também em `CONHECIMENTO-SUPERVISORES.md` (pool de contas) para outros Supervisores
-  saberem que `contaA` tem essa carga extra.
+  saberem que `contaB` tem essa carga extra.
 - Se o Thiago quiser mudar frequência, canal de aviso, ou conta usada, é só pedir — os três foram
   escolhas dele, não hardcoded por necessidade técnica.

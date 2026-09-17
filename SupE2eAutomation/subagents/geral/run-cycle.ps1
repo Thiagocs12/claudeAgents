@@ -66,7 +66,9 @@ if (Test-Path "C:\Multiplica\claudeAgents\PAUSA-HML.flag") {
     exit 0
 }
 
-# Conta do Claude Code dedicada a este subAgent (1º módulo criado -> contaA "de casa").
+# Conta do Claude Code dedicada a este subAgent — contaB é a conta padrão (pedido explícito do
+# Thiago em 2026-09-17: contaB é dele, deve ser usada pra maioria das coisas). contaA só entra
+# como fallback de rate-limit (lógica abaixo) quando contaB estiver perto do limite.
 #
 # --- Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15) ---
 # Cada conta grava sua última utilização conhecida (janela five_hour) em
@@ -96,8 +98,8 @@ function Set-UtilizacaoConta {
         ConvertTo-Json | Set-Content -Path "$pasta\ultima-utilizacao.json" -Encoding utf8
 }
 
-$contaDeCasa = "contaA"
-$contaAlternativa = "contaB"
+$contaDeCasa = "contaB"
+$contaAlternativa = "contaA"
 $contaEfetiva = $contaDeCasa
 $utilDeCasa = Get-UtilizacaoConta -Conta $contaDeCasa
 if ($null -ne $utilDeCasa -and $utilDeCasa -ge 0.99) {

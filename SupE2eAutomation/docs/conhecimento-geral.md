@@ -66,12 +66,11 @@ ciclos).
 - Cada subAgent/Agent Master roda um `claude -p` fixado numa conta própria via
   `CLAUDE_CONFIG_DIR` (pastas em `%USERPROFILE%\.claude-accounts\<conta>`), setada no início do
   `run-cycle.ps1` antes do `claude` iniciar.
-- **Agent Master**: sempre fixo em `contaB`.
-- **SubAgents de módulo**: revezam `contaA`/`contaB` pela ordem de criação (1º módulo = `contaA`,
-  2º = `contaB`, 3º = `contaA`, ...). Ver seção 3.0 do `CLAUDE.md` do Supervisor.
-- Atribuições atuais: `geral` = `contaA` (1º módulo), `mop` = `contaB` (2º módulo), `POC` = `contaA`
-  (3º módulo, criado em 2026-09-15 — POC do fluxo comercial Prospect → esteira → pleito). Próximo
-  módulo novo = `contaB`.
+- **`contaB` é a conta padrão de tudo** (Agent Master, todo subAgent, Status Watcher) — mudou em
+  2026-09-17, pedido explícito do Thiago (`contaB` é a conta pessoal dele). `contaA` só entra como
+  fallback de rate-limit (ver seção 3.0 do `CLAUDE.md` do Supervisor e
+  `CONHECIMENTO-SUPERVISORES.md`). Antes disso era revezamento por ordem de criação — histórico,
+  não usar mais como referência de "casa" atual.
 
 ## Alternância de conta por rate-limit (pedido do Thiago, 2026-09-15)
 

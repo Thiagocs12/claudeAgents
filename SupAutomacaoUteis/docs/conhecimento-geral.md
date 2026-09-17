@@ -56,10 +56,11 @@ ciclos).
 - Contas **reaproveitadas do `SupE2eAutomation`** (decisão do Thiago em 2026-09-14, ciente da
   concorrência extra de rate-limit — ver `CONHECIMENTO-SUPERVISORES.md` na raiz de
   `C:\Multiplica\claudeAgents`).
-- **Agent Master**: fixo em `contaB`. **Status Watcher**: fixo em `contaB`.
-- **SubAgents de módulo**: revezam `contaA`/`contaB` pela ordem de criação. Atribuição atual:
-  `keycloakUser` = `contaA` (1º módulo), `cedente` = `contaB` (2º módulo, criado em 2026-09-15).
-  Próximo módulo novo = `contaA`.
+- **`contaB` é a conta padrão de tudo** (Agent Master, todo subAgent, Status Watcher) — mudou em
+  2026-09-17, pedido explícito do Thiago (`contaB` é a conta pessoal dele). `contaA` só entra como
+  fallback de rate-limit (ver `CONHECIMENTO-SUPERVISORES.md`). Antes disso era revezamento por
+  ordem de criação (`keycloakUser`=`contaA`, `cedente`=`contaB`) — histórico, não usar mais como
+  referência de "casa" atual.
 
 ## GitHub CLI (`gh`) — usado pelo Agent Master para abrir PR
 

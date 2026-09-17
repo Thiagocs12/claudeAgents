@@ -57,55 +57,49 @@ redirecione todas as funções que partem de uma conversa minha com os superviso
 
 ## Pool de contas do Claude Code (`%USERPROFILE%\.claude-accounts\`)
 
-- `contaA` e `contaB` existem hoje, reservadas pelo `SupE2eAutomation` **e agora também pelo
-  `SupAutomacaoUteis`** (decisão explícita do Thiago em 2026-09-14, ciente da concorrência extra
-  de rate-limit entre os dois Supervisores — ele preferiu reusar a criar `contaC`/`contaD` por
-  enquanto):
-  - `SupE2eAutomation`: revezamento de subAgents (ver seção 3.0 do `CLAUDE.md` dele), `contaB`
-    fixa para o Agent Master, `contaA` fixa para o `StatusWatcher`.
-  - `SupAutomacaoUteis`: revezamento de subAgents começando em `contaA` (`keycloakUser` = 1º
-    módulo = `contaA`), `contaB` fixa para o Agent Master, `contaB` fixa para o `StatusWatcher`.
-  - `SupTestesFrontEnd` (3º Supervisor, sem Agent Master): revezamento de subAgents começando em
-    `contaA` (ainda sem nenhum módulo criado), `contaB` fixa para o `StatusWatcher`.
-- Um Supervisor novo que precisar de conta própria (ou se a concorrência de rate-limit virar
-  problema real) deve criar uma nova (`contaC`, `contaD`, ...) em vez de continuar empilhando em
-  `contaA`/`contaB` — isso exige um login interativo do Thiago na máquina na hora de criar.
-- Ao reservar uma conta nova, registre aqui: nome da conta, qual Supervisor/agente é dono dela.
-- **O Supervisor em si também alterna `contaA`/`contaB` (pedido explícito do Thiago em
-  2026-09-14)** — não só os agentes automatizados dentro dele. Mesma regra de ordem de criação dos
-  subAgents: 1º Supervisor criado = `contaA`, 2º = `contaB`, e assim por diante.
-  - `SupE2eAutomation` (1º Supervisor) → **`contaA`**.
-  - `SupAutomacaoUteis` (2º Supervisor) → **`contaB`**.
-  - `SupTestesFrontEnd` (3º Supervisor) → **`contaA`** (rodízio volta ao início; coincide com
-    `SupE2eAutomation`, aceito pelo Thiago em 2026-09-15).
-  - Isso é sobre a **sessão interativa do Supervisor em si** (a conversa com o Thiago, tipo esta
-    aqui), não sobre os agentes automatizados internos dele — aqueles continuam com suas próprias
-    atribuições já documentadas acima (ex.: dentro do `SupE2eAutomation`, o `StatusWatcher` também
-    usa `contaA` e o Agent Master usa `contaB`; a conta do Supervisor pode coincidir ou não com a
-    de um agente interno específico, não tem relação direta).
-  - Pra abrir uma sessão de Supervisor já na conta certa: setar `CLAUDE_CONFIG_DIR` **antes** de
-    iniciar o `claude` interativo nessa pasta (mesmo mecanismo dos `run-cycle.ps1`, só que manual/
-    interativo em vez de scheduled) — ex., pra abrir o `SupE2eAutomation`:
-    ```powershell
-    $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaA"
-    cd C:\Multiplica\claudeAgents\SupE2eAutomation
-    claude
-    ```
-    Não retroativo a sessões já abertas sem essa variável — só passa a valer na próxima vez que o
-    Thiago abrir uma sessão nova nessa pasta.
-  - **Sessão do Gerente (raiz `C:\Multiplica\claudeAgents`):** por padrão abre **sem**
-    `CLAUDE_CONFIG_DIR` setado (confirmado em 2026-09-16 — variável vazia na sessão em execução),
-    ou seja, usa a conta padrão do usuário, **fora do pool `contaA`/`contaB`** — não competia por
-    rate-limit com os Supervisores/agentes até agora. **Atualização 2026-09-16 (pedido do Thiago,
-    contaA em ~94-96% de uso no momento):** a sessão do Gerente passa a usar **`contaB`** também,
-    pra ter uma conta de fallback conhecida caso a padrão sature. Uma sessão interativa (como a do
-    Gerente) não consegue trocar a própria conta em tempo real — precisa ser fechada e reaberta já
-    com a variável setada:
-    ```powershell
-    $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaB"
-    cd C:\Multiplica\claudeAgents
-    claude
-    ```
+`contaA` = `taina.ribeiro@grupomultiplica.com.br`. `contaB` = `thiago.santos@grupomultiplica.com.br`
+(a conta pessoal do Thiago).
+
+**Política atual (2026-09-17, pedido explícito do Thiago — substitui o revezamento por módulo
+descrito na seção anterior desta mesma nota): `contaB` é a conta padrão pra praticamente tudo**
+(todo subAgent, Agent Master, Status Watcher, e a sessão interativa de cada Supervisor). `contaA`
+deixou de ser "casa" de qualquer agente — ela só é acionada pela lógica de alternância por
+rate-limit já existente (ver mais abaixo) quando `contaB` estiver perto do limite (`>=99%` na
+janela `five_hour`), e só naquele ciclo específico (não persiste). Aplicado nos 5 `run-cycle.ps1`
+que ainda tinham `contaA` como casa: `SupE2eAutomation/subagents/geral`,
+`SupE2eAutomation/subagents/POC`, `SupE2eAutomation/status-watcher`,
+`SupTestesFrontEnd/subagents/mop`, `SupAutomacaoUteis/subagents/keycloakUser` — os outros 6 já
+estavam em `contaB` e não precisaram mudar. Todos os 11 validados sintaticamente
+(`[Parser]::ParseFile`) depois da edição.
+
+- **Consequência esperada, não é bug**: com quase tudo concorrendo pela mesma conta, `contaB` deve
+  saturar bem mais rápido que antes — é justamente o `contaA` entrando como fallback que absorve
+  esse excesso, exatamente como pedido ("contaA só deve ser acionada quando estivermos perto do
+  limite da B").
+- Um Supervisor novo que precisar de conta própria deve criar uma nova (`contaC`, `contaD`, ...) em
+  vez de empilhar em `contaA`/`contaB` — isso exige um login interativo do Thiago na máquina na
+  hora de criar. Ao reservar uma conta nova, registre aqui: nome da conta, quem é dona dela.
+- **Sessão interativa de cada Supervisor**: também passa a usar `contaB` por padrão (era um
+  rodízio A/B/A por ordem de criação até 2026-09-17 — substituído pela mesma política acima). Pra
+  abrir já na conta certa, setar `CLAUDE_CONFIG_DIR` **antes** de iniciar o `claude` interativo
+  nessa pasta (mesmo mecanismo dos `run-cycle.ps1`, só que manual em vez de scheduled):
+  ```powershell
+  $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaB"
+  cd C:\Multiplica\claudeAgents\SupE2eAutomation
+  claude
+  ```
+  Não retroativo a sessões já abertas sem essa variável — só passa a valer na próxima vez que o
+  Thiago abrir uma sessão nova nessa pasta.
+- **Sessão do Gerente (raiz `C:\Multiplica\claudeAgents`)**: já estava usando `contaB` desde
+  2026-09-16 (adicionada como fallback conhecido quando `contaA` saturou) — segue igual, sem
+  mudança adicional necessária. Continua também podendo abrir sem `CLAUDE_CONFIG_DIR` (conta
+  padrão do usuário, fora do pool). Uma sessão interativa não troca a própria conta em tempo real —
+  precisa ser fechada e reaberta já com a variável setada:
+  ```powershell
+  $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\contaB"
+  cd C:\Multiplica\claudeAgents
+  claude
+  ```
 
 ## Padrão de nomes de Scheduled Task (Windows Task Scheduler)
 
@@ -391,6 +385,11 @@ final via `Set-UtilizacaoConta`):
   de quando qualquer agente usou aquela conta por último), nunca uma leitura em tempo real. Como os
   ciclos são frequentes (5-15min na maioria dos agentes), essa aproximação é boa o suficiente na
   prática.
+- **Nota (2026-09-17): as "casas" citadas acima (`keycloakUser`=`contaA`, `mop`=`contaA`, etc.)
+  estão desatualizadas** — não edite este bloco histórico, só releia a seção "Pool de contas" no
+  topo deste arquivo pra saber a "casa" atual de cada agente (hoje: `contaB` pra praticamente
+  tudo). Esta seção documenta só o histórico de quando o *mecanismo* de alternância foi implantado,
+  não quem é "casa" de quem agora.
 - **Aplicado até agora só no `SupE2eAutomation`** (seus 5 `run-cycle.ps1`: `geral`, `mop`, `POC`,
   `agent-master`, `status-watcher`). `SupAutomacaoUteis` e `SupTestesFrontEnd` ainda não adotaram —
   fica registrado aqui pra eles copiarem o padrão se quiserem (ver

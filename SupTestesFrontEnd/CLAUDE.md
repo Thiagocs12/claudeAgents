@@ -145,12 +145,12 @@ Contas reaproveitadas do pool existente (`contaA`/`contaB`), decisão do Thiago 
 ciente da concorrência extra de rate-limit entre os três Supervisores — ver
 `CONHECIMENTO-SUPERVISORES.md` para o registro cross-Supervisor completo.
 
-- **Sessão interativa deste Supervisor** (a conversa com o Thiago): `contaA` — 3º Supervisor
-  criado, continuando o rodízio A,B,A,B... (coincide com a conta do `SupE2eAutomation`; aceito
-  pelo Thiago).
-- **SubAgents de módulo**: revezam `contaA`/`contaB` pela ordem de criação — 1º módulo = `contaA`,
-  2º = `contaB`, e assim por diante.
-- **Status Watcher**: fixo em `contaB`.
+- **`contaB` é a conta padrão de tudo** (sessão interativa deste Supervisor, todo subAgent, Status
+  Watcher) — pedido explícito do Thiago em 2026-09-17 (`contaB` é a conta pessoal dele). **`contaA`
+  deixou de ser "casa" de nada** — só é usada pela alternância por rate-limit (ver
+  `CONHECIMENTO-SUPERVISORES.md`) quando `contaB` estiver perto do limite (`>=99%` na janela
+  `five_hour`), e só naquele ciclo. Antes disso (até 2026-09-17) era rodízio A,B,A,B... por ordem de
+  criação — histórico, não usar mais como referência.
 
 ### 3.1 Regras fixas de todo subAgent (conteúdo base do `AGENTE.md`)
 
