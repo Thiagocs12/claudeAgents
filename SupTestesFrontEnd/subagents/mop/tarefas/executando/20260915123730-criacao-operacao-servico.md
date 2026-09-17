@@ -181,5 +181,14 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   aplicação, é o próprio Cypress 15.20.1 quebrando.
 - **Corrigi**: removi esse screenshot diagnóstico específico (não é mais necessário — já
   confirmamos visualmente que o login funciona; o texto bruto do body, sem risco, e as screenshots
-  mais adiante, depois do `<main>` estabilizar, já cobrem esse trecho). Vou rodar de novo para
-  confirmar se o teste 2 avança além desse ponto agora.
+  mais adiante, depois do `<main>` estabilizar, já cobrem esse trecho).
+- Tentei rodar de novo → **teste 1 falhou de novo com o MESMO erro** (`Cannot destructure property
+  'duration'...`), desta vez no screenshot `02-apos-tentativa-login` (redirect pós-login do Beyond
+  Banking) — a mesma armadilha, recorrente em outro ponto do fluxo (confirmado: essa tela também
+  tem o fundo animado de pontos). **Teste 2 desta vez travou de fato no login** (Keycloak, host
+  `keycloak-new-2`): a URL não saiu de `/login-actions/authenticate` mesmo após o timeout de 20s —
+  intermitência já conhecida do `cy.origin()`, não um erro novo.
+- **Corrigi**: removi também o screenshot `02-apos-tentativa-login` (mesmo raciocínio — diagnóstico,
+  não essencial, o texto bruto e as screenshots seguintes já cobrem). Atualizei
+  `docs/documentacao.md` (armadilha de screenshot pós-redirect) com os dois casos novos. Vou rodar
+  de novo.

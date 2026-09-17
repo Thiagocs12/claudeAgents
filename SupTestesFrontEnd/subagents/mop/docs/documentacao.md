@@ -95,6 +95,19 @@ animação ou depois dela assentar) o teste passou normalmente. Se precisar de s
 um `cy.visit()`, prefira aguardar a tela assentar (`cy.wait()` maior, ou aguardar um elemento
 específico visível) antes de tirar o screenshot, ou evitar o screenshot nesse ponto específico.
 
+**Recorrência (rodadas 94-95, 2026-09-17):** o mesmo erro derrubou o teste em mais dois pontos —
+`02-apos-tentativa-login` (redirect pós-login do Beyond Banking, tela de seleção de cliente/Home,
+mesmo fundo com padrão de pontos) e `27-apos-submeter-login-beyond-backoffice` (redirect pós-login
+do Beyond BackOffice, Home "Ecossistema Beyond", mesmo padrão de fundo animado). Confirmado nos
+dois casos que o **login em si funcionava** (a screenshot de falha automática do Cypress mostrava a
+próxima tela já carregada) — só o screenshot manual diagnóstico é que quebrava o runner. Ambos
+removidos (eram só diagnóstico, não essenciais ao relatório final); o dump de texto bruto do body
+(sem risco) e as screenshots mais adiante, tiradas só depois da tela assentar de fato, continuam
+documentando esses trechos. **Regra geral reforçada**: qualquer screenshot nos primeiros segundos
+após um redirect/login em qualquer uma das telas com fundo animado (Beyond Banking e Beyond
+BackOffice/Beyond) é candidato a essa quebra — preferir não tirar screenshot ali, ou só depois de
+uma espera/checagem de estabilização bem maior que alguns segundos.
+
 ## Armadilha: `beyondbanking-hml` fica intermitentemente indisponível (observado 2026-09-15)
 
 Numa mesma sessão de exploração, o host `beyondbanking-hml.grupomultiplica.com.br` respondeu

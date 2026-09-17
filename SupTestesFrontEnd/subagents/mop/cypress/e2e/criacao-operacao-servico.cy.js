@@ -89,7 +89,15 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
     })
 
     cy.wait(4000)
-    cy.screenshot('02-apos-tentativa-login')
+    // CORRIGIDO (rodada 95): este screenshot ('02-apos-tentativa-login'), tirado logo apos o login
+    // com so um cy.wait fixo, e a mesma armadilha ja documentada em docs/documentacao.md
+    // ("cy.screenshot() logo apos cy.visit() quebra o runner") - a tela de login do Beyond Banking
+    // tem fundo animado e o screenshot pode cair no meio de uma transicao, derrubando o teste com
+    // `TypeError: Cannot destructure property 'duration' of 'props' as it is undefined`. Aconteceu
+    // nesta rodada (funcionava por coincidencia em rodadas anteriores). Removido - o dump de texto
+    // bruto logo abaixo (sem risco) ja documenta essa tela, e a screenshot
+    // '04-apos-selecionar-kenerson-avancar' mais adiante cobre o estado visual apos a pagina
+    // assentar.
     cy.location().then((loc) => {
       cy.writeFile('cypress/debug-output.txt', '\nURL APOS LOGIN: ' + loc.href + '\n', { flag: 'a+' })
     })
