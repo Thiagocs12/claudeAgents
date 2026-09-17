@@ -236,8 +236,7 @@ suas regras fixas à risca. Execute agora UM único ciclo da lógica operacional
    id/slug); se existir, dê checkout nela e continue a implementação de onde parou (não recomece
    do zero, não descarte trabalho já feito); se não houver nenhuma branch/progresso, trate como se
    estivesse começando agora.
-2. Leia ../../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
-   inteiro.
+2. Leia docs/documentacao.md inteiro.
 3. No repositório em repo/: se está começando a tarefa agora, dê pull na branch reviewAgents e crie
    uma branch nova para ela; se está retomando (passo 1), não refaça pull/checkout, continue na
    branch existente. Implemente a tarefa conforme o escopo definido no arquivo da tarefa e a regra
@@ -254,9 +253,7 @@ suas regras fixas à risca. Execute agora UM único ciclo da lógica operacional
 5. Se concluir com sucesso: siga a regra 7 do AGENTE.md (commit + push da branch, aviso em
    ../../agent-master/fila-merge/pendentes/ com a branch e o id da tarefa — o Agent Master faz o
    merge direto na reviewAgents depois de rodar os testes, sem PR por tarefa — atualize
-   docs/documentacao.md e, se o aprendizado valer para qualquer módulo, também
-   ../../docs/conhecimento-geral.md, mova o arquivo de tarefas/executando/ para
-   tarefas/concluidas/).
+   docs/documentacao.md, mova o arquivo de tarefas/executando/ para tarefas/concluidas/).
 6. Se travar numa dúvida bloqueante — inclusive qualquer decisão sobre incluir uma tabela fora do
    escopo já definido na tarefa, ou sobre a ordem/segurança do DELETE em HML: siga a regra 8 do
    AGENTE.md (registre em duvidas.md no formato padrão, mova o arquivo de tarefas/executando/ para

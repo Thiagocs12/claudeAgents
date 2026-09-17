@@ -1,5 +1,42 @@
 # Conhecimento acumulado do módulo cedente
 
+> Este Supervisor não mantém mais um `docs/conhecimento-geral.md` compartilhado (aposentado em
+> 2026-09-17). Este módulo é o único que acessa SQL Server direto (fora de API REST) — a seção
+> abaixo consolida lições reaproveitáveis por qualquer módulo futuro que vier a precisar do mesmo.
+
+## Lições reaproveitáveis: acesso a SQL Server direto (não via API REST)
+
+- **Script Node temporário pra explorar schema** (`INFORMATION_SCHEMA`/`sys.*` via `dbClient.cjs`,
+  fora do Cypress): crie o script `.cjs` **dentro de `repo/`** (raiz do clone, onde `node_modules`
+  já está instalado) — fora dele, `require('dotenv')`/`require('mssql/...')` não resolve. Rode com
+  `node nome-do-script.cjs` e **apague antes de commitar** (`git status` confirma que não sobrou).
+- **SQL Server (PROD/HML) inacessível via rede**: se uma consulta via `dbClient.cjs` travar sem
+  produzir saída nem erro (nem timeout do driver, nem erro de autenticação), é sinal de rede/VPN
+  indisponível, não consulta lenta/schema inesperado. Diagnóstico rápido: teste de TCP puro
+  (`net.createConnection`, sem passar pelo driver `mssql`) contra `*_DB_HOST:*_DB_PORT` (de `.env`)
+  — mais rápido que esperar o timeout do driver, que pode não ter timeout configurado. Se
+  confirmado, é dúvida bloqueante (regra 8 do `AGENTE.md`) pedindo ao Thiago confirmar VPN/rede —
+  não há como o subAgent resolver sozinho.
+- **Coluna sem FK física declarada — quando resolver por precedente vs. quando é dúvida
+  bloqueante**: conte quantas outras tabelas usam a mesma combinação nome-de-coluna → tabela-alvo
+  com FK física real. Duas ou mais ocorrências consistentes (nenhuma divergente) é precedente forte
+  o bastante pra resolver sem perguntar, mesmo se a coluna for NOT NULL; uma única ocorrência (ou
+  qualquer sinal de que o mesmo nome já apontou pra alvo diferente noutra tabela) continua ambíguo
+  — não presumir, e se NOT NULL, vira dúvida bloqueante.
+- **Nem toda tabela citada numa tarefa existe de fato no schema**: antes de declarar uma tabela
+  satélite como parte do grafo de dependência (mesmo por inferência de padrão de nomenclatura
+  `_HIST`/`_LOG`/`_VALIDADE`), confirme a existência real via `INFORMATION_SCHEMA.TABLES` — já
+  aconteceu de 3 tabelas citadas por inferência não existirem de verdade no schema.
+- **Criar registro em HML via SQL direto (não API REST): colunas de auditoria NOT NULL não se
+  preenchem sozinhas.** Diferente dos domínios que criam registro via API REST (o servidor preenche
+  `dataCadastro`/`usuarioCadastro`/etc. sozinho), um `INSERT` SQL direto não tem esse
+  preenchimento automático — se a coluna for NOT NULL (comum, 38/38 tabelas de catálogo verificadas
+  aqui), o SQL Server rejeita o `INSERT` sem valor explícito. Antes do primeiro `INSERT` de um
+  módulo novo nesse estilo, confira `INFORMATION_SCHEMA.COLUMNS` para essas colunas na tabela de
+  destino — se NOT NULL, decida com o Thiago (regra 8 do `AGENTE.md`, decisão que se propaga pra
+  todo `INSERT` do módulo) que valor fixo usar; não invente um valor sozinho, mesmo que pareça
+  inócuo (aqui, o precedente encontrado nos próprios dados foi o literal `"sistema"`).
+
 ## Tarefa `20260915130215-clonar-cedente-completo-prod-hml` — progresso
 
 Tarefa grande (174 tabelas no grafo, esperada em vários ciclos — ver regra 5 do

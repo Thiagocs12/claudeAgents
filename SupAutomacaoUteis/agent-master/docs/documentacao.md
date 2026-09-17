@@ -36,20 +36,20 @@
   (pedido do Thiago em 2026-09-14). Único ponto de revisão manual é o PR único contínuo acima.
 - Exceção implícita à regra "PR único nunca precisa ser recriado": se o Thiago mergear
   manualmente o PR contínuo, o próximo ciclo detecta via `gh pr list --base master --head
-  reviewAgents --state open` vazio e recria normalmente, sem precisar de decisão dele pra isso
-  (também registrado em `../docs/conhecimento-geral.md`).
+  reviewAgents --state open` vazio e recria normalmente, sem precisar de decisão dele pra isso.
 - Quando o merge de teste for fast-forward puro (sem branch local própria criada para a tarefa):
   **nunca rodar `git push --delete` na branch remota** — não há branch local equivalente pra
   "limpar"; a branch remota deve ser preservada como nos demais casos (erro cometido e corrigido
   no ciclo de 2026-09-15, ver histórico para o caso concreto).
 - Cenários que dependem de escolha de dado sensível/real (ex.: `usuarioOrigem` de PROD) nunca são
   decididos pelo Agent Master/subAgent sozinho — ficam para validação manual do Thiago.
-- `cypress/temp/tokens.json` precisa existir como `{}` antes de rodar os testes (armadilha
-  conhecida — detalhe completo em `../docs/conhecimento-geral.md`).
+- `cypress/temp/tokens.json` precisa existir como `{}` antes de rodar os testes — armadilha
+  pré-existente do `cy.readFile(...).then(sucesso, erro)` em `ambiente.js`/`utils.js` (a API
+  pública do `cy.then()` só aceita um único callback, o segundo argumento é ignorado
+  silenciosamente); contorno imediato é criar o arquivo com `{}` antes da primeira execução.
 - `npm install --legacy-peer-deps` (nunca `npm ci`) é necessário quando `node_modules` estiver
   ausente — `package-lock.json` é intencionalmente gitignored pelo repo, e há conflito de peer
-  dependency entre `cypress@15.14.2` (pinado) e `@badeball/cypress-cucumber-preprocessor@latest`
-  (detalhe completo em `../docs/conhecimento-geral.md`).
+  dependency entre `cypress@15.14.2` (pinado) e `@badeball/cypress-cucumber-preprocessor@latest`.
 - Observação em aberto, ainda não resolvida (desde 2026-09-14): branches remotas `esteiras` e
   `esteirasmop` apareceram em `repo/` sem aviso correspondente em `fila-merge/` nem subAgent
   próprio em `../subagents/`. Se aparecer um aviso de merge para essas branches, tratar como

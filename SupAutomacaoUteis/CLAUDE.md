@@ -11,9 +11,11 @@ escrever).
 
 **No início de toda sessão nova, antes de responder à primeira mensagem do Thiago**, releia por
 completo (não confie em memória de sessões anteriores — outros agentes/ciclos automáticos podem ter
-escrito algo novo desde a última vez): `CONHECIMENTO-SUPERVISORES.md` (acima), `docs/conhecimento-geral.md`
-desta pasta, e o `docs/documentacao.md` de cada subAgent (liste as subpastas de `subagents/`) e do
-`agent-master/`. Isso garante que você começa a conversa com o conhecimento acumulado mais recente,
+escrito algo novo desde a última vez): `CONHECIMENTO-SUPERVISORES.md` (acima) e o
+`docs/documentacao.md` de cada subAgent (liste as subpastas de `subagents/`) e do `agent-master/`
+(este Supervisor não mantém mais um `docs/conhecimento-geral.md` compartilhado — aposentado em
+2026-09-17, conhecimento agora mora no `documentacao.md` de cada módulo). Isso garante que você
+começa a conversa com o conhecimento acumulado mais recente,
 mesmo que tenha sido gerado por um ciclo automático depois da sua última sessão interativa.
 
 ## 1. Papel e escopo
@@ -125,9 +127,9 @@ $env:CLAUDE_CONFIG_DIR = "$env:USERPROFILE\.claude-accounts\<contaA-ou-contaB>"
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   tarefa — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico deste módulo).
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer tarefa (conhecimento específico
+   deste módulo — este Supervisor não mantém mais um arquivo de conhecimento compartilhado entre
+   módulos).
 2. Leia o `README.md` e o `CLAUDE.md` do repositório em `repo/` — eles contêm o padrão do projeto
    (arquitetura da automação, convenções, estrutura de pastas etc.) e devem ser seguidos
    rigorosamente ao implementar a tarefa. Se, durante a implementação, perceber que estão
@@ -149,9 +151,8 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    `README.md`/`CLAUDE.md` do repo feita no passo 2), deixe um aviso em
    `../../agent-master/fila-merge/pendentes/` (branch + id da tarefa) — o Agent Master faz o
    **merge direto na `reviewAgents`** depois de rodar os testes (sem PR por tarefa; ver seção 3.3)
-   — atualize `docs/documentacao.md` com o que foi implementado/aprendido e, se o aprendizado valer
-   para qualquer módulo, registre também em `../../docs/conhecimento-geral.md` (releia antes de
-   escrever) — e mova o arquivo da tarefa de `executando/` para `concluidas/`.
+   — atualize `docs/documentacao.md` com o que foi implementado/aprendido — e mova o arquivo da
+   tarefa de `executando/` para `concluidas/`.
 8. Se travar numa dúvida bloqueante (inclusive dúvida sobre qual padrão do projeto seguir, ou sobre
    dados sensíveis — ex. qual usuário copiar, que credencial usar): registre em `duvidas.md`, mova
    a tarefa de `executando/` para `aguardando-resposta/`, e encerre o ciclo sem terminar a tarefa.
@@ -159,9 +160,8 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    em `tarefas/`, sem extensão) — não um slug descritivo à parte. A pré-checagem em PowerShell do
    `run-cycle.ps1` (seção 3.4) procura por esse título exato pra saber quando mover a tarefa de
    volta pra `pendentes/`; um título diferente faz a tarefa ficar presa em `aguardando-resposta/`
-   para sempre, mesmo já respondida (bug real observado no módulo `cedente` em 2026-09-15 — ver
-   `docs/conhecimento-geral.md`). Se quiser um resumo legível, use um campo extra dentro do bloco
-   (ex. `Resumo:`), nunca o título.
+   para sempre, mesmo já respondida (bug real observado no módulo `cedente` em 2026-09-15). Se
+   quiser um resumo legível, use um campo extra dentro do bloco (ex. `Resumo:`), nunca o título.
 9. Nunca responda sua própria dúvida — apenas o Supervisor, repassando o Thiago, pode marcar uma
    dúvida como respondida.
 10. Nunca exponha valor de credencial/segredo (`.env`, tokens, senhas) em `docs/documentacao.md`,
@@ -191,7 +191,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 3. Se `tarefas/executando/` estiver vazia e houver algo em `tarefas/pendentes/` → mova a mais
    antiga para `tarefas/executando/`.
 4. Se não houver nada a fazer → encerre o ciclo.
-5. Leia `../../docs/conhecimento-geral.md` e `docs/documentacao.md`.
+5. Leia `docs/documentacao.md` inteiro.
 6. Dê pull na `reviewAgents` (só se for começar uma branch nova), crie a branch da tarefa se ainda
    não existir, implemente.
 7. Autoteste.
@@ -219,7 +219,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
 > `fila-merge/concluidos/` — a pasta `aguardando-aprovacao/` deve estar vazia agora; nenhum aviso
 > novo deve passar por ali daqui pra frente.
 
-1. Leia `../docs/conhecimento-geral.md` e `docs/documentacao.md`.
+1. Leia `docs/documentacao.md` inteiro.
 2. **Garanta que existe o PR único `reviewAgents → master`, sempre aberto:** rode `gh pr list
    --base master --head reviewAgents --state open`. Se não existir nenhum, crie um (`gh pr create
    --base master --head reviewAgents --title "Integração contínua reviewAgents → master" --body
@@ -268,8 +268,7 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    `duvidas.md`.
 8. Registre em `docs/documentacao.md` o que foi feito (merges feitos direto na `reviewAgents`,
    conflitos resolvidos, variáveis de `.env` novas — só o nome — estado do PR único pra `master`, e
-   o estado da sincronização da pasta de teste manual). Se o aprendizado valer para qualquer
-   módulo, registre também em `../docs/conhecimento-geral.md` (releia antes de escrever).
+   o estado da sincronização da pasta de teste manual).
 9. Se não conseguir resolver um conflito, os testes falharem antes do merge, não encontrar o valor
    de uma variável de `.env` nova, ou não conseguir sincronizar a pasta de teste manual: registre
    em `duvidas.md` (mesmo protocolo dos subAgents).
@@ -323,10 +322,10 @@ ausente, contraditória, ou claramente desatualizada.
   "Sem tarefa ativa.", "Bloqueado (`duvidas.md`: `<id>`) — <resumo>.", ou "Em execução (`<id>`) —
   <feito> — falta: <falta>."
 - Cada agente só edita a própria seção — releia o arquivo inteiro antes de escrever, mesma
-  disciplina já usada para `conhecimento-geral.md` (evita perder edição concorrente de outro
+  disciplina já usada para `docs/documentacao.md` (evita perder edição concorrente de outro
   módulo).
 - Este arquivo é sobre **estado atual**, não conhecimento (isso continua em
-  `docs/documentacao.md`/`conhecimento-geral.md`) — mantenha-o sempre pequeno, sem histórico.
+  `docs/documentacao.md` de cada módulo) — mantenha-o sempre pequeno, sem histórico.
 
 ## 4. Protocolo de dúvidas — você é o único canal
 

@@ -196,8 +196,7 @@ run-cycle.ps1) — voce nao precisa mais checar/criar esse PR, so cuidar da fila
 ja autenticado via GH_TOKEN, disponivel se precisar dele por outro motivo. Execute agora UM unico
 ciclo da logica operacional:
 
-1. Leia ../docs/conhecimento-geral.md (raiz do Supervisor) inteiro, depois docs/documentacao.md
-   inteiro.
+1. Leia docs/documentacao.md inteiro.
 2. Legado: se houver algo em fila-merge/aguardando-aprovacao/ (resquicio do modelo antigo de PR
    por tarefa; o unico caso conhecido, PR numero 5 da branch keycloakUser/clonar-usuario-prod-hml,
    ja foi mergeado e movido para concluidos/ - esta pasta deve estar vazia agora, a menos que
@@ -234,8 +233,7 @@ ciclo da logica operacional:
    force nada: registre em duvidas.md.
 5. Registre em docs/documentacao.md tudo que foi feito (merges feitos direto na reviewAgents,
    conflitos resolvidos, variáveis de .env novas só o nome, e estado da sincronização da pasta de
-   teste manual). Se o aprendizado valer para qualquer módulo, registre também em
-   ../docs/conhecimento-geral.md (releia antes de escrever).
+   teste manual).
 6. Nunca responda sua própria dúvida.
 '@
 

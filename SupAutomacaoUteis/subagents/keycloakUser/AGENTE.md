@@ -2,9 +2,9 @@
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   tarefa — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico deste módulo).
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer tarefa (conhecimento específico
+   deste módulo — este Supervisor não mantém mais um arquivo de conhecimento compartilhado entre
+   módulos, aposentado em 2026-09-17).
 2. Leia o `README.md` e o `CLAUDE.md` do repositório em `repo/` — eles contêm o padrão do projeto
    (arquitetura da sincronização PROD→HML, convenções, estrutura de pastas etc.) e devem ser
    seguidos rigorosamente ao implementar a tarefa. Se, durante a implementação, perceber que estão
@@ -26,10 +26,8 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    `README.md`/`CLAUDE.md` do repo feita no passo 2), deixe um aviso em
    `../../agent-master/fila-merge/pendentes/` (branch + id da tarefa) — o Agent Master faz o
    **merge direto na `reviewAgents`** depois de rodar os testes (sem PR por tarefa) — atualize
-   `docs/documentacao.md`
-   com o que foi implementado/aprendido e, se o aprendizado valer para qualquer módulo, registre
-   também em `../../docs/conhecimento-geral.md` (releia antes de escrever) — e mova o arquivo da
-   tarefa de `executando/` para `concluidas/`.
+   `docs/documentacao.md` com o que foi implementado/aprendido — e mova o arquivo da tarefa de
+   `executando/` para `concluidas/`.
 8. Se travar numa dúvida bloqueante (inclusive dúvida sobre qual padrão do projeto seguir, sobre
    qual usuário/dado copiar, ou sobre qualquer coisa envolvendo dados de PROD): registre em
    `duvidas.md`, mova a tarefa de `executando/` para `aguardando-resposta/`, e encerre o ciclo sem
@@ -38,9 +36,13 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    `run-cycle.ps1` (seção 3.4 do `CLAUDE.md`) procura por esse título exato pra saber quando mover
    a tarefa de volta pra `pendentes/`; um título diferente faz a tarefa ficar presa em
    `aguardando-resposta/` para sempre, mesmo já respondida (bug real observado no módulo `cedente`
-   em 2026-09-15 — ver `../../docs/conhecimento-geral.md`). Se quiser um resumo legível, use um
-   campo extra dentro do bloco, nunca o título. **Nunca decida sozinho** qual usuário copiar, qual
-   senha usar, ou assuma escopo de permissões além do que a tarefa especificar explicitamente.
+   em 2026-09-15). Se quiser um resumo legível, use um campo extra dentro do bloco, nunca o título.
+   **Se a tarefa já teve uma dúvida respondida e volta a bloquear por outro motivo, não crie um
+   segundo bloco `## <id>`** — mantenha um único bloco por tarefa; perguntas/respostas já resolvidas
+   migram para campos com sufixo numérico (`Status-historico-1:`, `Pergunta-1:`, `Resposta-1:`,
+   depois `-2`, etc.), que não batem com o regex da pré-checagem. **Nunca decida sozinho** qual
+   usuário copiar, qual senha usar, ou assuma escopo de permissões além do que a tarefa especificar
+   explicitamente.
 9. Nunca responda sua própria dúvida — apenas o Supervisor, repassando o Thiago, pode marcar uma
    dúvida como respondida.
 10. Nunca exponha valor de credencial/segredo (`.env`, tokens, senhas — inclusive a senha nova
@@ -62,7 +64,13 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
     + um ponteiro pro arquivo de histórico. **Nunca apague informação ao arquivar — é sempre mover,
     nunca descartar.** Esses arquivos são relidos INTEIROS a cada ciclo (regra 1) — deixá-los
     crescer sem limite é o maior custo de token deste sistema.
-14. **Status compacto para o Gerente (2026-09-17):** sempre que mudar o estado da sua tarefa (mover
+14. **Nunca `npm ci`, sempre `npm install --legacy-peer-deps`** no repositório (`package-lock.json`
+    é gitignored de propósito, e há conflito de peer dependency entre `cypress` pinado e
+    `@badeball/cypress-cucumber-preprocessor@latest`). **Sempre `git fetch`/`--prune` antes de
+    assumir que uma branch remota não existe.** **Ao retomar uma tarefa com alterações não
+    commitadas de um ciclo anterior**, revise o `git diff` contra as regras deste `AGENTE.md` antes
+    de aceitar/commitar como está — "passa no autoteste" não equivale a "está autorizado".
+15. **Status compacto para o Gerente (2026-09-17):** sempre que mudar o estado da sua tarefa (mover
     entre pastas de `tarefas/`, registrar ou atualizar uma dúvida em `duvidas.md`), atualize também
     `../../docs/status-resumo.md`: releia o arquivo INTEIRO antes de escrever (evita perder edição
     concorrente de outro módulo), localize a seção `## keycloakUser` (crie se ainda não existir) e

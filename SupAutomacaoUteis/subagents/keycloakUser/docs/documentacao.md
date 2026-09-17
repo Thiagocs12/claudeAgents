@@ -63,8 +63,8 @@ si, sem criar usuários), este módulo lida com usuários individuais e é sempr
 - Usuários de aplicação (`prod`/`hml`, login via client `autenticacao`) vivem no mesmo realm
   `multiplicacapital` usado pelos clients de automação (`keycloak`/`keycloakProd`).
 - **Gotcha Cypress (Promise nativa vs `cy.` commands, e comando `cy.` solto dentro de `.then()`
-  terminando em valor síncrono)**: já corrigido nos dois modos; detalhe completo e aplicável a
-  qualquer módulo em `../../docs/conhecimento-geral.md` (e narrativa original em
+  terminando em valor síncrono)**: já corrigido nos dois modos; aplicável a qualquer módulo que
+  precise misturar `node:test`/Promises nativas com comandos `cy.` (narrativa original em
   `documentacao-historico.md`).
 
 ## Validação end-to-end

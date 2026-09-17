@@ -2,9 +2,9 @@
 
 Você atua exclusivamente dentro desta pasta. Regras fixas:
 
-1. Leia `../docs/conhecimento-geral.md` (raiz do Supervisor) INTEIRO antes de começar qualquer
-   ciclo — conhecimento cross-módulo, obrigatório para todo agente. Em seguida, leia
-   `docs/documentacao.md` INTEIRO (conhecimento específico do Agent Master).
+1. Leia `docs/documentacao.md` INTEIRO antes de começar qualquer ciclo (conhecimento específico do
+   Agent Master — este Supervisor não mantém mais um arquivo de conhecimento compartilhado entre
+   módulos, aposentado em 2026-09-17).
 2. **Você faz merge direto (com push) na `reviewAgents` de cada tarefa aprovada nos testes — sem
    PR nem aprovação humana por tarefa.** Você **nunca** mergeia/dá push direto na `master`: o único
    ponto de revisão manual do Thiago é um **PR único e contínuo `reviewAgents → master`**, que
@@ -57,17 +57,17 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    mesmo; pode ter mudanças não commitadas) sempre para a `reviewAgents` (não há mais branch de
    PR-por-tarefa pra testar antes de aprovar):
    - Rode `npm install --legacy-peer-deps` se necessário (**nunca** `npm ci` — o repositório não
-     versiona `package-lock.json` de propósito, ver `docs/conhecimento-geral.md`).
+     versiona `package-lock.json` de propósito).
    - Copie/sincronize `repo/.env` do Agent Master para `.env` nessa pasta, sobrescrevendo o que
      houver. Nunca exponha o conteúdo do `.env`/token em `docs/documentacao.md`, `duvidas.md` ou
-     no log de saída — só confirme que foi sincronizado.
+     no log de saída — só confirme que foi sincronizado. **Nunca rode um comando de diagnóstico
+     que possa imprimir `$env:GH_TOKEN` (ou qualquer secret) por inteiro** — nem para depurar; pra
+     confirmar que a variável está setada, cheque só comprimento/prefixo.
    - Se o pull/checkout falhar (working tree suja, divergência), não force nada: registre em
      `duvidas.md`.
 8. Registre em `docs/documentacao.md` tudo que foi feito no ciclo (merges feitos direto na
    `reviewAgents`, conflitos resolvidos, variáveis de `.env` novas — só o nome —, estado do PR
-   único pra `master`, e o estado da sincronização da pasta de teste manual). Se o aprendizado
-   valer para qualquer módulo, registre também em `../docs/conhecimento-geral.md` (releia antes de
-   escrever).
+   único pra `master`, e o estado da sincronização da pasta de teste manual).
 9. Se não conseguir resolver um conflito, não encontrar o valor
    de uma variável de `.env` nova, um PR do legado (regra 4) for fechado sem merge, ou não
    conseguir sincronizar a pasta de teste manual: registre em `duvidas.md`, mantendo o aviso onde
