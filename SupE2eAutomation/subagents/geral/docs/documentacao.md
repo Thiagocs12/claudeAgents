@@ -54,6 +54,22 @@ não confirmada**.
   `agent-master/duvidas.md` (`20260914125955-atualizar-claude-md-fluxo-integracao`,
   `20260917111432-migrar-video-para-relatorio-pdf`), `subagents/POC/duvidas.md`
   (`20260915131339-criar-prospect-cedente-cnpj`).
+- **Novo detalhe do sintoma 4 (2026-09-17, módulo POC, retomada com o Cypress binary/cache já
+  limpo):** desta vez a tela capturada no screenshot de falha **não é uma tela em branco/carregando**
+  — é o próprio formulário do Keycloak, parado na URL `login-actions/authenticate`, exibindo a
+  mensagem de validação em vermelho "usuário ou senha inválidos" logo abaixo do campo de usuário
+  (usuário `automacao` visivelmente preenchido no campo). Ou seja, desta vez o Keycloak **rejeitou
+  ativamente a credencial** em vez de só não redirecionar por lentidão/rede. Confirmado que o valor
+  em `.env` (`HML_MASTER_PASSWORD`) bate exatamente com a credencial documentada acima
+  (`Automacao@123`, capitalização correta) — não é erro de digitação/capitalização no `.env`. No
+  mesmo `login.feature`, o cenário "Login com credenciais inválidas" (que usa senha propositalmente
+  errada) passou normalmente, confirmando que a mensagem "usuário ou senha inválidos" é a resposta
+  real do Keycloak, não um artefato do teste. Isso é consistente com duas hipóteses novas, nenhuma
+  confirmada: (a) a senha do usuário `automacao` foi rotacionada/expirou/a conta foi bloqueada no
+  Keycloak (credencial documentada ficou desatualizada), ou (b) intermitência real do Keycloak que
+  às vezes rejeita uma credencial válida (não só atraso de rede/redirect). Evidência completa
+  (screenshot + vídeo) e a dúvida levantada ao Thiago estão em `subagents/POC/duvidas.md`
+  (`20260915131339-criar-prospect-cedente-cnpj`, retomada 2026-09-17 pós-limpeza de cache).
 
 ## Login via Keycloak (tarefa 20260911181703-login-keycloak-usuario-master)
 

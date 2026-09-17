@@ -14,17 +14,17 @@ Sem tarefa ativa. Última concluída: `20260917111432-migrar-video-para-relatori
 Sem tarefa ativa.
 
 ## POC
-Bloqueado (`duvidas.md`: `20260915131339-criar-prospect-cedente-cnpj`) — mesmo com ambiente
-confirmado estável (Thiago autorizou retry, critério dele de "causa raiz nova" atingido), login via
-`cy.origin()` voltou a falhar nos 2 specs do módulo, enquanto `shared/login.feature` passou 2/2 no
-mesmo ciclo (evidência comparativa registrada, também em `../subagents/geral/docs/documentacao.md`).
-Aguardando decisão do Thiago: investigar infra/Keycloak vs. mudar teste vs. pausar. Código de
-produção já implementado e pushado (branch `feature/poc-criar-prospect-cedente-cnpj`, `9054e8b`),
-timeout do campo "Tipo de Prospect" já em 30s (60s pendente de aplicar) — falta rodar o autoteste
-final assim que o login for destravado. Tarefa em `tarefas/aguardando-resposta/` (bug conhecido do
-`Test-DuvidaRespondida` moveu de volta pra `executando/` sozinho de novo — 4ª recorrência; conferido
-manualmente que a pergunta mais recente (12ª rodada) segue `Status: pendente`, nada tocado em
-`repo/`).
+Bloqueado (`duvidas.md`: `20260915131339-criar-prospect-cedente-cnpj`, 13ª rodada) — pós-limpeza de
+cache do Cypress (12ª resposta do Thiago), novo sintoma diferente do `cy.origin()` catalogado até
+aqui: `shared/login.feature` e o spec de diagnóstico do POC falharam com o Keycloak exibindo
+"usuário ou senha inválidos" na tela (rejeição ativa da credencial, não timeout de rede/redirect) —
+senha em `.env` conferida igual à documentada. Pode ser credencial `automacao` rotacionada/expirada/
+bloqueada (afetaria todos os módulos, não só POC) — achado também registrado em
+`../subagents/geral/docs/documentacao.md`. Aguardando confirmação/credencial correta do Thiago.
+Código de produção já implementado e pushado (branch `feature/poc-criar-prospect-cedente-cnpj`,
+`9054e8b`), timeout do campo "Tipo de Prospect" em 30s (60s + espera revisada por spinner/requisição
+seguem pendentes de aplicar, a fazer assim que o login for destravado). Nenhum código de produção
+tocado nesta retomada; tarefa movida para `tarefas/aguardando-resposta/`.
 
 ## agent-master
 Bloqueado (`duvidas.md`: `20260917111432-migrar-video-para-relatorio-pdf`) — merge de teste local de

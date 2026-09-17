@@ -46,11 +46,30 @@
   mesmo comando de login falha no mesmo ciclo) também foi registrado em
   `../geral/docs/documentacao.md` (catálogo de sintomas de instabilidade de login) por ser
   potencialmente relevante a qualquer módulo.
-- **Próxima retomada, assim que a dúvida pendente for respondida:** depende da decisão do Thiago
-  sobre a dúvida acima. Se autorizado a seguir com o teste em si (não bloqueado por login): (1)
-  rodar o spec de diagnóstico descartável (`_scratch/diagnostico-campos-habilitam.feature`,
-  gitignored, já no working tree local, captura spinners e requisições em voo) para coletar
-  evidência real do que acontece depois do primeiro "Salvar"; (2) implementar a espera revisada com
+- **Retomada 2026-09-17 (pós-limpeza de cache do Cypress, 13ª dúvida registrada — novo sintoma,
+  ainda `Status: pendente`):** VPN/ambiente ok (`curl` `beyond-hml` → `200`, ~0.4s). Rodei primeiro
+  o spec de diagnóstico descartável (`_scratch/diagnostico-campos-habilitam.feature`) para coletar
+  evidência antes de mexer em código de produção — **falhou de novo, mas com sintoma diferente** do
+  `cy.origin() failed to create a spec bridge` catalogado até aqui: desta vez travou no
+  `cy.session`/login com timeout de 15s esperando a URL sair do Keycloak (`login-actions/
+  authenticate`) e voltar pra `beyond-hml`. Comparei com `shared/login.feature` (protocolo padrão)
+  → **também falhou**, mesmo cenário ("Login com credenciais válidas"), mesmo sintoma. O screenshot
+  da falha mostrou o motivo real: o próprio formulário do Keycloak, campo usuário preenchido
+  (`automacao`), com a mensagem de validação **"usuário ou senha inválidos"** em vermelho — ou seja,
+  rejeição ativa da credencial pelo Keycloak, não timeout de rede/redirect. Confirmei que
+  `HML_MASTER_PASSWORD` neste `.env` bate exatamente com o valor documentado em
+  `../geral/docs/documentacao.md` (`Automacao@123`). Confirmação extra: no mesmo run, o cenário
+  "Login com credenciais inválidas" (senha propositalmente errada) passou normalmente, confirmando
+  que a mensagem é resposta real do Keycloak. Registrei dúvida bloqueante nova (não é mais
+  variação do mesmo sintoma de sempre — é potencialmente a credencial `automacao` ter sido
+  rotacionada/expirado/bloqueada, o que afetaria todos os módulos, não só POC) e também atualizei
+  `../geral/docs/documentacao.md` (catálogo de instabilidade de login, sintoma 4). Nenhum código de
+  produção alterado (branch `feature/poc-criar-prospect-cedente-cnpj` segue limpa em `9054e8b`),
+  nenhuma tentativa adicional de retry.
+- **Próxima retomada, assim que a dúvida pendente (13ª rodada) for respondida:** se a credencial
+  foi corrigida/confirmada e a causa era mesmo essa (não mais bloqueio de login), retomar o plano já
+  traçado: (1) rodar o spec de diagnóstico descartável para coletar evidência real do que acontece
+  depois do primeiro "Salvar" (spinners/requisições em voo); (2) implementar a espera revisada com
   base nessa evidência (não `cy.wait` cego); (3) aumentar `aguardarCamposObrigatoriosHabilitados`
   para 60s como já pedido; (4) rodar o autoteste do spec de produção. Se o campo continuar preso
   mesmo assim, parar e deixar vídeo/screenshot prontos (já orientado pelo Thiago).
