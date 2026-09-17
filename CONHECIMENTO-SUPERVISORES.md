@@ -461,6 +461,25 @@ final via `Set-UtilizacaoConta`):
   não publicados no remoto). Qualquer novo módulo/Supervisor futuro deve nascer com essas duas
   chamadas já copiadas de um `run-cycle.ps1` existente (mesmo padrão de reaproveitar blocos já
   estabelecido nesta seção).
+- **Estendido às sessões interativas em 2026-09-17 (pedido explícito do Thiago: "toda a estrutura
+  tem que rodar um pull antes de iniciar")** — o que já valia para ciclos automáticos (pull no
+  início, push no fim) passa a valer também pra sessão interativa da Gerente e de cada Supervisor,
+  já que todas escrevem no mesmo repo raiz compartilhado:
+  - **Pull automático no início**: `.claude/settings.json` na raiz (`C:\Multiplica\claudeAgents`)
+    ganhou um hook `SessionStart` (mesmo padrão já usado nos `repo/.claude/settings.json` dos
+    subAgents pra `reviewAgents`, adaptado pra `main`) que roda `git pull origin main` sempre que
+    uma sessão interativa começa — só quando a branch atual é `main` e a working tree está limpa
+    (senão só avisa, nunca troca de branch nem sobrescreve trabalho local). Como Gerente e
+    Supervisores abrem sessão dentro do mesmo repositório (raiz ou uma subpasta dele), esse hook
+    único cobre os dois.
+  - **Push no fim de cada processo**: a Gerente já fazia isso desde antes (ver memória de sessão
+    "push automático em mudança de docs") — cada Supervisor deve seguir a mesma disciplina: assim
+    que terminar de escrever/mover algo relevante (tarefa, dúvida respondida, `documentacao.md`,
+    etc.), commitar e dar `git push origin main` na hora, sem esperar o fim da conversa inteira.
+  - **Não muda nada dos ciclos automáticos** (subAgents/Agent Masters/Status Watchers já faziam
+    pull+push via `Sync-RepoRaizClaudeAgents`, confirmado acima) nem do fluxo de `pull` da branch
+    `reviewAgents` de cada subAgent antes de criar uma branch nova (regra 4 do `AGENTE.md` de cada
+    um) — isso continua exatamente como já estava.
 
 ## Economia de tokens — arquivar documentação grande (2026-09-16)
 
