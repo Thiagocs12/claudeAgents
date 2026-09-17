@@ -219,7 +219,7 @@ normalmente, disponíveis no clone se quiser conferir. Posso tentar de novo?
 Resposta: Sim, pode tentar de novo.
 
 ## 20260915131339-criar-prospect-cedente-cnpj
-Status: pendente
+Status: respondida
 Pergunta: Nesta retomada, confirmei VPN ok antes de começar (`curl --max-time 20` em `beyond-hml`
 retornou `200`) e tentei rodar o spec de diagnóstico descartável de novo (mesma
 `_scratch/diagnostico-campos-habilitam.feature`, sem nenhuma mudança desde a última retomada) para
@@ -248,4 +248,9 @@ frequência crescente dessas falhas sugere que vale investigar a causa raiz do `
 em vez de continuar retentando (ex.: algo mudou recentemente no ambiente HML/Keycloak, ou é algo
 que só você/alguém com acesso a infraestrutura consegue diagnosticar)? Não quero ficar consumindo
 ciclos em retries sem sinalizar esse padrão.
-Resposta:
+Resposta: Thiago confirmou (via Gerente, 2026-09-17): era mesmo o ambiente HML — estava instável/
+indisponível (mesmo motivo do `PAUSA-HML.flag`, já removido). Ambiente confirmado OK agora, não é
+causa raiz no código/Keycloak em si. Pode tentar de novo normalmente; se o mesmo sintoma
+(`cy.origin() failed to create a spec bridge`) voltar a se repetir com essa frequência mesmo com o
+ambiente confirmado estável, aí sim registre como suspeita de causa raiz nova em vez de
+instabilidade pontual.
