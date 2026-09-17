@@ -1,0 +1,89 @@
+
+◇ injected env (9) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (criacao-operacao-servico.cy.js)                                       │
+  │ Searched:       C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\e2e\criacao │
+  │                 -operacao-servico.cy.js                                                        │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  criacao-operacao-servico.cy.js                                                  (1 of 1)
+
+
+  Exploracao: criacao de operacao de servico no Beyond Banking
+    1) acessa o Beyond Banking e mapeia a tela inicial / login
+    2) verifica a operacao avancada no Monitor Diario do Beyond BackOffice
+
+
+  0 passing (2m)
+  2 failing
+
+  1) Exploracao: criacao de operacao de servico no Beyond Banking
+       acessa o Beyond Banking e mapeia a tela inicial / login:
+     AssertionError: Timed out retrying after 20000ms: nao deveria mais estar numa tela de login do Keycloak: expected 'https://keycloak-new-2.grupomultiplica.com.br/auth/realms/beyondbanking-hml/login-actions/authenticate?execution=645edeb6-c31d-4172-ba41-c714da5e810f&client_id=autenticacao&tab_id=dWwxRr8jelQ&client_data=eyJydSI6Imh0dHBzOi8vYmV5b25kYmFua2luZy1obWwuZ3J1cG9tdWx0aXBsaWNhLmNvbS5ici8iLCJydCI6ImNvZGUiLCJybSI6ImZyYWdtZW50Iiwic3QiOiI0NDNhNTBkNS0wNzY3LTRjMDEtYWI1OC00MTQ3MmJjZmUyMTEifQ' not to match /\/auth\/realms\//
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:98:82)
+      at <unknown> (https://beyondbanking-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:120766:17)
+
+  2) Exploracao: criacao de operacao de servico no Beyond Banking
+       verifica a operacao avancada no Monitor Diario do Beyond BackOffice:
+     AssertionError: Timed out retrying after 20000ms: nao deveria mais estar numa tela de login do Keycloak: expected 'https://keycloak-new-2.grupomultiplica.com.br/auth/realms/multiplicacapital/login-actions/authenticate?execution=7ec8a6b1-7f79-4cdf-96c5-10b7b88bf478&client_id=autenticacao&tab_id=pHyXjjc4At4&client_data=eyJydSI6Imh0dHBzOi8vYmV5b25kLWhtbC5ncnVwb211bHRpcGxpY2EuY29tLmJyLyIsInJ0IjoiY29kZSIsInJtIjoiZnJhZ21lbnQiLCJzdCI6IjNmZGQzZDVjLTUwNjItNDgwZS04NTY3LTM3OGE3N2Q5YzdjNSJ9' not to match /\/auth\/realms\//
+      at Context.eval (webpack://mop/./cypress/e2e/criacao-operacao-servico.cy.js:644:84)
+      at <unknown> (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:120766:17)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        2                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      2                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  2                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     1 minute, 37 seconds                                                             │
+  │ Spec Ran:     criacao-operacao-servico.cy.js                                                   │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- acessa o Beyond Banking e mapeia a tela inicial  login (failed).png               
+  -  C:\Multiplica\claudeAgents\SupTestesFrontEnd\subagents\mop\cypress\screenshots\c     (1280x720)
+     riacao-operacao-servico.cy.js\Exploracao criacao de operacao de servico no Beyon               
+     d Banking -- verifica a operacao avancada no Monitor Diario do Beyond BackOffice               
+      (failed).png                                                                                  
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  criacao-operacao-servico.cy.js           01:37        2        -        2        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     01:37        2        -        2        -        -  
+

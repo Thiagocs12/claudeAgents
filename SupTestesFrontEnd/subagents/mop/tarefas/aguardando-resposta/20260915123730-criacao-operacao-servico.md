@@ -192,3 +192,36 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   não essencial, o texto bruto e as screenshots seguintes já cobrem). Atualizei
   `docs/documentacao.md` (armadilha de screenshot pós-redirect) com os dois casos novos. Vou rodar
   de novo.
+- Tentei rodar de novo (rodada 96) → **teste 1 falhou** com `CypressError: ... expected to run
+  against origin beyondbanking-hml but the application is at origin keycloak-new-2` — o
+  `cy.wait(4000)` fixo antes de sair do `cy.origin()` do login não foi suficiente numa execução
+  mais lenta (mesma classe de problema já resolvido no teste 2 com `cy.url({timeout:20000})`, nunca
+  aplicado ao teste 1). **Corrigi**: troquei o `cy.wait(4000)` por um `cy.url({timeout:20000
+  }).should(...)` que só segue quando a URL sair de fato do Keycloak (mesmo padrão do teste 2).
+  **Teste 2 (rodada 96) falhou de novo travado no login** (URL nunca saiu de
+  `/login-actions/authenticate`) — a screenshot de falha mostrou, pela primeira vez, a mensagem real
+  da tela: **"Usuário ou senha inválidos"**, com o campo Login/E-mail preenchido (`automacao`) e
+  Senha vazio (Keycloak limpa a senha após um submit rejeitado, comportamento normal dele).
+- Tentei rodar de novo (rodada 97, já com a correção do teste 1) → **AMBOS os testes travaram no
+  login com a mesma mensagem "Usuário ou senha inválidos"** — teste 1 (realm `beyondbanking-hml`) e
+  teste 2 (realm `multiplicacapital`), nos dois hosts (`keycloak-new-2`), nas duas telas de login,
+  na mesma rodada. Confirmei que as variáveis de ambiente `HML_MASTER_USERNAME`/`HML_MASTER_PASSWORD`
+  estão de fato carregadas do `.env` (tamanho de string plausível, 9 e 13 caracteres — nunca
+  exibindo o valor) — não é um `.env` vazio/não carregado.
+- **Achado importante**: login funcionou normalmente na rodada 94 (screenshot mostrou a Home do
+  Beyond BackOffice carregada com sucesso) e nas rodadas 74-93 do dia anterior (2026-09-16, operações
+  88681-88683 criadas e avançadas com sucesso) — ou seja, **não é uma falha permanente**, é
+  **intermitente**, mas passou a acontecer com frequência bem maior nesta sessão (3 falhas de login
+  com "credenciais inválidas" em 2 das últimas 3 rodadas, em ambos os realms). Não tenho como
+  distinguir, sem informação do Thiago, entre: (a) a senha usada foi rotacionada/expirou desde
+  ontem, (b) a conta `automacao` está temporariamente bloqueada por proteção de força bruta do
+  Keycloak (efeito colateral das minhas próprias tentativas repetidas), ou (c) uma instabilidade
+  pontual do ambiente HML sem relação com a credencial em si.
+- **Decidi parar de tentar login novamente por enquanto**: continuar batendo tentativas de login
+  com a mesma credencial arrisca aprofundar um possível bloqueio de conta por tentativas malsucedidas
+  repetidas (política comum de proteção contra força bruta) — registrando como dúvida bloqueante
+  em vez de seguir tentando às cegas.
+- **Dúvida registrada em `duvidas.md`** (id `20260915123730-criacao-operacao-servico (2)`) e tarefa
+  movida para `tarefas/aguardando-resposta/` — aguardando o Thiago confirmar se é rotação de senha,
+  bloqueio de conta por força bruta (efeito colateral das minhas próprias tentativas), ou
+  instabilidade pontual do ambiente, antes de tentar login de novo.

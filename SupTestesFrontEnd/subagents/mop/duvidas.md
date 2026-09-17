@@ -24,3 +24,29 @@ Resposta: Manter somente a versão refinada (roteiro de 14 passos, cedente "kene
 `tarefas/aguardando-resposta/` foi removido pelo Supervisor. A versão refinada já em
 `tarefas/pendentes/` é a única tarefa válida com este id; o subAgent deve começar do zero seguindo
 o roteiro dela.
+
+## 20260915123730-criacao-operacao-servico (2)
+Status: pendente
+Pergunta: Retomando a tarefa (rodadas 94-97, 2026-09-17) para tentar concluir os passos 13-14
+(Monitor Diário do Beyond BackOffice), corrigi três problemas de spec encontrados nesta sessão
+(screenshots derrubando o runner logo após redirects em telas com fundo animado — armadilha já
+conhecida, recorrente em 2 pontos novos — e um `cy.wait` fixo insuficiente após o login do Beyond
+Banking). Depois dessas correções, nas rodadas 96 e 97, o login passou a falhar com a mensagem real
+da tela do Keycloak **"Usuário ou senha inválidos"** — na rodada 96 só no realm `multiplicacapital`
+(Beyond BackOffice), e na rodada 97 em AMBOS os realms (`beyondbanking-hml` e `multiplicacapital`),
+sempre no mesmo host `keycloak-new-2.grupomultiplica.com.br`. Confirmei que as variáveis
+`HML_MASTER_USERNAME`/`HML_MASTER_PASSWORD` do `.env` estão carregadas (tamanho de string
+plausível — nunca exibi o valor). O login tinha funcionado normalmente pouco antes (rodada 94 desta
+mesma sessão, e nas rodadas 74-93 do dia anterior, 2026-09-16, com operações reais criadas e
+avançadas com sucesso) — não é uma falha permanente, é intermitente, mas com uma frequência bem
+maior que antes (3 falhas de login com "credenciais inválidas" nas últimas 2 rodadas, nos dois
+realms). Preciso de uma decisão/informação sua antes de continuar tentando: a senha usada
+(`HML_MASTER_PASSWORD` neste `.env`, copiada do `SupE2eAutomation`) foi rotacionada ou expirou
+recentemente? Ou pode ser um bloqueio temporário da conta `automacao` por proteção de força bruta
+do Keycloak — nesse caso, efeito colateral das minhas próprias tentativas repetidas de login nesta
+sessão, e eu deveria esperar algum tempo antes de tentar de novo em vez de insistir agora (risco de
+aprofundar um bloqueio se essa for a causa)? Parei de tentar login novamente até ter essa
+orientação seguindo a regra de não confundir "ainda não é dúvida bloqueante" (a flakiness antiga já
+documentada do `cy.origin()`) com este caso novo, que parece diferente e me exige uma decisão sua
+para continuar com segurança.
+Resposta:

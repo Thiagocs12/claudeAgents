@@ -7,14 +7,13 @@
 > dos outros 2 Supervisores, sem reler `duvidas.md`/`tarefas/` cru de cada módulo a cada consulta.
 
 ## mop
-Em execução (`20260915123730-criacao-operacao-servico`) — passos 1-11 do roteiro provados e
-reproduzíveis, passo 12 confirmado em banco como concluído com sucesso (o 400 anterior era
-documento duplicado entre operações de teste, não bug real). Falta passos 13-14 (confirmar no
-Monitor Diário do Beyond BackOffice) — travado por flakiness intermitente do `cy.origin()` (spec
-bridge) em 3 tentativas, mais um erro pontual de "redirect_uri inválido" ainda não confirmado como
-reproduzível. Pendência secundária não bloqueante: divergência UI×banco na operação 88677.
-**Nota:** HML está fora do ar (`PAUSA-HML.flag` desde 2026-09-16) — ciclos automáticos deste módulo
-estão pausados de propósito, não travados por bug.
+Bloqueado (`duvidas.md`: `20260915123730-criacao-operacao-servico (2)`) — login (Keycloak) passou a
+falhar intermitentemente com "Usuário ou senha inválidos" nos dois realms (Beyond Banking e Beyond
+BackOffice) nas rodadas 96-97 (2026-09-17), depois de funcionar normalmente até a rodada 94; preciso
+que o Thiago confirme se é rotação de senha, bloqueio de conta por força bruta, ou instabilidade
+pontual, antes de tentar login de novo. Passos 1-12 do roteiro seguem provados/reproduzíveis
+(confirmados em banco); só falta 13-14 (Monitor Diário). Pendência secundária não bloqueante:
+divergência UI×banco na operação 88677.
 
 ## contratos
 Sem tarefa ativa. Módulo novo (criado em 2026-09-17): tarefa
