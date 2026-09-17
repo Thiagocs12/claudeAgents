@@ -280,6 +280,18 @@ if (-not (Test-TrabalhoPendente)) {
     "$ts | [ciclo pulado] fila-merge vazia - claude nao foi chamado" |
         Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     Atualizar-FilaTarefas -NomeModulo "SupE2eAutomation/agent-master" -IdTarefa $null
+    # --- Scheduled Task sob demanda (pedido do Thiago, 2026-09-17 noite): fila-merge vazia
+    # desabilita a propria Scheduled Task - volta a ser reabilitada por qualquer subAgent que
+    # deixar um aviso novo em fila-merge/pendentes/ (ver Enable-ScheduledTask no fim do run-cycle.ps1
+    # de cada subAgent / CONHECIMENTO-SUPERVISORES.md, secao "Scheduled Task sob demanda").
+    try {
+        Disable-ScheduledTask -TaskName "SupE2eAutomation-AgentMaster" -ErrorAction Stop | Out-Null
+        "$(Get-Date -Format 'HH:mm:ss') | [sob-demanda] SupE2eAutomation-AgentMaster desabilitada (fila-merge vazia)" |
+            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    } catch {
+        "$(Get-Date -Format 'HH:mm:ss') | [sob-demanda] nao foi possivel desabilitar SupE2eAutomation-AgentMaster - $($_.Exception.Message)" |
+            Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+    }
     exit 0
 }
 

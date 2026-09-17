@@ -10,16 +10,14 @@
 Sem tarefa ativa (as 6 tarefas do módulo já estão em `concluidas/`).
 
 ## cedente
-Em execução (`20260915130215-clonar-cedente-completo-prod-hml`) — clonagem completa PROD→HML
-(prospect→POC→comitê→cedente). Grafo de FK das 4 fases mapeado por inteiro, 9 dúvidas de
-escopo/negócio já resolvidas, orquestrador completo (`cy.clonarCedenteCompleto`, Ciclo 18) já liga
-leitura+INSERT estrutural. Ciclo 19 corrigiu um problema de correção achado ao revisar o
-orquestrador (não uma dúvida — a busca de satélite nunca alcançava POC/comitê partindo só do
-prospect; agora descobre múltiplas raízes via `MC_POC_PROSPECT`/`idComite`, ver
-`docs/documentacao.md`). Só o caminho de skip (sem `documentoOrigem`) foi testado fim a fim até
-agora, decisão deliberada. Falta: implementar o DELETE (apaga-e-refaz, mesmo problema de
-"múltiplas raízes" ainda não resolvido do lado HML) e a execução da dependência `cascata` (cedente
-vinculado) — trabalho ainda local na branch, não pushado.
+Sem tarefa ativa — `20260915130215-clonar-cedente-completo-prod-hml` **concluída** no Ciclo 21
+(2026-09-17): clonagem completa PROD→HML (prospect→POC→comitê→cedente) implementada fim a fim,
+incluindo o DELETE apaga-e-refaz (Ciclo 20) e a execução da dependência `cascata` (cedente
+vinculado, Ciclo 21). `npm run lint`/`test:safety` (126/126) passam; `npx cypress run` não roda
+nesta máquina (binário não instala, problema de ambiente, não de código). Branch
+`cedente/clonar-cedente-completo-prod-hml` pushada (commit `86eda12`), aviso em
+`agent-master/fila-merge/pendentes/`, aguardando o Agent Master processar. `README.md`/`CLAUDE.md`
+do repo atualizados. Detalhes em `subagents/cedente/docs/documentacao.md`.
 
 ## agent-master
 Sem aviso pendente em `fila-merge/`. PR único `reviewAgents → master` mantido aberto; o item legado

@@ -336,7 +336,7 @@ if (-not (Test-TrabalhoPendente)) {
     "$ts | [ciclo pulado] sem tarefa pendente/retomavel/respondida - claude nao foi chamado" |
         Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     Atualizar-FilaTarefas -NomeModulo "SupE2eAutomation/mop" -IdTarefa $null
-    Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+    Disable-TaskSobDemanda -LogPath (Join-Path $PSScriptRoot "run-log.txt")
     exit 0
 }
 
@@ -433,6 +433,19 @@ if ($script:ultimoRateLimit) {
     Set-UtilizacaoConta -Conta $contaEfetiva -Utilizacao $script:ultimoRateLimit.utilization -ResetsAt $script:ultimoRateLimit.resetsAt
 }
 Liberar-SlotConta -Conta $contaEfetiva -LogPath (Join-Path $PSScriptRoot "run-log.txt")
+
+# --- Reabilita o Agent Master sob demanda se este ciclo deixou aviso novo em fila-merge/pendentes/
+# (ele pode ter se autodesabilitado por fila vazia - ver Disable-TaskSobDemanda) ---
+if ((Get-ChildItem -Path "../../agent-master/fila-merge/pendentes" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
+    try {
+        $taskMaster = Get-ScheduledTask -TaskName "SupE2eAutomation-AgentMaster" -ErrorAction Stop
+        if ($taskMaster.State -eq 'Disabled') {
+            Enable-ScheduledTask -TaskName "SupE2eAutomation-AgentMaster" -ErrorAction Stop | Out-Null
+            "$(Get-Date -Format 'HH:mm:ss') | [sob-demanda] SupE2eAutomation-AgentMaster reabilitada (aviso novo em fila-merge)" |
+                Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+        }
+    } catch {}
+}
 
 # Publica no remoto tudo que este ciclo escreveu/moveu no repo raiz (docs, duvidas, tarefas) — ver
 # função Sync-RepoRaizClaudeAgents definida no início deste script.

@@ -359,6 +359,53 @@ disponível."**
   `contaB` livre) — a ordem de tentativa saiu `contaB, contaA`, como esperado. Todos os 8 validados
   sintaticamente (`[Parser]::ParseFile`) depois da edição.
 
+## Scheduled Task sob demanda — criado em 2026-09-17 (mesmo dia, à noite)
+
+Pedido explícito do Thiago: **"Se não tiver nada para o subAgent não precisa ter task, se não
+houver nada para o Sup o master não precisa estar ativo; quando eu criar alguma tarefa para eles
+você ativa sob demanda e os configura para se desativarem após a conclusão se não houver outra
+coisa na fila."** Substitui a "cadência ociosa" (seção "Cadência real" abaixo) como resposta a fila
+vazia nos subAgents — em vez de só desacelerar para 1h, a própria Scheduled Task é desabilitada
+(`Disable-ScheduledTask`). Reduz a zero os ciclos "de graça" (mesmo um ciclo pulado sem chamar
+`claude -p` ainda gastava um disparo/log) enquanto não há absolutamente nada a fazer.
+
+- **Quem desabilita, e quando**: o próprio `run-cycle.ps1`, no mesmo branch onde hoje loga `[ciclo
+  pulado] ...`/`fila-merge vazia` e chamava `Set-CadenciaAdaptativa -Estado 'ocioso'` — trocado por
+  uma função nova (`Disable-TaskSobDemanda` nos subAgents, reaproveitando `$nomeTaskAgendada` já
+  declarado; bloco inline equivalente nos 2 Agent Master, que não tinham cadência adaptativa —
+  hardcoded `SupAutomacaoUteis-AgentMaster`/`SupE2eAutomation-AgentMaster`). **Não se aplica** ao
+  branch de `PAUSA-HML.flag` (ambiente fora do ar, não é "fila vazia" no sentido deste mecanismo —
+  continua só com cadência ociosa) nem ao branch de "sem slot de conta livre" (há trabalho real,
+  só não tem conta disponível agora — desabilitar aqui atrasaria a retomada sem necessidade).
+- **Quem reabilita — três entradas cobertas**:
+  1. **Tarefa nova criada por um Supervisor** (protocolo de refinamento de demanda, seção 2 de cada
+     `CLAUDE.md`): ao gravar o arquivo em `tarefas/pendentes/`, o Supervisor também chama
+     `Enable-ScheduledTask -TaskName "<Supervisor>-SubAgent-<modulo>"` se ela estiver desabilitada.
+  2. **Dúvida respondida** (protocolo de dúvidas, seção 4 de cada `CLAUDE.md`): ao marcar `Status:
+     respondida` em `duvidas.md`, o Supervisor também reabilita a Scheduled Task do módulo — sem
+     isso, uma tarefa em `aguardando-resposta/` ficaria presa para sempre (a task desabilitada nunca
+     mais roda `Test-TrabalhoPendente` pra perceber que a dúvida foi respondida).
+  3. **Aviso novo em `fila-merge/pendentes/`** (subAgent → Agent Master): coberto automaticamente
+     via código determinístico — cada um dos 5 subAgents com Agent Master (todos exceto
+     `SupTestesFrontEnd/mop`, que não tem Agent Master) checa, no fim do próprio ciclo (depois de
+     `Liberar-SlotConta`, antes do `Sync-RepoRaizClaudeAgents`), se `../../agent-master/fila-merge/
+     pendentes/` tem algo e reabilita `Enable-ScheduledTask` do Agent Master correspondente se
+     estiver desabilitada. Não depende do Supervisor/Thiago lembrar disso.
+- **Hand-off entre Supervisores** (`SupTestesFrontEnd` → `SupE2eAutomation`, seção 3.6 do
+  `CLAUDE.md` do `SupTestesFrontEnd`): like o item 1 acima — ao gravar a tarefa nova em
+  `SupE2eAutomation/subagents/<modulo>/tarefas/pendentes/`, o Supervisor que faz o hand-off também
+  reabilita `SupE2eAutomation-SubAgent-<modulo>` se estiver desabilitada.
+- **Não muda nenhuma regra de negócio** — só controla se a Scheduled Task dispara ou não. Quando
+  reabilitada, a cadência volta pro intervalo ativo de sempre no primeiro ciclo real seguinte
+  (`Set-CadenciaAdaptativa -Estado 'ativo'`, já existente).
+- **Aplicado nos mesmos 8 `run-cycle.ps1` reais**. Todos os 8 validados sintaticamente
+  (`[Parser]::ParseFile`) depois da edição.
+- **Pendência**: os 3 `CLAUDE.md` (seções 2 e 4 de cada Supervisor) ainda precisam do parágrafo
+  explícito instruindo o Supervisor a chamar `Enable-ScheduledTask` nos itens 1 e 2 acima — sem
+  isso, o mecanismo de autodesabilitar existe mas nada reabilita automaticamente numa sessão
+  interativa. Atualizar na primeira oportunidade (ou o Thiago/Gerente reabilita manualmente
+  enquanto isso, como já vinha fazendo).
+
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.

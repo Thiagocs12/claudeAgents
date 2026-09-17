@@ -440,6 +440,19 @@ if ($script:ultimoRateLimit) {
 }
 Liberar-SlotConta -Conta $contaEfetiva -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 
+# --- Reabilita o Agent Master sob demanda se este ciclo deixou aviso novo em fila-merge/pendentes/
+# (ele pode ter se autodesabilitado por fila vazia - ver Disable-TaskSobDemanda) ---
+if ((Get-ChildItem -Path "../../agent-master/fila-merge/pendentes" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
+    try {
+        $taskMaster = Get-ScheduledTask -TaskName "SupAutomacaoUteis-AgentMaster" -ErrorAction Stop
+        if ($taskMaster.State -eq 'Disabled') {
+            Enable-ScheduledTask -TaskName "SupAutomacaoUteis-AgentMaster" -ErrorAction Stop | Out-Null
+            "$(Get-Date -Format 'HH:mm:ss') | [sob-demanda] SupAutomacaoUteis-AgentMaster reabilitada (aviso novo em fila-merge)" |
+                Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
+        }
+    } catch {}
+}
+
 # Publica no remoto tudo que este ciclo escreveu/moveu no repo raiz (docs, duvidas, tarefas) — ver
 # função Sync-RepoRaizClaudeAgents definida no início deste script.
 Sync-RepoRaizClaudeAgents -LogPath (Join-Path $PSScriptRoot "run-log.txt") -PermitirCommitEPush -MensagemCommit "keycloakUser: sincroniza estado do ciclo (auto, $(Get-Date -Format 'yyyy-MM-dd HH:mm'))"
