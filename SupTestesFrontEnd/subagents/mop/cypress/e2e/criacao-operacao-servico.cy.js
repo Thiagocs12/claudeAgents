@@ -597,10 +597,18 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
               cy.get(selectors.submit).should('be.visible').click()
               // INVESTIGACAO (rodada 81): rodada 80 travou nesta mesma tela (URL nunca saiu do
               // keycloak-new-2 mesmo apos 20s) - capturando o que aparece na tela apos o clique
-              // (screenshot + texto bruto) pra entender se e erro de credencial, tela extra
-              // (consentimento/2FA), ou apenas lentidao.
+              // (texto bruto) pra entender se e erro de credencial, tela extra (consentimento/2FA),
+              // ou apenas lentidao.
+              // CORRIGIDO (rodada 94): o screenshot fullPage logo apos o clique (`cy.wait(3000)` +
+              // `cy.screenshot(...)`) quebrava o runner com a mesma armadilha ja documentada em
+              // docs/documentacao.md ("cy.screenshot() logo apos cy.visit() quebra o runner") -
+              // desta vez no redirect pos-login pra beyond-hml (fundo com padrao de pontos, mesma
+              // familia de tela animada). O login em si funcionava (a screenshot de FALHA do
+              // Cypress, tirada automaticamente, mostrava a Home do Beyond ja carregada) - so o
+              // screenshot manual diagnostico e que derrubava o teste. Removido; o texto bruto
+              // abaixo (sem risco) e as screenshots mais adiante (apos <main> estabilizar) ja
+              // documentam esse trecho o suficiente.
               cy.wait(3000)
-              cy.screenshot('27-apos-submeter-login-beyond-backoffice', { capture: 'fullPage' })
               cy.get('body').then(($body) => {
                 cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS SUBMETER LOGIN (Beyond BackOffice, dentro do cy.origin):\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
               })

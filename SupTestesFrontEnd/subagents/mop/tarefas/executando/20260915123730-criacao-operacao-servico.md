@@ -162,3 +162,24 @@ repetido (`12345`) entre operações de teste; ajustar Valor de teste pra R$ 100
   decisão que dependa do Thiago). Se o erro de `redirect_uri` reaparecer de forma consistente numa
   tentativa que realmente chegue na tela de login, tratar como RESULTADO (bug/config real
   bloqueando passos 13-14) em vez de continuar tentando indefinidamente.
+
+## Execução — rodada 94 (retomada, 2026-09-17)
+
+- Tentei rodar a spec completa de novo (`npx cypress run`) → **teste 1 falhou** logo no
+  `cy.origin()` do login do Beyond Banking, com `CypressError: cy.origin() failed to create a spec
+  bridge...` antes de qualquer screenshot — mesma flakiness intermitente já documentada, ambiental,
+  não regressão.
+- **Teste 2 avançou mais que nas rodadas 90-93**: desta vez o Keycloak do Beyond BackOffice foi
+  servido por `keycloak-new-2...` (não `lgni`, então o erro de `redirect_uri` não se repetiu nesta
+  rodada — ainda não confirmado nem descartado como reproduzível). O login de fato funcionou (a
+  screenshot de falha automática do Cypress mostra a Home do Beyond já carregada, "BEM-VINDO AO
+  ECOSSISTEMA BEYOND", com o card "Beyond BackOffice" visível) → mas o teste falhou logo depois com
+  `TypeError: Cannot destructure property 'duration' of 'props' as it is undefined` — **é a mesma
+  armadilha já documentada em `docs/documentacao.md`** ("cy.screenshot() logo após cy.visit() quebra
+  o runner"), desta vez disparada pelo screenshot manual `27-apos-submeter-login-beyond-backoffice`
+  tirado logo após o clique de login, numa tela com fundo animado (padrão de pontos) — não é bug da
+  aplicação, é o próprio Cypress 15.20.1 quebrando.
+- **Corrigi**: removi esse screenshot diagnóstico específico (não é mais necessário — já
+  confirmamos visualmente que o login funciona; o texto bruto do body, sem risco, e as screenshots
+  mais adiante, depois do `<main>` estabilizar, já cobrem esse trecho). Vou rodar de novo para
+  confirmar se o teste 2 avança além desse ponto agora.

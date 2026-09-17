@@ -1,0 +1,101 @@
+
+◇ injected env (4) from .env // tip: ⌘ enable debugging { debug: true }
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+====================================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.20.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v26.5.1 (C:\Program Files\nodejs\node.exe)                                     │
+  │ Specs:          1 found (diagnostico-campos-habilitam.feature)                                 │
+  │ Searched:       C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\e2e\fea │
+  │                 tures\_scratch\diagnostico-campos-habilitam.feature                            │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  diagnostico-campos-habilitam.feature                                            (1 of 1)
+
+
+  Diagnostico scratch - quando os campos obrigatorios habilitam apos Salvar
+    1) Amostrar estado disabled do campo Tipo de Prospect em intervalos apos o primeiro Salvar
+
+
+  0 passing (16s)
+  1 failing
+
+  1) Diagnostico scratch - quando os campos obrigatorios habilitam apos Salvar
+       Amostrar estado disabled do campo Tipo de Prospect em intervalos apos o primeiro Salvar:
+     CypressError: `cy.origin()` failed to create a spec bridge to communicate with the specified origin. This can happen when you attempt to create a spec bridge to an insecure (http) frame from a secure (https) frame.
+
+Check your Developer Tools Console for the actual error - it should be printed there.
+
+This error occurred while creating the session. Because the session setup failed, we failed the test.
+
+https://on.cypress.io/origin
+      at cypressErr (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75939:18)
+      at Object.errByPath (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:75999:10)
+      at <unknown> (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:124048:80)
+  From Your Spec Code:
+      at Object.eval [as setup] (https://beyond-hml.grupomultiplica.com.br/__cypress/tests?p=cypress\support\e2e.js:120:16)
+      at Context.<anonymous> (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:134861:38)
+      at getRet (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121345:20)
+      at tryCatcher (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:1780:23)
+      at Promise.attempt.Promise.try (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:4288:29)
+      at Context.thenFn (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121356:66)
+      at Context.then (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:121607:21)
+      at wrapped (https://beyond-hml.grupomultiplica.com.br/__cypress/runner/cypress_runner.js:146374:19)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        true                                                                             │
+  │ Duration:     16 seconds                                                                       │
+  │ Spec Ran:     diagnostico-campos-habilitam.feature                                             │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\screensho     (1280x720)
+     ts\diagnostico-campos-habilitam.feature\Diagnostico scratch - quando os campos o               
+     brigatorios habilitam apos Salvar -- Amostrar estado disabled do campo Tipo de P               
+     rospect em intervalos apos o primeiro Salvar (failed).png                                      
+
+
+  (Video)
+
+  -  Video output: C:\Multiplica\claudeAgents\SupE2eAutomation\subagents\POC\repo\cypress\videos\diagnostico-campos-habilitam.feature.mp4
+
+
+====================================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  diagnostico-campos-habilitam.featur      00:16        1        -        1        -        - │
+  │    e                                                                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:16        1        -        1        -        -  
+

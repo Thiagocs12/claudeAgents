@@ -23,11 +23,31 @@
 - **Bloqueio recorrente, ainda mais frequente, impedindo até testar o bloqueio acima:** login via
   `cy.loginComoPerfil` falhando com `cy.origin() failed to create a spec bridge...` (mesmo sintoma
   catalogado em `../../docs/conhecimento-geral.md`) em quase toda tentativa recente (várias
-  ocorrências entre 2026-09-15 e 2026-09-16, inclusive 2x seguidas numa mesma retomada). Dúvida
-  bloqueante mais recente (`duvidas.md`, ainda `Status: pendente`) pergunta ao Thiago se deve
-  continuar só retentando ou se a frequência crescente justifica investigar causa raiz.
-- **Próxima retomada, assim que a dúvida pendente for respondida:** conforme a orientação já dada
-  antes de ser respondida, (1) rodar o spec de diagnóstico descartável (`_scratch/diagnostico-campos-habilitam.feature`,
+  ocorrências entre 2026-09-15 e 2026-09-16, inclusive 2x seguidas numa mesma retomada). Thiago
+  respondeu (2026-09-17) que era instabilidade do ambiente HML (mesmo motivo do `PAUSA-HML.flag`,
+  já removido), confirmado OK, autorizando retry normal — mas condicionou: se o mesmo sintoma
+  voltasse a se repetir com essa frequência mesmo com o ambiente já confirmado estável, deveria ser
+  registrado como suspeita de causa raiz nova.
+- **Retomada 2026-09-17 — critério de escalada do Thiago atingido, nova dúvida registrada com
+  evidência comparativa (ainda `Status: pendente`):** VPN/ambiente confirmado ok via `curl`
+  (`beyond-hml` respondeu `200` em ~0.4s). Rodei em sequência, no mesmo ciclo: (1) spec de
+  diagnóstico `_scratch/diagnostico-campos-habilitam.feature` → falhou no login com `cy.origin()`;
+  (2) `shared/login.feature` → **passou 2/2** sem erro; (3) spec de produção
+  `poc/poc-criar-prospect-cedente-cnpj.feature` → **falhou de novo**, mesmo erro exato de
+  `cy.origin()`, mesmo ponto (setup do `cy.session`/`cy.loginComoPerfil`, antes de qualquer
+  interação com a tela). Ou seja, na mesma janela de minutos, `login.feature` funcionou enquanto os
+  dois specs do `POC` (mesmo comando `cy.loginComoPerfil('master')`) falharam. Comparei o código
+  até a chamada de login nos dois fluxos e não achei diferença de comando Cypress antes do login —
+  não parece ser algo que o código do `POC` faça de diferente do `login.feature`. Não retentei uma
+  4ª vez; registrada nova dúvida bloqueante com essa evidência comparativa completa, pedindo decisão
+  do Thiago (investigar infra/Keycloak vs. mudar algo no teste vs. pausar). Nenhum código de
+  produção alterado nesta retomada (branch `feature/poc-criar-prospect-cedente-cnpj` segue limpa em
+  `9054e8b`). Esse achado (login.feature passa de forma confiável enquanto outro spec que usa o
+  mesmo comando de login falha no mesmo ciclo) também foi registrado em
+  `../../docs/conhecimento-geral.md` por ser potencialmente relevante a qualquer módulo.
+- **Próxima retomada, assim que a dúvida pendente for respondida:** depende da decisão do Thiago
+  sobre a dúvida acima. Se autorizado a seguir com o teste em si (não bloqueado por login): (1)
+  rodar o spec de diagnóstico descartável (`_scratch/diagnostico-campos-habilitam.feature`,
   gitignored, já no working tree local, captura spinners e requisições em voo) para coletar
   evidência real do que acontece depois do primeiro "Salvar"; (2) implementar a espera revisada com
   base nessa evidência (não `cy.wait` cego); (3) aumentar `aguardarCamposObrigatoriosHabilitados`

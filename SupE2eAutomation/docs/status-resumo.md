@@ -13,11 +13,14 @@ Sem tarefa ativa.
 Sem tarefa ativa.
 
 ## POC
-Bloqueado (`duvidas.md`: `20260915131339-criar-prospect-cedente-cnpj`) — login via
-`cy.origin()`/Keycloak falhou 3x seguidas (erro de spec bridge); aguardando decisão do Thiago
-sobre retry vs. investigar causa raiz no ambiente HML/Keycloak. Em execução: fluxo de criação de
-Prospect por CNPJ com código já implementado e pushado, timeout do campo "Tipo de Prospect"
-escalado 15s→30s→60s — falta rodar o autoteste final assim que o login for destravado.
+Bloqueado (`duvidas.md`: `20260915131339-criar-prospect-cedente-cnpj`) — mesmo com ambiente
+confirmado estável (Thiago autorizou retry, critério dele de "causa raiz nova" atingido), login via
+`cy.origin()` voltou a falhar nos 2 specs do módulo, enquanto `shared/login.feature` passou 2/2 no
+mesmo ciclo (evidência comparativa registrada, também em `../docs/conhecimento-geral.md`).
+Aguardando decisão do Thiago: investigar infra/Keycloak vs. mudar teste vs. pausar. Código de
+produção já implementado e pushado (branch `feature/poc-criar-prospect-cedente-cnpj`, `9054e8b`),
+timeout do campo "Tipo de Prospect" já em 30s (60s pendente de aplicar) — falta rodar o autoteste
+final assim que o login for destravado.
 
 ## agent-master
 Sem aviso pendente em `fila-merge/`. PR único `reviewAgents → main` mantido aberto; o PR legado

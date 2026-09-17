@@ -254,3 +254,41 @@ causa raiz no código/Keycloak em si. Pode tentar de novo normalmente; se o mesm
 (`cy.origin() failed to create a spec bridge`) voltar a se repetir com essa frequência mesmo com o
 ambiente confirmado estável, aí sim registre como suspeita de causa raiz nova em vez de
 instabilidade pontual.
+
+## 20260915131339-criar-prospect-cedente-cnpj
+Status: pendente
+Pergunta: Segui a sua orientação anterior: confirmei VPN/ambiente ok antes de começar (`curl
+--max-time 20` em `beyond-hml` retornou `200`, tempo de resposta ~0.4s — nada de instável) e
+tentei de novo. **A primeira tentativa já falhou de novo**, mesmo sintoma exato:
+`CypressError: cy.origin() failed to create a spec bridge to communicate with the specified
+origin`. Como você pediu, não fiquei só retentando — fiz uma comparação para tentar isolar a causa:
+
+1. Rodei `cypress/e2e/features/_scratch/diagnostico-campos-habilitam.feature` (o spec de
+   diagnóstico) → falhou no login com `cy.origin()` (mesmo erro).
+2. Rodei `cypress/e2e/features/shared/login.feature` logo em seguida (mesma máquina, mesmo
+   ambiente, minutos de diferença) → **passou 2/2**, sem nenhum erro.
+3. Rodei `cypress/e2e/features/poc/poc-criar-prospect-cedente-cnpj.feature` (o spec de produção
+   desta tarefa) logo depois → **falhou de novo com o mesmo erro exato de `cy.origin()`**, no
+   mesmo ponto (dentro do `cy.session`/setup do `cy.loginComoPerfil`, antes de qualquer interação
+   com a tela).
+
+Ou seja: no mesmo ciclo, mesma máquina, mesma janela de poucos minutos, `login.feature` funcionou
+normalmente enquanto os dois specs do módulo `POC` (que usam exatamente o mesmo comando
+`cy.loginComoPerfil('master')`) falharam os dois com o mesmo sintoma. Comparei o código dos dois
+fluxos até a chamada de `cy.loginComoPerfil` (`shared/login.js` vs.
+`step_definitions/poc/pocCriarProspectPorCnpj.js` → `EsteiraCriarProspectPorCnpj` →
+`EtapaCriarProspectPorCnpj.logar()`) e não encontrei nenhuma diferença de comando Cypress antes da
+chamada de login em nenhum dos dois casos — não parece ser algo que o código do `POC` esteja
+fazendo de diferente. Isso bate exatamente com o padrão que você descreveu como critério para
+suspeitar de causa raiz nova (mesmo sintoma se repetindo com o ambiente já confirmado estável) —
+por isso não tentei uma 4ª vez sozinha e estou trazendo essa evidência comparativa para você
+decidir. Nenhum código de produção foi alterado nesta retomada (git status limpo na branch
+`feature/poc-criar-prospect-cedente-cnpj`). Vídeos e screenshots das 3 execuções desta retomada
+disponíveis no clone (`cypress/videos/`, `cypress/screenshots/`).
+
+Como devo prosseguir? Não sei se: (a) é algo que só você/alguém com acesso a infraestrutura
+consegue investigar (ex.: log do Keycloak, config de CORS/CSP específica para esses specs), (b) há
+algo que eu deveria mudar no teste (embora eu não tenha achado diferença de código até agora), ou
+(c) você prefere que eu pause esta tarefa até uma investigação mais profunda ser feita por outra
+via.
+Resposta:

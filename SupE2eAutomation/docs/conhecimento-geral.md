@@ -517,3 +517,36 @@ capacidade ociosa da outra conta.
   manualmente a cada retomada, não só na primeira vez que notar o problema. O subAgent `POC` seguiu
   o mesmo protocolo já estabelecido: não tocou em `repo/`, não rodou Cypress, não respondeu a dúvida
   sozinho, apenas moveu o arquivo de volta para `tarefas/aguardando-resposta/`.
+
+## `cy.origin()`/spec bridge — `shared/login.feature` passa de forma confiável enquanto outro spec com o mesmo comando falha no mesmo ciclo (achado pelo `POC`, 2026-09-17)
+
+- Contexto: o Thiago já havia atribuído as falhas recorrentes de `cy.origin() failed to create a
+  spec bridge...` (ver seção acima, "HML/login") a instabilidade pontual do ambiente HML, mas
+  condicionou: se o mesmo sintoma voltasse a se repetir com essa frequência mesmo com o ambiente
+  já confirmado estável, deveria ser tratado como suspeita de causa raiz nova, não mais
+  instabilidade pontual.
+- **Retomada 2026-09-17, módulo `POC`, tarefa `20260915131339-criar-prospect-cedente-cnpj`:** com
+  VPN/ambiente confirmado ok via `curl` (`beyond-hml` respondeu `200` em ~0.4s, nada de lento),
+  rodei em sequência no mesmo ciclo: (1) spec de diagnóstico `_scratch/diagnostico-campos-habilitam.feature`
+  → falhou no login com `cy.origin()`; (2) `shared/login.feature` (mesma máquina, minutos depois)
+  → **passou 2/2**, sem nenhum erro; (3) spec de produção `poc/poc-criar-prospect-cedente-cnpj.feature`
+  → **falhou de novo**, mesmo erro exato, mesmo ponto (dentro do `cy.session`/setup do
+  `cy.loginComoPerfil`, antes de qualquer interação com a tela).
+- **Por que isso é relevante além do `POC`:** os dois specs do `POC` usam exatamente o mesmo
+  comando `cy.loginComoPerfil('master')` que `login.feature` usa (mesmo `commands.js`, mesmo
+  `cy.session`/`cy.origin`). Comparei o código até a chamada de login nos dois fluxos e não
+  encontrei diferença de comando Cypress antes dela. Isso enfraquece a hipótese de "instabilidade
+  genérica do ambiente HML/Keycloak" (que faria `login.feature` falhar também, já que ele bate no
+  mesmo Keycloak) e é o **mesmo padrão já visto antes com `mop/mop-monitor-diario.feature`** (ver
+  seção "HML/login" acima, atualização de 2026-09-14: `login.feature` passa quase sempre,
+  `mop-monitor-diario.feature` falha quase sempre, no mesmo `npm test`). Ou seja, já são dois
+  módulos diferentes (`mop` e `POC`) mostrando o mesmo padrão de "`login.feature` isolado é
+  confiável, mas outro spec que também loga falha no mesmo ciclo" — reforça que pode não ser
+  instabilidade de rede/Keycloak genérica, e sim algo específico de como/quando outros specs
+  disparam o `cy.origin()` (timing, ordem de specs, algo no próprio spec bridge do Cypress).
+  Nenhuma causa raiz confirmada ainda.
+- Nova dúvida bloqueante registrada pelo `POC` (`subagents/POC/duvidas.md`,
+  `20260915131339-criar-prospect-cedente-cnpj`, ainda `Status: pendente`) com essa evidência
+  comparativa completa, pedindo decisão do Thiago. Qualquer módulo que veja `login.feature` passar
+  isoladamente enquanto seu próprio spec falha com `cy.origin()` no mesmo ciclo deve registrar essa
+  mesma comparação (não assumir só "ambiente instável") e referenciar este achado.
