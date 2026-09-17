@@ -22,13 +22,13 @@ formulário do Keycloak, com o campo de usuário preenchido (`automacao`) e uma 
 validação em vermelho logo abaixo: **"usuário ou senha inválidos"**. Ou seja, o Keycloak rejeitou
 ativamente a credencial — não é timeout de rede/redirect lento. Conferi que `HML_MASTER_PASSWORD`
 neste `.env` bate exatamente com o valor documentado em `../geral/docs/documentacao.md`
-(`Automacao@123`, capitalização correta) — não é erro de digitação neste clone. Confirmação
+(confirmado igual, capitalização correta) — não é erro de digitação neste clone. Confirmação
 adicional: no mesmo run de `login.feature`, o cenário "Login com credenciais inválidas" (senha
 propositalmente errada) passou normalmente, confirmando que a mensagem é a resposta real do
 Keycloak, não artefato do teste.
 
 Isso é mais grave que os sintomas anteriores desta tarefa: não parece mais timing/rede/`cy.origin`
-— parece que a própria credencial `automacao`/`Automacao@123` está sendo rejeitada pelo Keycloak
+— parece que a própria credencial `automacao` está sendo rejeitada pelo Keycloak
 agora, o que bloquearia **todos** os módulos que usam `cy.loginComoPerfil('master')`, não só o
 POC. Não tentei de novo nem toquei em `repo/` (git status segue limpo na branch
 `feature/poc-criar-prospect-cedente-cnpj`, nenhum código de produção alterado). Screenshot e vídeo
