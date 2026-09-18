@@ -36,13 +36,13 @@ semelhante (Keycloak) na mesma janela, reforçando (não confirmando) a suspeita
 cross-módulo.
 
 ## agent-master
-Bloqueado (`duvidas.md`: `20260917111432-migrar-video-para-relatorio-pdf`) — merge de teste local de
-`feature/migrar-video-para-relatorio-pdf` sem conflito, mas `npm test` falhou 2/2 specs com sintoma
-de login novo (Keycloak não redireciona de volta pra `beyond-hml`); `shared/login.feature` também
-falhou (quebra o padrão anterior de "login isolado é confiável"). Merge local desfeito, aviso em
-`fila-merge/pendentes/`. PR único `reviewAgents → main` mantido aberto; o PR legado
-`feature/atualizar-claude-md-fluxo-integracao` segue abandonado por decisão do Thiago (não conta
-como pendência).
+Sem aviso pendente. Última ação: `20260917111432-migrar-video-para-relatorio-pdf` mergeada direto
+em `reviewAgents` (push `9f38a75 → a81b2de`, sem conflito, sem teste rodado — regra 5 do
+`AGENTE.md`, dúvida já respondida pelo Thiago) e movida para `fila-merge/concluidos/`.
+`C:\multiplica\cypress-e2e` sincronizado (`npm ci`, `.env` idêntico por hash); sem PDF novo pra
+copiar (`repo/relatorios/` ainda não existe). PR único `reviewAgents → main` mantido aberto; o PR
+legado `feature/atualizar-claude-md-fluxo-integracao` segue abandonado por decisão do Thiago (não
+conta como pendência).
 
 _Bootstrap inicial gerado pela Gerente em 2026-09-17 a partir do levantamento manual do "status" —
 a partir de agora, cada seção é mantida pelo próprio subAgent/Agent Master._

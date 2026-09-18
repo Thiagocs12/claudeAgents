@@ -136,7 +136,21 @@ só se `package.json`/`package-lock.json` mudou, `.env` do Agent Master copiado 
 de lá, e vídeos de testes rodados no ciclo (`repo/cypress/videos/**`) copiados para
 `cypress/videos/` dentro dessa pasta.
 
-## Aviso bloqueado — `migrar-video-para-relatorio-pdf` (módulo `geral`, 2026-09-17)
+## Aviso concluído — `migrar-video-para-relatorio-pdf` (módulo `geral`, resolvido 2026-09-18)
+
+Thiago respondeu a dúvida bloqueante (ver `duvidas.md`): Agent Master não deve mais rodar teste
+nenhum antes do merge (regra 5 do `AGENTE.md`, reforçada em 2026-09-18) — o subAgent já testa antes
+de avisar, e a instabilidade de login/HML não tem relação com o código da mudança. Reprocessado:
+merge de teste local contra `reviewAgents` sem conflito, `.env.example` sem variável nova,
+`package.json` só trouxe a dependência já esperada `pdfkit@0.20.2` (dependencies). Merge finalizado
+e pushado direto em `reviewAgents` (`9f38a75 → a81b2de`, sem PR por tarefa). `npm install` no
+`repo/` sem novidade. `C:\multiplica\cypress-e2e` sincronizado: `git pull` (8 arquivos alterados,
+incluindo `scripts/gerar-relatorio-pdf.cjs` novo), `npm ci` (package.json mudou) sem erro, `.env`
+copiado por cima (hash SHA256 confirmado idêntico). `repo/relatorios/*.pdf` ainda não existe (nada
+gerado neste ciclo, já que nenhum teste foi rodado) — nada para copiar, não é dúvida. Aviso movido
+de `fila-merge/pendentes/` para `fila-merge/concluidos/`.
+
+## Histórico da dúvida bloqueada (contexto anterior, preservado)
 
 - Aviso em `fila-merge/pendentes/` (`20260917111432-migrar-video-para-relatorio-pdf`,
   `feature/migrar-video-para-relatorio-pdf`). Merge de teste local limpo (sem conflito,

@@ -156,7 +156,7 @@ function Test-DuvidaRespondida {
 }
 
 function Test-TrabalhoPendente {
-    $aguardando = Get-ChildItem -Path "tarefas/aguardando-resposta" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue
+    $aguardando = Get-ChildItem -Path "tarefas/aguardando-resposta" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne '.gitkeep' }
     foreach ($arquivo in $aguardando) {
         $id = [System.IO.Path]::GetFileNameWithoutExtension($arquivo.Name)
         if (Test-DuvidaRespondida -DuvidasPath "duvidas.md" -Id $id) {
@@ -166,9 +166,9 @@ function Test-TrabalhoPendente {
         }
     }
 
-    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne '.gitkeep' } | Measure-Object).Count -gt 0
     if (-not $temExecutando) {
-        $maisAntiga = Get-ChildItem -Path "tarefas/pendentes" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+        $maisAntiga = Get-ChildItem -Path "tarefas/pendentes" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne '.gitkeep' } | Sort-Object Name | Select-Object -First 1
         if ($maisAntiga) {
             Move-Item -Path $maisAntiga.FullName -Destination "tarefas/executando/$($maisAntiga.Name)" -Force
             "$(Get-Date -Format 'HH:mm:ss') | [fila] $($maisAntiga.Name): movido pendentes -> executando" |
@@ -176,7 +176,7 @@ function Test-TrabalhoPendente {
         }
     }
 
-    return (Get-ChildItem -Path "tarefas/executando" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+    return (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne '.gitkeep' } | Measure-Object).Count -gt 0
 }
 
 if (-not (Test-TrabalhoPendente)) {
