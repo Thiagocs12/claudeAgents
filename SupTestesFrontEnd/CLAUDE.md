@@ -199,10 +199,17 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
    Thiago — ex.: bug real impedindo continuar é RESULTADO, não dúvida):**
    - **Gere um PDF do relatório (não mais vídeo — política mudou em 2026-09-17)**: monte/reaproveite
      um script `scripts/gerar-relatorio-pdf.cjs` (Node + `pdfkit`) que recebe o id da tarefa e gera
-     `relatorios/<id-da-tarefa>.pdf` com: capa (objetivo, módulo, data), uma seção por entrada da
-     narrativa `## Execução` (regra 4) com o texto e os screenshots daquele passo (par antes/depois
-     do clique, regra 3, em ordem), e uma página final com o `## Resultado`. O script é
-     infraestrutura reaproveitável entre tarefas (diferente do código de automação da tela).
+     `relatorios/<id-da-tarefa>.pdf`. **Formato padronizado (pedido do Thiago, 2026-09-18):**
+     relatório estilizado, direto ao ponto — capa com objetivo/módulo/data, depois **uma página por
+     screenshot** (em ordem numérica) com uma legenda curta derivada do próprio nome do arquivo
+     (ex. `04-apos-selecionar-kenerson-avancar.png` → "Apos selecionar kenerson avancar"), e uma
+     página final com o `## Resultado`. **Não despeje a narrativa bruta de `## Execução`** (texto
+     corrido com tentativas/erros/raciocínio) no PDF — isso é o rascunho de trabalho do subAgent,
+     útil pra retomar um ciclo, mas não é o que o Thiago quer ler num relatório; o relatório fala só
+     "o que foi feito" (uma frase por passo) + o print, e o resultado final. Copie o script já
+     implementado em `subagents/mop/scripts/gerar-relatorio-pdf.cjs` como referência ao montar o de
+     um módulo novo — não reescreva do zero. O script é infraestrutura reaproveitável entre tarefas
+     (diferente do código de automação da tela).
    - Acrescente ao arquivo da tarefa uma seção `## Resultado` com: veredito (objetivo cumprido /
      não cumprido / cumprido parcialmente), o caminho do PDF, e um resumo dos achados — a
      narrativa da regra 4 já documenta o passo a passo, aqui é a conclusão.
