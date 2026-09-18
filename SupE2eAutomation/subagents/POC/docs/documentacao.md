@@ -74,43 +74,19 @@
   para 60s como já pedido; (4) rodar o autoteste do spec de produção. Se o campo continuar preso
   mesmo assim, parar e deixar vídeo/screenshot prontos (já orientado pelo Thiago).
 
-- **Retomada 2026-09-18 03:30 (ciclo sem ação):** confirmado manualmente que `tarefas/executando/`
-  e `tarefas/pendentes/` estão vazias e a tarefa segue em `tarefas/aguardando-resposta/`, com a
-  dúvida da 13ª rodada ainda `Status: pendente`/`Resposta:` vazia em `duvidas.md` — ao contrário das
-  recorrências anteriores do bug abaixo, desta vez a sincronização mecânica **não** moveu o arquivo
-  para `executando/` incorretamente (o arquivo já estava no lugar certo). Como não há nada em
-  `executando/` para retomar nem em `pendentes/` para iniciar, e a dúvida segue sem resposta do
-  Thiago, nenhuma ação foi tomada: `repo/` não foi tocado (branch `feature/poc-criar-prospect-
-  cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida por mim.
-  Ciclo encerrado sem alteração de estado.
-- **Retomada seguinte (mesmo dia, ciclo sem ação):** o prompt de disparo deste ciclo presumia uma
-  tarefa em `tarefas/executando/` para retomar, mas a checagem manual confirmou de novo que
-  `executando/` e `pendentes/` estão vazias e a tarefa segue corretamente em
-  `tarefas/aguardando-resposta/` — a 13ª pergunta em `duvidas.md` continua `Status: pendente`/
-  `Resposta:` vazia (nenhuma resposta nova do Thiago desde a retomada anterior). Como não há nada
-  para retomar/iniciar e a dúvida bloqueante (suspeita de credencial `automacao` rotacionada/
-  expirada no Keycloak) segue sem decisão, nenhuma ação foi tomada: `repo/` não foi tocado (branch
-  `feature/poc-criar-prospect-cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida
-  não respondida por mim (regra 9 do `AGENTE.md`). Ciclo encerrado sem alteração de estado.
-- **Retomada seguinte (mesmo dia, mais um ciclo sem ação):** de novo o prompt de disparo presumia
-  tarefa em `tarefas/executando/`, mas a checagem manual confirmou o mesmo estado das duas
-  retomadas anteriores: `executando/`/`pendentes/` vazias, tarefa corretamente em
-  `tarefas/aguardando-resposta/`, 13ª pergunta ainda `Status: pendente`/`Resposta:` vazia em
-  `duvidas.md` (sem resposta nova do Thiago). Nada tocado em `repo/` (branch
-  `feature/poc-criar-prospect-cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida
-  não respondida por mim. Ciclo encerrado sem alteração de estado.
-- **Retomada seguinte (2026-09-18, mais um ciclo sem ação):** mesma checagem manual, mesmo
-  resultado: `executando/`/`pendentes/` vazias, tarefa corretamente em
-  `tarefas/aguardando-resposta/`, 13ª pergunta ainda `Status: pendente`/`Resposta:` vazia (sem
-  resposta nova do Thiago). Nada tocado em `repo/` (branch segue limpa em `9054e8b`), nenhum
-  Cypress rodado, dúvida não respondida por mim. **Corroboração cruzada notada** (só leitura, sem
-  ação): `../../docs/status-resumo.md`, seção `## agent-master`, registra que o merge de teste da
-  branch `feature/migrar-video-para-relatorio-pdf` (módulo `geral`) também falhou 2/2 specs com
-  `shared/login.feature` quebrando — mesma família de sintoma de rejeição/instabilidade do
-  Keycloak suspeitada aqui na 13ª rodada, agora observada também fora do módulo POC no mesmo
-  período. Reforça (não confirma) a hipótese de causa raiz cross-módulo já registrada em
-  `../geral/docs/documentacao.md`; decisão continua exclusivamente com o Thiago via Supervisor.
-  Ciclo encerrado sem alteração de estado.
+- **Ciclos sem ação (2026-09-18, 7 retomadas consecutivas até agora, detalhe completo das 6
+  primeiras arquivado em `docs/documentacao-historico.md`):** em todas, `tarefas/executando/`/
+  `pendentes/` confirmadas vazias, tarefa corretamente em `tarefas/aguardando-resposta/`, 13ª
+  pergunta seguindo `Status: pendente`/`Resposta:` vazia em `duvidas.md` (sem resposta nova do
+  Thiago). Nenhuma ação tomada em nenhuma delas: `repo/` sempre conferido limpo na branch
+  `feature/poc-criar-prospect-cedente-cnpj`, commit `9054e8b`, nenhum Cypress rodado, dúvida nunca
+  respondida por mim. Uma delas notou corroboração cruzada (só leitura): `status-resumo.md` mostrou
+  o módulo `geral`/Agent Master também com falha de login (Keycloak) na mesma janela, reforçando
+  (não confirmando) a hipótese de causa raiz cross-módulo já registrada em
+  `../geral/docs/documentacao.md`. Na 7ª (esta retomada), único ponto novo: confirmado por `grep`
+  em `duvidas.md` que existe só um bloco `## 20260915131339-criar-prospect-cedente-cnpj` no
+  arquivo (não há rodada mais recente escondida) — reforça que a 13ª pergunta é mesmo a mais atual
+  e continua sem resposta.
 
 ## Bug conhecido na sincronização mecânica da fila (`Test-DuvidaRespondida`)
 
@@ -120,74 +96,18 @@
   `run-cycle.ps1` (que olha só o **primeiro** bloco `## <id>` que bate, não o mais recente) considera
   o id "respondido para sempre" assim que a 1ª pergunta é respondida — mesmo que rodadas
   posteriores sigam pendentes.
-- **Nova recorrência (2026-09-17, retomada seguinte à 11ª pergunta registrada — evidência
-  comparativa `cy.origin`/`login.feature`):** a mesma falha mecânica moveu a tarefa de
-  `aguardando-resposta/` para `executando/` de novo, com a pergunta mais recente (11ª rodada,
-  pedindo decisão do Thiago entre investigar infra/Keycloak, mudar o teste, ou pausar) ainda
-  `Status: pendente` em `duvidas.md`. Confirmado manualmente (releitura de `duvidas.md` inteiro)
-  antes de agir. Mesmo protocolo de sempre: nada tocado em `repo/`, nenhum Cypress rodado, dúvida
-  não respondida por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Branch
-  segue limpa em `9054e8b`. Já são 3 recorrências consecutivas deste mesmo bug nesta tarefa.
-- **Nova recorrência (2026-09-17, retomada seguinte à 12ª pergunta registrada — evidência
-  comparativa `cy.origin`/`login.feature`, ainda sem resposta do Thiago):** a mesma falha mecânica
-  moveu a tarefa de `aguardando-resposta/` para `executando/` de novo, com a pergunta mais recente
-  (12ª rodada, pedindo decisão entre investigar infra/Keycloak, mudar o teste, ou pausar) ainda
-  `Status: pendente` em `duvidas.md` (a 11ª pergunta, essa sim, já está `respondida`). Confirmado
-  manualmente (releitura de `duvidas.md` inteiro) antes de agir. Mesmo protocolo de sempre: nada
-  tocado em `repo/` (branch segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida
-  por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Já são 4 recorrências
-  consecutivas deste mesmo bug nesta tarefa.
-- **Nova recorrência (2026-09-17, retomada seguinte — mesma 12ª pergunta, ainda sem resposta do
-  Thiago):** de novo o mesmo bug moveu a tarefa para `executando/`, com a 12ª rodada (evidência
-  comparativa `cy.origin`/`login.feature`) seguindo `Status: pendente`/`Resposta:` vazia em
-  `duvidas.md` — nenhuma resposta nova foi registrada desde a recorrência anterior. Confirmado
-  manualmente antes de agir; `repo/` segue limpo em `9054e8b`, nenhum Cypress rodado, dúvida não
-  respondida por mim — arquivo movido de volta para `tarefas/aguardando-resposta/`. Já são 5
-  recorrências consecutivas deste mesmo bug nesta tarefa, todas para a mesma pergunta de 12ª rodada
-  ainda sem decisão do Thiago.
-- **Recorrência (2026-09-16, esta retomada):** o mesmo bug moveu a tarefa de `aguardando-resposta/`
-  para `executando/` de novo, com a pergunta mais recente (sobre insistir em retry de login vs.
-  investigar causa raiz) ainda `Status: pendente`. Segui o mesmo protocolo da recorrência anterior:
-  não toquei em `repo/`, não rodei Cypress, não respondi a dúvida sozinha (regra 9 do `AGENTE.md`) —
-  apenas movi o arquivo de volta para `tarefas/aguardando-resposta/`. Nenhum código de produção
-  alterado (branch segue limpa em `9054e8b`).
+- **Recorrências do bug (2026-09-16/17, 6 ocorrências, detalhe completo — inclusive rodada exata de
+  dúvida afetada em cada uma — arquivado em `docs/documentacao-historico.md`):** o mesmo falso
+  positivo moveu a tarefa de `aguardando-resposta/` para `executando/` repetidas vezes (10ª à 12ª
+  rodada de dúvida, todas ainda `Status: pendente` no momento). Protocolo idêntico em todas: nada
+  tocado em `repo/`, nenhum Cypress rodado, dúvida nunca respondida por mim — arquivo sempre movido
+  de volta para `tarefas/aguardando-resposta/`. Branch sempre conferida limpa em `9054e8b`.
 - Confirma que a correção sugerida (iterar os blocos de `duvidas.md` em ordem reversa / usar o
   último match, não o primeiro) ainda não foi aplicada — segue sob responsabilidade do Supervisor
   coordenar, já que o script é compartilhado entre todos os subAgents/Agent Master/Status Watcher.
-- **Retomada 2026-09-18 (mais um ciclo sem ação, bug não recorreu desta vez):** checagem manual
-  confirmou de novo `executando/`/`pendentes/` vazias e a tarefa corretamente em
-  `tarefas/aguardando-resposta/`, 13ª pergunta ainda `Status: pendente`/`Resposta:` vazia (sem
-  resposta nova do Thiago). Nada tocado em `repo/` (branch `feature/poc-criar-prospect-cedente-cnpj`
-  segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida por mim. `status-resumo.md`
-  já refletia esse estado corretamente, sem necessidade de atualização. Ciclo encerrado sem
-  alteração de estado.
-- **Nova recorrência (2026-09-16, retomada seguinte à anterior):** o mesmo bug moveu a tarefa de
-  `aguardando-resposta/` para `executando/` mais uma vez, com a 10ª rodada de dúvida (pergunta sobre
-  insistir em retry de login vs. investigar causa raiz do `cy.origin`) ainda `Status: pendente`.
-  Confirma que o problema não é pontual — já são duas recorrências consecutivas do falso positivo
-  nesta mesma tarefa. Mesmo protocolo seguido de novo: nada tocado em `repo/`, nenhum Cypress
-  rodado, dúvida não respondida por mim, arquivo movido de volta para `aguardando-resposta/`. Branch
-  segue limpa em `9054e8b`.
-- **Retomada 2026-09-18 (mais um ciclo sem ação; prompt de disparo presumia tarefa em
-  `executando/`, checagem manual mostrou o contrário):** `tarefas/executando/` e
-  `tarefas/pendentes/` confirmadas vazias; a tarefa segue corretamente em
-  `tarefas/aguardando-resposta/`. `duvidas.md` conferido inteiro: a 13ª pergunta (suspeita de
-  credencial `automacao` rotacionada/expirada/bloqueada no Keycloak) continua `Status: pendente`/
-  `Resposta:` vazia — sem resposta nova do Thiago. Como não havia nada para retomar em `executando/`
-  nem para iniciar em `pendentes/`, nenhuma ação foi tomada: `repo/` conferido limpo na branch
-  `feature/poc-criar-prospect-cedente-cnpj`, no commit `9054e8b` (nenhum código de produção tocado),
-  nenhum Cypress rodado, dúvida não respondida por mim (regra 9 do `AGENTE.md`). `status-resumo.md`
-  já refletia esse estado corretamente, sem necessidade de atualização. Ciclo encerrado sem
-  alteração de estado.
-- **Retomada 2026-09-18 (mais um ciclo sem ação):** prompt de disparo novamente presumia tarefa em
-  `tarefas/executando/`, mas checagem manual confirmou o mesmo estado de todos os ciclos recentes:
-  `executando/`/`pendentes/` vazias, tarefa corretamente em `tarefas/aguardando-resposta/`, 13ª
-  pergunta ainda `Status: pendente`/`Resposta:` vazia em `duvidas.md` (sem resposta nova do
-  Thiago). `repo/` conferido limpo na branch `feature/poc-criar-prospect-cedente-cnpj`, commit
-  `9054e8b` (nenhum código de produção tocado), nenhum Cypress rodado, dúvida não respondida por
-  mim. `status-resumo.md` já refletia esse estado corretamente. Ciclo encerrado sem alteração de
-  estado.
-- **Retomada 2026-09-18 (mais um ciclo sem ação):** mesma checagem de sempre, mesmo resultado —
-  `executando/`/`pendentes/` vazias, tarefa em `tarefas/aguardando-resposta/`, 13ª pergunta ainda
-  `Status: pendente`/`Resposta:` vazia. `repo/` limpo em `9054e8b`, nenhum Cypress rodado, dúvida
-  não respondida por mim, `status-resumo.md` já correto. Ciclo encerrado sem alteração de estado.
+- **Ciclos sem ação, bug não recorreu (2026-09-18, 4 retomadas, detalhe completo arquivado em
+  `docs/documentacao-historico.md`):** checagem manual sempre confirmou `executando/`/`pendentes/`
+  vazias e a tarefa corretamente em `tarefas/aguardando-resposta/`, 13ª pergunta ainda
+  `Status: pendente`/`Resposta:` vazia (sem resposta nova do Thiago). Nada tocado em `repo/` (branch
+  sempre limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida por mim,
+  `status-resumo.md` já refletindo o estado corretamente em todas.

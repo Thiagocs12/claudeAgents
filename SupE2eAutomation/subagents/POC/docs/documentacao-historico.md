@@ -178,3 +178,64 @@ a considerar esse id "respondido" para sempre, mesmo que rodadas posteriores con
 **Ação tomada:** não executei nenhum passo da tarefa. Apenas movi o arquivo de volta de
 `tarefas/executando/` para `tarefas/aguardando-resposta/`. Nenhum código de produção alterado.
 Registrado em `../../docs/conhecimento-geral.md` para o Supervisor decidir a correção coordenada.
+
+## Recorrências do bug de sincronização mecânica (2026-09-16/17, detalhe completo)
+
+- **2026-09-16, retomada seguinte:** moveu a tarefa para `executando/` de novo, com a 10ª rodada de
+  dúvida (retry de login vs. investigar causa raiz do `cy.origin`) ainda `Status: pendente`. Já
+  duas recorrências consecutivas do falso positivo. Nada tocado em `repo/`, nenhum Cypress rodado,
+  dúvida não respondida, arquivo movido de volta. Branch limpa em `9054e8b`.
+- **2026-09-16, retomada seguinte:** mesmo bug, mesma 10ª rodada ainda `Status: pendente`. Mesmo
+  protocolo: nada tocado em `repo/`, nenhum Cypress rodado, dúvida não respondida, arquivo movido
+  de volta para `aguardando-resposta/`. Branch limpa em `9054e8b`.
+- **2026-09-17, retomada seguinte à 11ª pergunta (evidência comparativa `cy.origin`/
+  `login.feature`):** moveu a tarefa para `executando/` de novo, 11ª rodada ainda
+  `Status: pendente`. Confirmado manualmente (releitura de `duvidas.md` inteiro) antes de agir.
+  Nada tocado em `repo/`, nenhum Cypress rodado, dúvida não respondida, arquivo movido de volta.
+  Branch limpa em `9054e8b`. 3ª recorrência consecutiva.
+- **2026-09-17, retomada seguinte à 12ª pergunta:** moveu a tarefa de novo, 12ª rodada ainda
+  `Status: pendente` (a 11ª, essa sim, já `respondida`). Confirmado manualmente antes de agir. Nada
+  tocado em `repo/`, nenhum Cypress rodado, dúvida não respondida, arquivo movido de volta. Branch
+  limpa em `9054e8b`. 4ª recorrência consecutiva.
+- **2026-09-17, retomada seguinte — mesma 12ª pergunta:** de novo o mesmo bug, 12ª rodada
+  seguindo `Status: pendente`/`Resposta:` vazia — nenhuma resposta nova desde a recorrência
+  anterior. Confirmado manualmente antes de agir; `repo/` limpo em `9054e8b`, nenhum Cypress
+  rodado, dúvida não respondida, arquivo movido de volta. 5ª recorrência consecutiva, todas para a
+  mesma pergunta de 12ª rodada ainda sem decisão do Thiago.
+
+## Ciclos sem ação, bug não recorreu (2026-09-18, detalhe completo)
+
+- **Retomada 03:30:** `executando/`/`pendentes/` vazias, tarefa em `tarefas/aguardando-resposta/`,
+  13ª pergunta ainda `Status: pendente`/`Resposta:` vazia — ao contrário das recorrências
+  anteriores do bug, desta vez a sincronização mecânica **não** moveu o arquivo incorretamente (já
+  estava no lugar certo). Nada tocado em `repo/` (branch limpa em `9054e8b`), nenhum Cypress
+  rodado, dúvida não respondida.
+- **Retomada seguinte:** prompt de disparo presumia tarefa em `executando/`, checagem manual
+  confirmou de novo `executando/`/`pendentes/` vazias e tarefa em `aguardando-resposta/`, 13ª
+  pergunta ainda pendente. Nada tocado em `repo/` (branch limpa em `9054e8b`), nenhum Cypress
+  rodado, dúvida não respondida (regra 9 do `AGENTE.md`).
+- **Retomada seguinte:** mesmo resultado. Nada tocado em `repo/` (branch limpa em `9054e8b`),
+  nenhum Cypress rodado, dúvida não respondida. `status-resumo.md` já correto.
+- **Retomada seguinte:** mesmo resultado. `repo/` conferido limpo em `9054e8b`, nenhum Cypress
+  rodado, dúvida não respondida, `status-resumo.md` já correto.
+
+## Ciclos sem ação (2026-09-18, detalhe completo, 6 retomadas antes desta consolidação)
+
+- **Retomada 1:** `executando/`/`pendentes/` vazias, tarefa em `aguardando-resposta/`, 13ª
+  pergunta `Status: pendente`. Nada tocado em `repo/` (branch `9054e8b`), nenhum Cypress rodado,
+  dúvida não respondida.
+- **Retomada 2:** mesmo resultado. Nada tocado em `repo/` (branch `9054e8b`), nenhum Cypress
+  rodado, dúvida não respondida (regra 9 do `AGENTE.md`).
+- **Retomada 3:** mesmo resultado. Nada tocado em `repo/` (branch `9054e8b`), nenhum Cypress
+  rodado, dúvida não respondida.
+- **Retomada 4:** mesmo resultado. Nada tocado em `repo/` (branch `9054e8b`), nenhum Cypress
+  rodado, dúvida não respondida. **Corroboração cruzada notada** (só leitura): `status-resumo.md`,
+  seção `## agent-master`, registrou que o merge de teste de `feature/migrar-video-para-relatorio-
+  pdf` (módulo `geral`) também falhou 2/2 specs com `shared/login.feature` quebrando — mesma
+  família de sintoma de rejeição/instabilidade do Keycloak suspeitada na 13ª rodada aqui, agora
+  observada também fora do módulo POC no mesmo período.
+- **Retomada 5:** prompt de disparo presumia tarefa em `executando/`, checagem mostrou o
+  contrário. Mesmo resultado, `repo/` limpo em `9054e8b`, nenhum Cypress rodado, dúvida não
+  respondida (regra 9), `status-resumo.md` já correto.
+- **Retomada 6:** mesmo resultado. `repo/` limpo em `9054e8b`, nenhum Cypress rodado, dúvida não
+  respondida, `status-resumo.md` já correto.
