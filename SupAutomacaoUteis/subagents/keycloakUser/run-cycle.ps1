@@ -396,6 +396,7 @@ docs/documentacao.md, duvidas.md, log, ou no aviso pro Agent Master.
 '@
 
 $script:ultimoRateLimit = $null
+$script:limiteSemanalResetsAt = $null
 
 $prompt | claude -p --permission-mode bypassPermissions --output-format stream-json --verbose 2>&1 |
     ForEach-Object {
@@ -440,11 +441,27 @@ $prompt | claude -p --permission-mode bypassPermissions --output-format stream-j
                 }
             }
         } catch {}
+        # --- Limite semanal (pedido do Thiago, 2026-09-18): "You've hit your weekly limit" nao vem
+        # como rate_limit_event estruturado, so como texto falado - sem isso, Set-UtilizacaoConta
+        # nunca grava a saturacao e Test-ContaSaturada (Adquirir-SlotConta) continua tentando essa
+        # conta a toa. Extrai a data/hora do proprio texto ("resets Sep 21, 3pm") e trata como
+        # saturacao de longa duracao (mesmo mecanismo do five_hour, so com resetsAt mais distante).
+        if ($texto -match '\[fala\].*weekly limit.*resets\s+(?<mes>\w{3})\s+(?<dia>\d{1,2}),\s+(?<hora>\d{1,2})(?<ampm>am|pm)') {
+            try {
+                $anoRef = (Get-Date).Year
+                $dataStr = "$($Matches.mes) $($Matches.dia) $anoRef $($Matches.hora):00 $($Matches.ampm.ToUpper())"
+                $dtLocal = [datetime]::ParseExact($dataStr, "MMM d yyyy h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
+                if ($dtLocal -lt (Get-Date).AddDays(-1)) { $dtLocal = $dtLocal.AddYears(1) }
+                $script:limiteSemanalResetsAt = [DateTimeOffset]::new([datetime]::SpecifyKind($dtLocal, 'Unspecified'), [TimeSpan]::FromHours(-3)).ToUnixTimeSeconds()
+            } catch {}
+        }
         if (-not $texto) { $texto = $linha }
         "$ts | $texto" | Add-Content -Path (Join-Path $PSScriptRoot "run-log.txt") -Encoding utf8
     }
 
-if ($script:ultimoRateLimit) {
+if ($script:limiteSemanalResetsAt) {
+    Set-UtilizacaoConta -Conta $contaEfetiva -Utilizacao 1 -ResetsAt $script:limiteSemanalResetsAt
+} elseif ($script:ultimoRateLimit) {
     Set-UtilizacaoConta -Conta $contaEfetiva -Utilizacao $script:ultimoRateLimit.utilization -ResetsAt $script:ultimoRateLimit.resetsAt
 }
 Liberar-SlotConta -Conta $contaEfetiva -LogPath (Join-Path $PSScriptRoot "run-log.txt")

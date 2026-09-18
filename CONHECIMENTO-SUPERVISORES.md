@@ -450,6 +450,40 @@ se eu ainda estiver trabalhando fora desse horário, eu peço pra você rodar so
   menos 2 tasks (um subAgent, um Agent Master) que o `CalendarTrigger`/`Repetition`/`DaysOfWeek`
   ficaram corretos após a mudança.
 
+## Limite semanal ("weekly limit") não vem como `rate_limit_event` — criado em 2026-09-18
+
+Achado ao investigar por que `contaA` continuava sendo tentada mesmo com `Test-ContaSaturada` (seção
+acima) já implementado: desde as 07:49 de 2026-09-18, vários módulos bateram em "You've hit your
+weekly limit · resets Sep 21, 3pm (America/Sao_Paulo)" — mas essa mensagem **não vem acompanhada de
+um evento `rate_limit_event` estruturado** (`unifiedWindows.five_hour`/`.seven_day`) como o
+`five_hour=100%` de sessão; é só texto falado (`[fala] You've hit your weekly limit...`) sem nenhum
+JSON de rate-limit na mesma resposta. Resultado: `$script:ultimoRateLimit` nunca era populado nesses
+casos, `Set-UtilizacaoConta` nunca rodava, e `ultima-utilizacao.json` da conta ficava com dado antigo
+(ou ausente) — `Test-ContaSaturada` não tinha como saber que a conta estava presa até dia 21, e o
+mecanismo de pular conta saturada (seção "Pular conta com rate-limit já conhecido") não se aplicava a
+esse caso, causando ciclos perdidos hora após hora enquanto `contaB` ficava livre do lado.
+
+- **Mecanismo**: cada `run-cycle.ps1` agora também testa o texto `[fala]` de cada evento
+  `assistant` contra a regex `\[fala\].*weekly limit.*resets\s+(\w{3})\s+(\d{1,2}),\s+(\d{1,2})
+  (am|pm)` — extrai mês/dia/hora do próprio texto (`"Sep 21, 3pm"`), monta um `datetime` local
+  (ano corrente, ou +1 ano se a data já tiver passado — proteção pra virada dez/jan) e converte pra
+  epoch UTC assumindo `America/Sao_Paulo` fixo (`UTC-3`, mesma premissa já usada em todo o sistema,
+  sem tratar horário de verão porque o Brasil não usa mais). Guardado em
+  `$script:limiteSemanalResetsAt`, separado de `$script:ultimoRateLimit` (que continua vindo do
+  `rate_limit_event` estruturado do `five_hour`).
+- **Grava reaproveitando a mesma infraestrutura**: no fim do ciclo, se
+  `$script:limiteSemanalResetsAt` estiver setado, chama `Set-UtilizacaoConta -Utilizacao 1
+  -ResetsAt $script:limiteSemanalResetsAt` (mesmo `ultima-utilizacao.json`/`Test-ContaSaturada` já
+  existentes — nenhum mecanismo novo, só uma fonte de dado a mais alimentando o mesmo arquivo).
+  Prioridade sobre o `$script:ultimoRateLimit` do `five_hour` quando os dois existem no mesmo ciclo
+  (o limite semanal é a restrição mais forte/duradoura).
+- **Validado**: a regex testada isoladamente contra o texto real capturado no log
+  (`"You've hit your weekly limit · resets Sep 21, 3pm (America/Sao_Paulo)"`) produziu epoch
+  `1790013600` — conferido que bate exatamente com o `seven_day.resetsAt` que a API já tinha
+  retornado num evento `rate_limit_event` anterior da mesma conta.
+- Aplicado nos mesmos 8 `run-cycle.ps1` reais. Todos os 8 validados sintaticamente
+  (`[Parser]::ParseFile`) depois da edição.
+
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.
