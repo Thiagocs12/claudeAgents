@@ -1,7 +1,7 @@
 > Histórico de dúvidas já respondidas/arquivadas: ver `duvidas-historico.md` (mesma pasta).
 
 ## 20260915131339-criar-prospect-cedente-cnpj
-Status: pendente
+Status: respondida
 Pergunta: Retomei a tarefa após a limpeza de cache do Cypress (sua última resposta, 12ª rodada) e,
 seguindo a orientação de revisar a espera com base em spinner/requisição real (não tempo fixo)
 antes de aumentar o timeout para 60s, rodei primeiro o spec de diagnóstico descartável

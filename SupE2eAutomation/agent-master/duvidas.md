@@ -2,7 +2,7 @@
 > arquivadas em `duvidas-historico.md` (2026-09-17). Nada foi descartado, só movido.
 
 ## 20260917111432-migrar-video-para-relatorio-pdf
-Status: pendente
+Status: respondida
 Pergunta: Merge de teste local (sem conflito, sem variável de `.env` nova, `npm install` trouxe só
 a dependência nova esperada `pdfkit@0.20.2`) rodado contra `feature/migrar-video-para-relatorio-pdf`
 → `reviewAgents`. `npm test` (2 specs, `mop/mop-monitor-diario.feature` e `shared/login.feature`)
