@@ -154,6 +154,13 @@
 - Confirma que a correção sugerida (iterar os blocos de `duvidas.md` em ordem reversa / usar o
   último match, não o primeiro) ainda não foi aplicada — segue sob responsabilidade do Supervisor
   coordenar, já que o script é compartilhado entre todos os subAgents/Agent Master/Status Watcher.
+- **Retomada 2026-09-18 (mais um ciclo sem ação, bug não recorreu desta vez):** checagem manual
+  confirmou de novo `executando/`/`pendentes/` vazias e a tarefa corretamente em
+  `tarefas/aguardando-resposta/`, 13ª pergunta ainda `Status: pendente`/`Resposta:` vazia (sem
+  resposta nova do Thiago). Nada tocado em `repo/` (branch `feature/poc-criar-prospect-cedente-cnpj`
+  segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida por mim. `status-resumo.md`
+  já refletia esse estado corretamente, sem necessidade de atualização. Ciclo encerrado sem
+  alteração de estado.
 - **Nova recorrência (2026-09-16, retomada seguinte à anterior):** o mesmo bug moveu a tarefa de
   `aguardando-resposta/` para `executando/` mais uma vez, com a 10ª rodada de dúvida (pergunta sobre
   insistir em retry de login vs. investigar causa raiz do `cy.origin`) ainda `Status: pendente`.
