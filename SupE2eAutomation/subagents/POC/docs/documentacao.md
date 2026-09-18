@@ -99,6 +99,18 @@
   `duvidas.md` (sem resposta nova do Thiago). Nada tocado em `repo/` (branch
   `feature/poc-criar-prospect-cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida
   não respondida por mim. Ciclo encerrado sem alteração de estado.
+- **Retomada seguinte (2026-09-18, mais um ciclo sem ação):** mesma checagem manual, mesmo
+  resultado: `executando/`/`pendentes/` vazias, tarefa corretamente em
+  `tarefas/aguardando-resposta/`, 13ª pergunta ainda `Status: pendente`/`Resposta:` vazia (sem
+  resposta nova do Thiago). Nada tocado em `repo/` (branch segue limpa em `9054e8b`), nenhum
+  Cypress rodado, dúvida não respondida por mim. **Corroboração cruzada notada** (só leitura, sem
+  ação): `../../docs/status-resumo.md`, seção `## agent-master`, registra que o merge de teste da
+  branch `feature/migrar-video-para-relatorio-pdf` (módulo `geral`) também falhou 2/2 specs com
+  `shared/login.feature` quebrando — mesma família de sintoma de rejeição/instabilidade do
+  Keycloak suspeitada aqui na 13ª rodada, agora observada também fora do módulo POC no mesmo
+  período. Reforça (não confirma) a hipótese de causa raiz cross-módulo já registrada em
+  `../geral/docs/documentacao.md`; decisão continua exclusivamente com o Thiago via Supervisor.
+  Ciclo encerrado sem alteração de estado.
 
 ## Bug conhecido na sincronização mecânica da fila (`Test-DuvidaRespondida`)
 

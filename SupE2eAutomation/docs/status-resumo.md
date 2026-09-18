@@ -24,7 +24,10 @@ bloqueada (afetaria todos os módulos, não só POC) — achado também registra
 Código de produção já implementado e pushado (branch `feature/poc-criar-prospect-cedente-cnpj`,
 `9054e8b`), timeout do campo "Tipo de Prospect" em 30s (60s + espera revisada por spinner/requisição
 seguem pendentes de aplicar, a fazer assim que o login for destravado). Nenhum código de produção
-tocado nesta retomada; tarefa movida para `tarefas/aguardando-resposta/`.
+tocado nesta retomada; tarefa segue em `tarefas/aguardando-resposta/`, sem resposta nova do
+Thiago — mais um ciclo sem ação. Nota: a seção `## agent-master` abaixo relata falha de login
+semelhante (Keycloak) na mesma janela, reforçando (não confirmando) a suspeita de causa raiz
+cross-módulo.
 
 ## agent-master
 Bloqueado (`duvidas.md`: `20260917111432-migrar-video-para-relatorio-pdf`) — merge de teste local de
