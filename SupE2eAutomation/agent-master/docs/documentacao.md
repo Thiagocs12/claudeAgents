@@ -188,3 +188,8 @@ intermitência do Keycloak em HML) ao decidir como proceder com a dúvida bloque
   (`fila-merge/aguardando-aprovacao/`) vazio. Único aviso em `pendentes/`
   (`20260917111432-migrar-video-para-relatorio-pdf`) segue `Status: pendente` em `duvidas.md`,
   sem resposta nova do Thiago — não reprocessado (protocolo de não insistir sem instrução nova).
+- **2026-09-18 (ciclo seguinte):** mesmo resultado — `origin/reviewAgents` ainda em `9f38a75`,
+  `repo/` e `C:\multiplica\cypress-e2e` limpos e idênticos (`.env` com hash SHA256 igual). Nenhum
+  aviso novo em `fila-merge/pendentes/` ou `aguardando-aprovacao/`. Único aviso pendente
+  (`20260917111432-migrar-video-para-relatorio-pdf`) ainda `Status: pendente`, sem resposta do
+  Thiago — mantido sem reprocessar.
