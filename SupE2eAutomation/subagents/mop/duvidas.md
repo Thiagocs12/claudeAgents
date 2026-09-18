@@ -35,7 +35,7 @@ sozinho enquanto não houver uma pista nova.
 Resposta: HML está ok agora. Pode retomar a investigação.
 
 ## 20260918104219-hand-off-criacao-operacao-servico-monitor-diario
-Status: pendente
+Status: respondida
 Pergunta: Implementei o fluxo completo (branch `feature/mop-criacao-operacao-servico-monitor-diario`,
 já commitado): login Beyond Banking → seleção do cedente `kenerson` → "Beyond Operação Interno" →
 wizard AQUISIÇÃO→ANTECIPAÇÃO DE DUPLICATA→DUPLICATA→SERVIÇO→BOLETO → título "por digitação" (CPF
@@ -65,4 +65,9 @@ corrigido; (b) o teste automatizado usar uma estratégia diferente pra encontrar
 (c) alguma outra forma de contornar que eu não tenha enxergado. Branch com o progresso até aqui já
 commitada (`d9843bc`), autoteste (`npx cypress run`) falha no passo "Avançar" com
 `cy.click() failed because this element is disabled`.
-Resposta:
+Resposta: Se a operação está aparecendo no Monitor Diário do Beyond BackOffice (realm
+`multiplicacapital`), está OK — pode finalizar. É o mesmo bug de produto já documentado pelo
+`SupTestesFrontEnd` (fora do escopo, não bloqueia). Se precisar de uma operação para validar o
+Monitor Diário e a nova não avançar por causa desse bug, siga o mesmo caminho que a investigação
+original usou: valide com uma operação já confirmada em banco em vez de depender só da recém-criada
+avançar via UI.
