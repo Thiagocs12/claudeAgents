@@ -176,7 +176,9 @@ intermitência do Keycloak em HML) ao decidir como proceder com a dúvida bloque
   segue `Status: pendente` em `duvidas.md` sem resposta nova do Thiago (não reprocessado), `repo/`
   e `C:\multiplica\cypress-e2e` confirmados no mesmo commit `9f38a75` com working tree limpo em
   ambos — nada para sincronizar.
-- **2026-09-18 (ciclo de rotina):** mesmo estado — legado vazio, único aviso em `pendentes/`
-  (`20260917111432-migrar-video-para-relatorio-pdf`) ainda `Status: pendente` sem resposta nova
-  (não reprocessado), `repo/` e `C:\multiplica\cypress-e2e` confirmados no mesmo commit `9f38a75`,
-  working tree limpo em ambos, `.env` idênticos (hash conferido) — nada para sincronizar.
+- **2026-09-18 (ciclos de rotina):** mesmo estado confirmado em mais de um ciclo — legado vazio,
+  único aviso em `pendentes/` (`20260917111432-migrar-video-para-relatorio-pdf`) ainda
+  `Status: pendente` sem resposta nova (não reprocessado), `repo/` e `C:\multiplica\cypress-e2e`
+  confirmados no mesmo commit `9f38a75`, working tree limpo em ambos, `.env` idênticos (hash
+  SHA256 conferido) — nada para sincronizar. `repo/relatorios/` segue não existindo (infra de PDF
+  ainda não implementada).
