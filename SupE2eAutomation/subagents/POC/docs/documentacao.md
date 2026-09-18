@@ -74,6 +74,16 @@
   para 60s como já pedido; (4) rodar o autoteste do spec de produção. Se o campo continuar preso
   mesmo assim, parar e deixar vídeo/screenshot prontos (já orientado pelo Thiago).
 
+- **Retomada 2026-09-18 03:30 (ciclo sem ação):** confirmado manualmente que `tarefas/executando/`
+  e `tarefas/pendentes/` estão vazias e a tarefa segue em `tarefas/aguardando-resposta/`, com a
+  dúvida da 13ª rodada ainda `Status: pendente`/`Resposta:` vazia em `duvidas.md` — ao contrário das
+  recorrências anteriores do bug abaixo, desta vez a sincronização mecânica **não** moveu o arquivo
+  para `executando/` incorretamente (o arquivo já estava no lugar certo). Como não há nada em
+  `executando/` para retomar nem em `pendentes/` para iniciar, e a dúvida segue sem resposta do
+  Thiago, nenhuma ação foi tomada: `repo/` não foi tocado (branch `feature/poc-criar-prospect-
+  cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida não respondida por mim.
+  Ciclo encerrado sem alteração de estado.
+
 ## Bug conhecido na sincronização mecânica da fila (`Test-DuvidaRespondida`)
 
 - Ver detalhe completo em `CONHECIMENTO-SUPERVISORES.md` (raiz de `claudeAgents`), seção "Bugs
