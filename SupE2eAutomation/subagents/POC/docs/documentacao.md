@@ -105,7 +105,7 @@
 - Confirma que a correção sugerida (iterar os blocos de `duvidas.md` em ordem reversa / usar o
   último match, não o primeiro) ainda não foi aplicada — segue sob responsabilidade do Supervisor
   coordenar, já que o script é compartilhado entre todos os subAgents/Agent Master/Status Watcher.
-- **Ciclos sem ação, bug não recorreu (2026-09-18, 4 retomadas, detalhe completo arquivado em
+- **Ciclos sem ação, bug não recorreu (2026-09-18, 5 retomadas, detalhe completo arquivado em
   `docs/documentacao-historico.md`):** checagem manual sempre confirmou `executando/`/`pendentes/`
   vazias e a tarefa corretamente em `tarefas/aguardando-resposta/`, 13ª pergunta ainda
   `Status: pendente`/`Resposta:` vazia (sem resposta nova do Thiago). Nada tocado em `repo/` (branch
