@@ -168,3 +168,14 @@
   nesta mesma tarefa. Mesmo protocolo seguido de novo: nada tocado em `repo/`, nenhum Cypress
   rodado, dúvida não respondida por mim, arquivo movido de volta para `aguardando-resposta/`. Branch
   segue limpa em `9054e8b`.
+- **Retomada 2026-09-18 (mais um ciclo sem ação; prompt de disparo presumia tarefa em
+  `executando/`, checagem manual mostrou o contrário):** `tarefas/executando/` e
+  `tarefas/pendentes/` confirmadas vazias; a tarefa segue corretamente em
+  `tarefas/aguardando-resposta/`. `duvidas.md` conferido inteiro: a 13ª pergunta (suspeita de
+  credencial `automacao` rotacionada/expirada/bloqueada no Keycloak) continua `Status: pendente`/
+  `Resposta:` vazia — sem resposta nova do Thiago. Como não havia nada para retomar em `executando/`
+  nem para iniciar em `pendentes/`, nenhuma ação foi tomada: `repo/` conferido limpo na branch
+  `feature/poc-criar-prospect-cedente-cnpj`, no commit `9054e8b` (nenhum código de produção tocado),
+  nenhum Cypress rodado, dúvida não respondida por mim (regra 9 do `AGENTE.md`). `status-resumo.md`
+  já refletia esse estado corretamente, sem necessidade de atualização. Ciclo encerrado sem
+  alteração de estado.
