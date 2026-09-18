@@ -33,3 +33,36 @@ saudável agora, ou se há algo estrutural (ex.: mudança de configuração do K
 CORS/CSP para `cy.origin`) impedindo esse login especificamente neste fluxo? Não vou tentar de novo
 sozinho enquanto não houver uma pista nova.
 Resposta: HML está ok agora. Pode retomar a investigação.
+
+## 20260918104219-hand-off-criacao-operacao-servico-monitor-diario
+Status: pendente
+Pergunta: Implementei o fluxo completo (branch `feature/mop-criacao-operacao-servico-monitor-diario`,
+já commitado): login Beyond Banking → seleção do cedente `kenerson` → "Beyond Operação Interno" →
+wizard AQUISIÇÃO→ANTECIPAÇÃO DE DUPLICATA→DUPLICATA→SERVIÇO→BOLETO → título "por digitação" (CPF
+de teste, Documento aleatório por execução, Valor R$ 100.000,00) → Salvar → Gerar Operação →
+Confirmar. Esse trecho roda de ponta a ponta com sucesso ("Operação criada com sucesso"). O
+próximo passo do roteiro (clicar "Avançar" na linha recém-criada da tabela "Operações", necessário
+pra ela deixar de ser pré-operação e conseguir progredir até "Middle" no Monitor Diário) está
+bloqueado: a operação recém-criada não aparece em lugar nenhum na tabela "Operações" do Beyond
+Banking — nem como primeira linha, nem em nenhuma das 7 linhas visíveis (todas de 16/09/2026,
+sobras de uma investigação exploratória anterior). Testei esperar 10s + `cy.reload()` da página
+antes de olhar a tabela de novo e o resultado foi o mesmo (confirmei via dump das 7 linhas, nenhuma
+de hoje 18/09). Isso reproduz ao vivo, agora, um achado já documentado pelo `SupTestesFrontEnd`
+(`SupTestesFrontEnd/subagents/mop/docs/documentacao.md`, seção "Armadilha/achado: operação
+recém-criada não aparece na listagem 'Operações' do Beyond Banking, apesar de existir no banco e
+aparecendo normalmente no Monitor Diário") — só que lá esse achado foi tratado como "fora do escopo,
+não bloqueia", porque a validação final da investigação exploratória usou uma operação ANTIGA já
+existente em banco (`88683`, já convertida — `indVirouOperacao=true` — de antes desse bug aparecer)
+em vez de uma operação nova. O hand-off que virou esta tarefa pede um teste automatizado permanente
+que cria uma operação NOVA a cada execução (Documento aleatório) e a leva até "Middle" — isso exige
+clicar "Avançar" numa operação que, neste ambiente agora, nunca aparece na listagem pra ser clicada.
+Não tentei nenhum workaround pro bug em si (ex.: mexer direto em banco), conforme pedido no hand-off
+("não implementar workaround"). Como devo proceder? Algumas opções que consigo ver, mas não decido
+sozinho: (a) considerar isso um bug de produto a ser corrigido antes deste teste poder passar de
+forma confiável, deixando o teste implementado porém sabidamente falho/pendente até o bug ser
+corrigido; (b) o teste automatizado usar uma estratégia diferente pra encontrar/avançar a operação
+(ex.: algum endpoint/API direta em vez da tabela da UI — precisaria de orientação sobre qual);
+(c) alguma outra forma de contornar que eu não tenha enxergado. Branch com o progresso até aqui já
+commitada (`d9843bc`), autoteste (`npx cypress run`) falha no passo "Avançar" com
+`cy.click() failed because this element is disabled`.
+Resposta:

@@ -90,3 +90,64 @@ e respondidas pelo Thiago (ver `duvidas.md` para o texto completo; catálogo ger
 instabilidade de login em `../geral/docs/documentacao.md`); causa raiz não confirmada (ambiente
 instável vs. algo estrutural), mas neste ciclo (2026-09-14) o login funcionou normalmente de ponta
 a ponta, permitindo concluir a investigação e a implementação.
+
+## Tarefa 20260918104219-hand-off-criacao-operacao-servico-monitor-diario (BLOQUEADA em 2026-09-18)
+
+Hand-off de uma investigação exploratória do `SupTestesFrontEnd` — virar teste automatizado
+permanente do fluxo "criar operação de serviço no Beyond Banking → verificar Etapa 'Middle' no
+Monitor Diário do Beyond BackOffice". Branch `feature/mop-criacao-operacao-servico-monitor-diario`,
+progresso commitado (`d9843bc`), **ainda não pushado** (tarefa bloqueada, não concluída).
+
+### Implementação (passos 1-9 do roteiro funcionam de ponta a ponta)
+
+- `cypress/support/pages/mop/SelecaoClientePage.js` — seleciona o cedente `kenerson` (trata os dois
+  casos: tela "Seleção de cliente" aparecer ou já vir com cedente persistido da sessão).
+- `cypress/support/pages/mop/OperacaoInternoPage.js` — `criarOperacaoServicoBoleto()`, função única
+  autocontida (não chama outras Pages) porque roda inteira dentro de um único `cy.origin()` (o
+  subdomínio de "Beyond Operação Interno" é uma origem distinta pro Cypress). Cobre: wizard de
+  produto (Aquisição → Antecipação de Duplicata → Duplicata → Serviço → Boleto, sempre com regex de
+  match exato — há textos superconjunto e um typo real do app, "DUPLICTA"), conta pré-selecionada,
+  entrada "por digitação", Cad Pessoa (CPF de teste, busca automática preenche o resto), título
+  (Documento aleatório por execução — documento duplicado causa 400 no "Avançar" —, Valor de
+  teste), Salvar → Gerar Operação → Confirmar (toast "Operação criada com sucesso").
+- `cypress/support/etapas/mop/EtapaCriarOperacaoServicoBeyondBanking.js` (perfil `master`, app
+  `beyondBanking`) e `EtapaVerificarOperacaoMonitorDiario.js` (perfil `master`, app default
+  `backoffice`) + `EsteiraCriacaoOperacaoServicoMonitorDiario.js` — orquestração padrão
+  Etapa/Esteira. `EtapaVerificarOperacaoMonitorDiario` recebe a etapa de criação no construtor pra
+  ler `numeroOperacao` (só disponível depois que a fila de comandos Cypress dela terminar — lido
+  dentro de `cy.then()`, nunca direto).
+- `cypress/e2e/features/mop/mop-criacao-operacao-servico.feature` +
+  `step_definitions/mop/mopCriacaoOperacaoServico.js` — camada fina Cucumber.
+- `MonitorDiarioPage.localizarOperacaoPorNumero()` + `aguardarOperacaoAlemDeInclusaoOpe()` (polling
+  com até 6 tentativas, amplia janela pra 29 dias se a operação nem aparecer em "Inclusão OPE").
+- Login multi-app: `cy.loginComoPerfil(perfil, { app })` (`commands.js`) + `getApp()`
+  (`environments.js`) + variáveis novas `HML_BEYOND_BANKING_URL`/`HML_BEYOND_BANKING_OPERACAO_URL`
+  (`.env.example`) — permite logar em Beyond Banking e Beyond BackOffice (hosts/realms diferentes
+  do Keycloak) no mesmo teste, sem misturar sessão (`cy.session` chaveado por `app:perfil`).
+- **Bug corrigido nesta tarefa**: `criarOperacaoServicoBoleto()` originalmente retornava
+  `numeroOperacao` (valor síncrono) de dentro de um `.then()` que já tinha enfileirado comandos
+  `cy.wrap()/cy.wait()` antes — Cypress rejeita isso (`cy.then() failed because you are mixing up
+  async and sync code`). Corrigido encadeando tudo na mesma promise (`cy.wrap(...).then(() =>
+  ...).then(() => numeroOperacao)`).
+
+### BLOQUEIO (achado reproduzido ao vivo, 2026-09-18): operação nova não aparece na listagem "Operações" do Beyond Banking
+
+Depois de "Operação criada com sucesso", o passo seguinte do roteiro (clicar "Avançar" na linha da
+operação recém-criada — necessário pra ela deixar de ser pré-operação e progredir além de "Inclusão
+OPE" no Monitor Diário) não consegue achar a linha: a tabela "Operações" continuou mostrando só as
+mesmas 7 linhas antigas de 16/09/2026 (sobras da investigação exploratória anterior, `88677-88683`),
+mesmo depois de `cy.wait(10000)` + `cy.reload()`. O código pegava a primeira linha (assumindo "mais
+recente primeiro"), que na prática é uma operação antiga já "Em Análise" com o botão "Avançar" já
+desabilitado — `cy.click() failed because this element is disabled`.
+
+Isso é a reprodução ao vivo, hoje, de um achado já documentado pelo `SupTestesFrontEnd`
+(`SupTestesFrontEnd/subagents/mop/docs/documentacao.md`, "Armadilha/achado: operação recém-criada
+não aparece na listagem 'Operações' do Beyond Banking, apesar de existir no banco e aparecendo
+normalmente no Monitor Diário"). Lá esse achado foi tratado como "não bloqueia" porque a validação
+final usou uma operação antiga já convertida em banco (`88683`) em vez de recriar uma nova — mas um
+teste automatizado permanente (Documento aleatório a cada execução, por design) não tem esse atalho:
+precisa de uma operação nova a cada run, e não consegue avançá-la se ela não aparece na listagem.
+
+Dúvida registrada em `duvidas.md` (`20260918104219-...`), tarefa movida para
+`tarefas/aguardando-resposta/`. Não commitei nenhum workaround pro bug em si (banco, API direta
+etc.) — só o fix legítimo do bug de async/sync acima, que é independente deste bloqueio.

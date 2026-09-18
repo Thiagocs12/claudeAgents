@@ -11,7 +11,13 @@ Sem tarefa ativa. Última concluída: `20260917111432-migrar-video-para-relatori
 `feature/migrar-video-para-relatorio-pdf` pushada, aviso em `agent-master/fila-merge/pendentes/`).
 
 ## mop
-Sem tarefa ativa.
+Bloqueado (`duvidas.md`: `20260918104219-hand-off-criacao-operacao-servico-monitor-diario`) —
+implementação (criar operação de serviço no Beyond Banking → Monitor Diário) roda até "Operação
+criada com sucesso", mas o passo "Avançar" trava: a operação nova não aparece na listagem
+"Operações" do Beyond Banking (reproduzido ao vivo, nem com wait 10s + reload), bug de ambiente já
+conhecido de uma investigação anterior do `SupTestesFrontEnd`. Progresso commitado (não pushado) em
+`feature/mop-criacao-operacao-servico-monitor-diario`. Aguardando decisão do Thiago sobre como o
+teste deve lidar com esse bug de produto.
 
 ## POC
 Bloqueado (`duvidas.md`: `20260915131339-criar-prospect-cedente-cnpj`, 13ª rodada) — pós-limpeza de
