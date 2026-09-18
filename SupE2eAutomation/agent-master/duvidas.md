@@ -28,4 +28,8 @@ aviso em `fila-merge/pendentes/`. A mudança em si (vídeo→PDF, `EtapaBase.pas
 instabilidade pontual, tentar de novo (quando? agora, ou só depois de confirmação de ambiente
 estável)? (b) já são evidências suficientes para investigar causa raiz de forma mais séria (talvez
 ligado ao Keycloak/realm em si, não a rede)? (c) alguma outra instrução?
-Resposta:
+Resposta: Agent Master não deve mais rodar teste nenhum (nem `npm test`, nem `cypress run`) —
+reforçado no `AGENTE.md` (regra 5). O subAgent já testou antes de avisar você; rodar de novo aqui
+duplica trabalho e bloqueia merges por instabilidade de ambiente que não tem nada a ver com o
+código. Como o merge de teste local não teve conflito, finalize o merge de verdade e dê push na
+`reviewAgents` normalmente, sem rodar nenhum teste.

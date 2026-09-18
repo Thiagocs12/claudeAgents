@@ -38,12 +38,16 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
      `repo/.env`, procure o valor em `../subagents/<modulo>/docs/documentacao.md` e/ou no arquivo
      da tarefa em `../subagents/<modulo>/tarefas/concluidas/<id>.md` (seção "Material de apoio").
      Nunca invente nem deixe em branco — se não achar, é dúvida bloqueante (regra 9).
-   - **Você não roda os testes da automação** (2026-09-17, pedido explícito do Thiago: o subAgent já
-     rodou o autoteste antes de avisar você — regra 5 do `AGENTE.md` dele — rodar de novo aqui
-     duplicaria o trabalho). Se não houver conflito, ou o conflito foi resolvido com sucesso:
-     **finalize o merge de verdade e dê push direto na `reviewAgents`** (sem PR, sem esperar
-     aprovação). Mova o aviso de `fila-merge/pendentes/` direto para `fila-merge/concluidos/` (nunca
-     passa por `aguardando-aprovacao/` nesse fluxo).
+   - **Você NUNCA roda os testes da automação — nem `npm test`, nem `npx cypress run`, nem nenhuma
+     variação, mesmo "só pra validar o merge"** (reforçado em 2026-09-18 depois de acontecer de
+     novo, pedido explícito do Thiago: o subAgent já rodou o autoteste antes de avisar você — regra
+     5 do `AGENTE.md` dele — rodar de novo aqui duplicaria o trabalho e, pior, um teste falhando por
+     instabilidade de ambiente/login não tem nada a ver com o merge em si e não deveria bloqueá-lo).
+     A única verificação que você faz é o **merge de teste local** (`git merge` sem commit, só pra
+     detectar CONFLITO DE CÓDIGO) — não é rodar a suíte. Se não houver conflito, ou o conflito foi
+     resolvido com sucesso: **finalize o merge de verdade e dê push direto na `reviewAgents`** (sem
+     PR, sem esperar aprovação, sem rodar teste nenhum). Mova o aviso de `fila-merge/pendentes/`
+     direto para `fila-merge/concluidos/` (nunca passa por `aguardando-aprovacao/` nesse fluxo).
    - Se o conflito não puder ser resolvido: trate como dúvida bloqueante
      (regra 9), desfaça o merge local (não deixe a `reviewAgents` local suja) e deixe o aviso em
      `fila-merge/pendentes/`.
@@ -61,11 +65,11 @@ Você atua exclusivamente dentro desta pasta. Regras fixas:
      comando de diagnóstico ecoou o `GH_TOKEN` inteiro em `run-log.txt` em 2026-09-14. Se acontecer
      de novo, registre dúvida bloqueante imediatamente (não redija/apague sozinho) e não repita o
      comando tentando "corrigir".
-   - Copie também `repo/relatorios/*.pdf` (se existirem, dos testes que você rodou neste ciclo —
-     substituiu `cypress/videos/*.mp4` em 2026-09-17, pedido explícito do Thiago) para
-     `relatorios/` dentro dessa pasta — o relatório da execução deve terminar no repositório do
-     Thiago, não só ficar preso no seu próprio clone (`repo/`). Se `repo/relatorios/` ainda não
-     existir (infra de PDF ainda não implementada — ver tarefa em
+   - Copie também `repo/relatorios/*.pdf` (se existirem — relatórios gerados pelo **subAgent** ao
+     concluir a tarefa, regra 6 do `AGENTE.md` dele; substituiu `cypress/videos/*.mp4` em
+     2026-09-17, pedido explícito do Thiago) para `relatorios/` dentro dessa pasta — o relatório da
+     execução deve terminar no repositório do Thiago, não só ficar preso no clone do subAgent. Se
+     `repo/relatorios/` ainda não existir (infra de PDF ainda não implementada — ver tarefa em
      `../subagents/geral/tarefas/`), não há nada pra copiar; não trate isso como dúvida.
    - Se o pull/checkout falhar (working tree suja, divergência), não force nada: registre em
      `duvidas.md`.
