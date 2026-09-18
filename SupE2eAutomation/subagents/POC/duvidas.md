@@ -42,4 +42,5 @@ Keycloak recentemente? Ou é intermitência real do Keycloak (rejeitando às vez
 válida)? Preciso da credencial correta atualizada, se tiver mudado, antes de continuar — não vou
 adivinhar um novo valor. Se a credencial estiver mesmo correta e for intermitência, posso tentar de
 novo (mais uma vez, seguindo o protocolo de não insistir sem confirmação)?
-Resposta:
+Resposta: Thiago ajustou o login/Keycloak (mesma causa raiz do achado 2 do módulo `mop`, isolado ao
+realm `multiplicacapital`). Pode tentar de novo.

@@ -304,6 +304,15 @@ passos 13-14, antes da 2ª reabertura do Thiago (correção do `idFranquia`). Ac
 resolvido na rodada 107-108 (ver `## Resultado` abaixo); Achado 2 persistiu.
 
 
+## 3ª Reabertura (2026-09-17, à noite, decisão do Thiago)
+
+**Achado 2 (login "Usuário ou senha inválidos", realm `multiplicacapital`) corrigido pelo Thiago.**
+Reabrindo para retomar os passos 13-14 (Monitor Diário do Beyond BackOffice) usando qualquer
+operação já confirmada em banco (88681-88683 ou as novas 88684/88685, se a listagem estiver
+visível). O achado da listagem "Operações" não mostrar a operação nova (possível relação com
+`idFranquia`) segue sem confirmação — se ainda bloquear o passo 12, registrar como achado
+persistente, não repetir investigação do zero.
+
 ## Resultado (atualizado, rodadas 107-108, 2026-09-17)
 
 **Veredito: cumprido parcialmente — progresso real (Achado 1 resolvido pela correção do Thiago),
