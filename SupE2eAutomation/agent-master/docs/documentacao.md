@@ -204,3 +204,12 @@ sempre em dia. As entradas individuais e idênticas desses ciclos foram removida
   anterior em tudo (legado vazio, aviso único em `pendentes/` ainda `Status: pendente` sem resposta
   nova, `repo/` e `C:\multiplica\cypress-e2e` ambos em `9f38a75` com working tree limpo e `.env`
   idênticos, `repo/relatorios/` ainda inexistente). Não reprocessado, mesmo protocolo.
+- **2026-09-17 (ciclo seguinte, mais um ainda):** sem trabalho novo. Legado
+  (`fila-merge/aguardando-aprovacao/`) vazio. Único aviso em `pendentes/`
+  (`20260917111432-migrar-video-para-relatorio-pdf`) segue `Status: pendente` em `duvidas.md`, sem
+  resposta nova do Thiago — não reprocessado (mesmo protocolo de não insistir sem instrução nova).
+  Confirmado via `git rev-parse HEAD`: `repo/` e `C:\multiplica\cypress-e2e` ambos exatamente em
+  `9f38a75` (igual a `origin/reviewAgents`), working tree limpo em ambos, `.env` idênticos (diff
+  vazio), `repo/relatorios/` ainda inexistente — nada para sincronizar. PR único
+  `reviewAgents → main` fica a cargo do `Confirmar-PRUnico` do `run-cycle.ps1`, não reconferido
+  aqui.
