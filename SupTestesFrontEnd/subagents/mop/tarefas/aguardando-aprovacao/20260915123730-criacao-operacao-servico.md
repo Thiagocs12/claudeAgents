@@ -281,9 +281,15 @@ ao Beyond Banking — não afeta o Monitor Diário do Beyond BackOffice (ver ach
 
 ## Resultado (atualizado, rodada 109-112, 2026-09-18, 3ª reabertura)
 
-**Veredito: cumprido (com uma ressalva sobre a redação literal do critério de aceite) — passos
-13-14 do roteiro concluídos usando uma operação já confirmada em banco (88683), evitando recriar
-uma operação nova (autorizado pelo Thiago na 3ª reabertura).**
+**Veredito: CUMPRIDO, sem ressalva — passos 13-14 do roteiro concluídos usando uma operação já
+confirmada em banco (88683), evitando recriar uma operação nova (autorizado pelo Thiago na 3ª
+reabertura).**
+
+**Esclarecimento do Thiago (2026-09-18)**: a ressalva abaixo não procede — o critério de aceite do
+passo 14 nunca foi "a UI mostrar a palavra literal 'concluída'". Quando a operação avança, o sistema
+pula direto de "Inclusão OPE" para "Middle" — **a confirmação de que "Inclusão OPE" foi concluída é
+justamente a operação aparecer na etapa "Middle"**. Não existe (nem deveria existir) uma tela de
+histórico/linha do tempo separada para checar isso. Critério satisfeito como está.
 
 - **Achado 2 (login do Beyond BackOffice, realm `multiplicacapital`): CONFIRMADO RESOLVIDO** pela
   correção do Thiago. O login submeteu e redirecionou para `beyond-hml.grupomultiplica.com.br` já
@@ -296,18 +302,15 @@ uma operação nova (autorizado pelo Thiago na 3ª reabertura).**
   confirmadas em banco nas rodadas 74-93, `indVirouOperacao=true`) localizada com sucesso após
   ampliar a janela de busca para 29 dias (a janela padrão de "hoje" não cobre uma operação de
   16/09) — `cypress-run-110.log`/`112.log`, screenshot `30-linha-da-operacao-no-monitor-diario`.
-- **Passo 14 (etapa "Inclusão OPE" concluída): CONCLUÍDO COM RESSALVA.** A operação 88683 mostra
-  Etapa atual **"Middle"** (detalhe via `title` do chip: "Middle - Middle OPE -  Analisar
-  Operação") — ou seja, ela já **avançou para além** da etapa "Inclusão OPE", o que é evidência
-  forte de que essa etapa foi concluída. **Ressalva**: não existe em lugar nenhum da UI do Monitor
-  Diário (linha da tabela, chip, tooltip) a palavra literal "concluída" nem um histórico de etapas
-  passadas com status — o Monitor Diário parece expor só a etapa CORRENTE + sub-etapa, não uma
-  linha do tempo. Achado de apoio: operações mais novas (88684, 88685, criadas 17/09) aparecem
-  nessa mesma tela com o chip **"Inclusão OPE"** como etapa corrente (confirma que essa é uma etapa
-  real, nomeada exatamente como o roteiro espera, e que 88683 já passou por ela). **Recomendação
-  para o Thiago**: confirmar se essa evidência indireta (etapa avançou além de "Inclusão OPE")
-  satisfaz o critério de aceite como está redigido, ou se existe uma tela de histórico/linha do
-  tempo por operação (não localizada nesta exploração) que deveria ser checada em vez disso.
+- **Passo 14 (etapa "Inclusão OPE" concluída): CONCLUÍDO.** A operação 88683 mostra Etapa atual
+  **"Middle"** (detalhe via `title` do chip: "Middle - Middle OPE -  Analisar Operação") — ou seja,
+  avançou para além da etapa "Inclusão OPE". **Confirmado pelo Thiago que esse é exatamente o
+  critério correto**: o sistema pula direto de "Inclusão OPE" para "Middle", então a operação
+  aparecer em "Middle" **é** a confirmação de que "Inclusão OPE" foi concluída — não existe (nem
+  deveria existir) status literal "concluída" nem tela de histórico separada para checar. Achado de
+  apoio: operações mais novas (88684, 88685, criadas 17/09) aparecem nessa mesma tela com o chip
+  **"Inclusão OPE"** como etapa corrente, confirmando que é uma etapa real, nomeada exatamente como
+  o roteiro espera, e que 88683 já passou por ela.
 - **Achado extra (contraste com o achado das rodadas 107-108)**: o achado "operação recém-criada
   não aparece na listagem Operações" é **restrito ao Beyond Banking** (app de criação) — as mesmas
   operações 88684/88685 aparecem normalmente no Monitor Diário do Beyond BackOffice. Reduz a
@@ -316,16 +319,14 @@ uma operação nova (autorizado pelo Thiago na 3ª reabertura).**
 - **Relatório em PDF**: `relatorios/20260915123730-criacao-operacao-servico.pdf` (screenshots desta
   rodada mostram o login bem-sucedido no Beyond BackOffice, a navegação até o Monitor Diário, a
   busca ampliada, e a linha da operação 88683 com etapa "Middle").
-- **Achados que precisam de ação fora do escopo deste subAgent**:
-  1. Investigar por que a operação recém-criada não aparece na listagem "Operações" do Beyond
-     Banking mesmo existindo no banco e aparecendo normalmente no Monitor Diário — pendência
-     mantida das rodadas 107-108, agora com escopo mais restrito (só a listagem do Beyond Banking).
-  2. Confirmar se existe uma tela de histórico/linha do tempo por operação que mostre "Inclusão
-     OPE" com um status explícito de "concluída" — não localizada nesta exploração (o Monitor
-     Diário só mostra a etapa corrente).
-- **Próximo passo recomendado**: apresentar este resultado ao Thiago para decidir se o critério do
-  passo 14 está satisfeito como está (evidência indireta pela progressão de etapa) ou se precisa de
-  uma exploração adicional específica de uma tela de histórico.
+- **Achado que precisa de ação fora do escopo deste subAgent**: investigar por que a operação
+  recém-criada não aparece na listagem "Operações" do Beyond Banking mesmo existindo no banco e
+  aparecendo normalmente no Monitor Diário — pendência mantida das rodadas 107-108, escopo restrito
+  à listagem do Beyond Banking (não afeta o Monitor Diário/passos 13-14, já esclarecidos e
+  concluídos).
+- **Próximo passo**: nenhum pendente nesta tarefa — passos 13-14 concluídos e critério esclarecido
+  pelo Thiago. Achado da listagem "Operações" do Beyond Banking segue como pendência separada, fora
+  do escopo desta tarefa.
 
 ## Execução — rodada 109-110 (2026-09-18, 3ª reabertura: correção do Achado 2 pelo Thiago)
 

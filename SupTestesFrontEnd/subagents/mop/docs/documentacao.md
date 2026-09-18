@@ -366,6 +366,12 @@ vivo na rodada 109-112 (2026-09-18)**, depois que o login do Beyond BackOffice (
   Produto, **Etapa**, Tempo, MC, REM, Chat, Ações. A 1ª coluna ("Op.") tem o número da operação
   (mesmo número mostrado no Beyond Banking); "Etapa" é o chip `.mop-MuiChip-label` com o status
   atual (valores já observados: "Inclusão OPE", "Middle", entre outros).
+- **Regra de negócio confirmada pelo Thiago (2026-09-18): não existe status literal "concluída" pra
+  etapa "Inclusão OPE", nem tela de histórico/linha do tempo separada.** O sistema pula direto de
+  "Inclusão OPE" para "Middle" — a confirmação de que "Inclusão OPE" foi concluída **é** a operação
+  aparecer com Etapa "Middle" nesta tabela. Ao validar esse critério de aceite em qualquer tarefa
+  futura, checar exatamente isso (Etapa = "Middle" ou além), não procurar um status explícito de
+  "concluída" em lugar nenhum da UI.
 - Se a operação não aparecer na busca com a janela de data padrão, ampliar para 29 dias: pegar
   `input[type="date"]` (o primeiro, data inicial), setar via o setter nativo do protótipo de
   `HTMLInputElement` (mesma técnica documentada pelo `SupE2eAutomation` — `.val()` do jQuery não
