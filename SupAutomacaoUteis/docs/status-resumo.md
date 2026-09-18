@@ -24,10 +24,11 @@ Sem aviso pendente em `fila-merge/`. Ciclo de 2026-09-17: merge direto (sem conf
 `.env.example` novo) da tarefa `20260915130215-clonar-cedente-completo-prod-hml` (módulo
 `cedente`) na `reviewAgents`, push feito (commit `f3542ec`), aviso movido para
 `fila-merge/concluidos/`. Pasta manual `C:\multiplica\cypress-uteis` sincronizada (fast-forward,
-sem `npm install` necessário) e `.env` copiado por cima. PR único `reviewAgents → master` não
-reconferido neste ciclo (regra 3.4 do `CLAUDE.md`: só reconferido em ciclo que processa algo —
-este processou, mas nada indica que o PR tenha sido fechado; seguirá aberto). Item legado
-`keycloakUser/clonar-usuario-prod-hml` segue em `fila-merge/concluidos/`.
+sem `npm install` necessário) e `.env` copiado por cima. **PR #7 (contínuo) tinha sido mergeado
+manualmente pelo Thiago em 2026-09-15 e ninguém recriou até agora** — recriado neste ciclo como
+**PR #8** (https://github.com/Thiagocs12/automacaoUteisMultiplica/pull/8), aberto, cobrindo todo o
+módulo `cedente` pendente de revisão. Item legado `keycloakUser/clonar-usuario-prod-hml` segue em
+`fila-merge/concluidos/`.
 
 _Bootstrap inicial gerado pela Gerente em 2026-09-17 a partir do levantamento manual do "status" —
 a partir de agora, cada seção é mantida pelo próprio subAgent/Agent Master._
