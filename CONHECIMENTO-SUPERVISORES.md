@@ -406,6 +406,50 @@ vazia nos subAgents — em vez de só desacelerar para 1h, a própria Scheduled 
   hand-off da seção 3.6 (reabilita `SupE2eAutomation-SubAgent-<modulo>` ao criar a tarefa do outro
   lado).
 
+## Janela comercial (seg-sex, 9h-19h) — criado em 2026-09-17 (noite)
+
+Pedido explícito do Thiago: **"As Scheduled Tasks só devem rodar de segunda a sexta, das 9h às 19h;
+se eu ainda estiver trabalhando fora desse horário, eu peço pra você rodar sob demanda."**
+
+- **Mecanismo (nível Windows Task Scheduler, não no `run-cycle.ps1`)**: os 8 gatilhos reais (6
+  subAgents + 2 Agent Master) foram recriados como `CalendarTrigger` semanal (`ScheduleByWeek`,
+  `DaysOfWeek` = segunda a sexta), `StartBoundary` às 09:00, com `Repetition.Interval` (10min
+  subAgent / 20min Agent Master) e `Repetition.Duration` de 10h (cobre até 19:00). Antes disso, os 6
+  subAgents usavam um trigger `Once` com repetição por 3650 dias (sem nenhuma restrição de dia/hora)
+  e os 2 Agent Master usavam `Daily` (todo dia, incluindo fim de semana, das 18:00 às 06:00 do dia
+  seguinte).
+- **Por que via COM (`New-Object -ComObject "Schedule.Service"`) e não
+  `New-ScheduledTaskTrigger`**: o cmdlet `New-ScheduledTaskTrigger -Weekly` desta versão do módulo
+  `ScheduledTasks` não aceita `-RepetitionInterval`/`-RepetitionDuration` no mesmo parameter set
+  (erro "conjunto de parâmetros não pode ser resolvido") — só o parameter set `-Once` aceita esses
+  dois parâmetros diretamente. A solução foi manipular o trigger via COM
+  (`$folder.GetTask($nome).Definition`, `$def.Triggers.Create(3)` = `TASK_TRIGGER_WEEKLY`,
+  `$trig.DaysOfWeek`/`.WeeksInterval`/`.Repetition.Interval`/`.Repetition.Duration` graváveis
+  diretamente) e regravar com `$folder.RegisterTaskDefinition(...)`. **Armadilha**:
+  `RegisterTaskDefinition` reseta `Enabled` para o padrão do `$def` — sempre capturar
+  `$taskCom.Enabled` antes e reaplicar (`$folder.GetTask($nome).Enabled = $estadoHabilitado`) depois
+  de registrar, senão a task pode voltar habilitada/desabilitada por engano.
+- **`Set-CadenciaAdaptativa` (cadência ativa/ociosa) atualizada nos 6 `run-cycle.ps1` de subAgent**
+  para não destruir mais essa janela: antes, ao trocar de intervalo, ela recriava o trigger inteiro
+  via `New-ScheduledTaskTrigger -Once -RepetitionDuration (New-TimeSpan -Days 3650)` — o que
+  substituiria silenciosamente o `CalendarTrigger` semanal por um `Once` de novo na primeira troca de
+  cadência real. Agora ela só ajusta `$def.Triggers.Item(1).Repetition.Interval` via COM (mesmo
+  padrão acima), preservando `DaysOfWeek`/`StartBoundary`/`Repetition.Duration` intactos. Agent
+  Master não tem `Set-CadenciaAdaptativa` (agendamento fixo), não precisou de ajuste.
+- **"Sob demanda" fora da janela funciona automaticamente, sem nenhum código extra**: `Start-
+  ScheduledTask`/`schtasks /run` ignora completamente o gatilho configurado — dispara o `run-
+  cycle.ps1` imediatamente independente de dia/hora. Ou seja, quando o Thiago pedir pra rodar algo
+  fora de seg-sex 9h-19h, a Gerente/Supervisor só chama `Start-ScheduledTask` normalmente (mesmo
+  mecanismo já usado o dia todo nesta sessão) — não precisa de nenhum flag de "forçar ciclo" nem
+  qualquer lógica adicional dentro do script.
+- **Efeito prático**: fora da janela (noites, fim de semana), nenhuma Scheduled Task dispara
+  sozinha — nem para checar fila vazia. Dentro da janela, comportamento idêntico a antes (cadência
+  adaptativa 10-20min ativa / 1h ociosa, autodesabilitação por fila vazia continuam funcionando
+  normalmente).
+- Aplicado nas mesmas 8 Scheduled Tasks reais. Conferido via `Export-ScheduledTask` (XML) em pelo
+  menos 2 tasks (um subAgent, um Agent Master) que o `CalendarTrigger`/`Repetition`/`DaysOfWeek`
+  ficaram corretos após a mudança.
+
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.

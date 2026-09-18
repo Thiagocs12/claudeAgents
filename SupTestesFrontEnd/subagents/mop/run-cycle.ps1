@@ -24,9 +24,18 @@ function Set-CadenciaAdaptativa {
         $trigger = $task.Triggers | Select-Object -First 1
         $intervaloAtual = [System.Xml.XmlConvert]::ToTimeSpan($trigger.Repetition.Interval)
         if ($intervaloAtual -ne $intervaloAlvo) {
-            $novoTrigger = New-ScheduledTaskTrigger -Once -At ([datetime]$trigger.StartBoundary) `
-                -RepetitionInterval $intervaloAlvo -RepetitionDuration (New-TimeSpan -Days 3650)
-            Set-ScheduledTask -TaskName $nomeTaskAgendada -Trigger $novoTrigger | Out-Null
+            # Ajusta so o intervalo de repeticao via COM (Schedule.Service), preservando o gatilho
+            # semanal seg-sex 9h-19h (janela comercial, pedido do Thiago 2026-09-17 noite) - trocar
+            # o trigger inteiro via New-ScheduledTaskTrigger -Once destruiria essa janela.
+            $service = New-Object -ComObject "Schedule.Service"
+            $service.Connect()
+            $folder = $service.GetFolder("\")
+            $taskCom = $folder.GetTask($nomeTaskAgendada)
+            $estadoHabilitado = $taskCom.Enabled
+            $def = $taskCom.Definition
+            $def.Triggers.Item(1).Repetition.Interval = "PT$([int]$intervaloAlvo.TotalMinutes)M"
+            $folder.RegisterTaskDefinition($nomeTaskAgendada, $def, 4, $null, $null, 3) | Out-Null
+            $folder.GetTask($nomeTaskAgendada).Enabled = $estadoHabilitado
             "$(Get-Date -Format 'HH:mm:ss') | [cadencia] $nomeTaskAgendada ajustada para $Estado (repeticao=$intervaloAlvo)" |
                 Add-Content -Path $LogPath -Encoding utf8
         }
