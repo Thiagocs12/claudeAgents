@@ -193,3 +193,10 @@ sempre em dia. As entradas individuais e idênticas desses ciclos foram removida
   compartilhado entre módulos — vale considerar como a mesma causa raiz (credencial ou
   intermitência do Keycloak em HML) ao decidir como proceder, em vez de tratar como dois problemas
   isolados.
+- **2026-09-17 (ciclo seguinte, mais um):** sem trabalho novo. Legado vazio. Único aviso em
+  `pendentes/` (`20260917111432-migrar-video-para-relatorio-pdf`) segue com `Status: pendente` em
+  `duvidas.md`, sem resposta do Thiago; não reprocessado (mesmo protocolo). `repo/` e
+  `C:\multiplica\cypress-e2e` confirmados no mesmo commit (`9f38a75`), working tree limpo em
+  ambos, `.env` idênticos (diff vazio), `repo/relatorios/` ainda não existe — nada para
+  sincronizar. PR único `reviewAgents → main` fica a cargo do `Confirmar-PRUnico` do
+  `run-cycle.ps1`, não reconferido aqui.
