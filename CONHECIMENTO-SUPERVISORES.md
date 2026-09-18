@@ -501,6 +501,45 @@ esse caso, causando ciclos perdidos hora após hora enquanto `contaB` ficava liv
 - Aplicado nos mesmos 8 `run-cycle.ps1` reais. Todos os 8 validados sintaticamente
   (`[Parser]::ParseFile`) depois da edição.
 
+## Bug real: `.gitkeep` quebrava a pré-checagem de fila vazia — achado e corrigido em 2026-09-18
+
+Pedido do Thiago ("se não foi feito porra nenhuma como que os tokens estão acabando tão rápido?")
+levou a investigar de verdade quanto custo real (não contaminado por linhas de dias antigos com o
+mesmo horário — ver nota abaixo) cada módulo gastou. Achado: vários módulos com fila genuinamente
+vazia (`keycloakUser` confirmado ao vivo) estavam chamando o `claude -p` mesmo assim, gastando
+~$0,05-0,16 por ciclo só pra reconfirmar "nada a fazer" — exatamente o que a pré-checagem
+`Test-TrabalhoPendente` deveria impedir.
+
+**Causa raiz: os `.gitkeep` adicionados mais cedo no mesmo dia** (seção "Corrige pasta
+tarefas/executando ausente no POC") **quebraram a própria checagem que deveriam só proteger.**
+`Get-ChildItem -Path "tarefas/executando" -File` conta o `.gitkeep` como arquivo real (Windows não
+trata arquivo começado com ponto como oculto, diferente do Unix) — uma pasta "vazia" (só com
+`.gitkeep`) passa a ter `Count -gt 0`, fazendo `Test-TrabalhoPendente` sempre retornar `$true`.
+Sintoma característico no log: `[fila-global] slot obtido: ... tarefa=` com o campo tarefa **vazio**
+(`(Get-ChildItem ... | Select-Object -First 1).BaseName` de um arquivo `.gitkeep` retorna string
+vazia, já que `BaseName` de um dotfile sem extensão "de verdade" é `""`).
+
+- **Correção**: todo `Get-ChildItem -Path "tarefas/<pendentes|executando|aguardando-resposta>" -File`
+  usado para decidir se a fila está vazia (dentro de `Test-TrabalhoPendente` e na linha que lê
+  `$idTarefaAtual`) ganhou `-Exclude '.gitkeep'`. Aplicado nos 6 `run-cycle.ps1` de subAgent (não
+  afeta os 2 Agent Master, que usam `fila-merge/`, pasta que não recebeu `.gitkeep`) + `contratos`
+  (ainda sem Scheduled Task, corrigido por precaução).
+- **Validado ao vivo**: antes da correção, disparar `keycloakUser` manualmente com fila vazia
+  resultava em `[fila-global] slot obtido: contaA (... tarefa=)` (chamada real, confirmado custo
+  em ciclos anteriores). Depois da correção, o mesmo disparo produziu `[ciclo pulado] ... claude nao
+  foi chamado` — confirmado o fim do desperdício.
+- **Lição gravíssima para qualquer futuro `.gitkeep` (ou qualquer arquivo "estrutural") numa pasta
+  de fila**: toda pasta de fila que usa `-File` pra decidir "tem trabalho?" precisa excluir
+  explicitamente qualquer arquivo que não seja uma tarefa de verdade — `.gitkeep` é o caso conhecido
+  agora, mas o mesmo cuidado vale pra qualquer outro marcador que vier a existir.
+- **Nota sobre como isso foi descoberto**: a primeira tentativa de medir custo por horário
+  (`HH:mm:ss` do log, sem data) misturou entradas de dias diferentes com o mesmo horário de relógio
+  — os logs (`run-log.txt`) só guardam data de verdade dentro de JSON bruto não reformatado
+  (campo `"timestamp"` de eventos não tratados pelo switch, ex. `tool_progress`); linhas formatadas
+  como `[ciclo encerrado] ...` perdem a data. Método confiável: usar o `timestamp` ISO mais recente
+  visto antes de cada linha de custo, ou (melhor ainda) `git log --since/--until` no repositório —
+  nunca confiar em correspondência de `HH:mm:ss` sozinha num arquivo que acumula múltiplos dias.
+
 ## Padrão estrutural de um Supervisor (referência: `SupE2eAutomation`)
 
 - `CLAUDE.md` na raiz do Supervisor — o "manual" fixo do papel dele.

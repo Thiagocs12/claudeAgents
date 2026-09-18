@@ -362,7 +362,7 @@ function Test-TrabalhoPendente {
     # cá em 2026-09-16, pedido do Thiago: tudo que não exige julgamento deve rodar fora do Claude,
     # pra não gastar tokens/turnos em operação mecânica). Nenhuma das duas ações abaixo decide nada
     # — é só regex em duvidas.md e ordenação por timestamp no nome do arquivo.
-    $aguardando = Get-ChildItem -Path "tarefas/aguardando-resposta" -File -ErrorAction SilentlyContinue
+    $aguardando = Get-ChildItem -Path "tarefas/aguardando-resposta" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue
     foreach ($arquivo in $aguardando) {
         $id = [System.IO.Path]::GetFileNameWithoutExtension($arquivo.Name)
         if (Test-DuvidaRespondida -DuvidasPath "duvidas.md" -Id $id) {
@@ -372,9 +372,9 @@ function Test-TrabalhoPendente {
         }
     }
 
-    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+    $temExecutando = (Get-ChildItem -Path "tarefas/executando" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
     if (-not $temExecutando) {
-        $maisAntiga = Get-ChildItem -Path "tarefas/pendentes" -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+        $maisAntiga = Get-ChildItem -Path "tarefas/pendentes" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
         if ($maisAntiga) {
             Move-Item -Path $maisAntiga.FullName -Destination "tarefas/executando/$($maisAntiga.Name)" -Force
             "$(Get-Date -Format 'HH:mm:ss') | [fila] $($maisAntiga.Name): movido pendentes -> executando" |
@@ -382,7 +382,7 @@ function Test-TrabalhoPendente {
         }
     }
 
-    return (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+    return (Get-ChildItem -Path "tarefas/executando" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
 }
 
 if (-not (Test-TrabalhoPendente)) {
@@ -394,7 +394,7 @@ if (-not (Test-TrabalhoPendente)) {
     exit 0
 }
 
-$idTarefaAtual = (Get-ChildItem -Path "tarefas/executando" -File -ErrorAction SilentlyContinue | Select-Object -First 1).BaseName
+$idTarefaAtual = (Get-ChildItem -Path "tarefas/executando" -File -Exclude '.gitkeep' -ErrorAction SilentlyContinue | Select-Object -First 1).BaseName
 $contaEfetiva = Adquirir-SlotConta -NomeModulo "SupTestesFrontEnd/mop" -IdTarefa $idTarefaAtual -LogPath (Join-Path $PSScriptRoot "run-log.txt")
 if (-not $contaEfetiva) {
     Set-CadenciaAdaptativa -Estado 'ocioso' -LogPath (Join-Path $PSScriptRoot "run-log.txt")
