@@ -179,3 +179,17 @@ sempre em dia. As entradas individuais e idênticas desses ciclos foram removida
   neste ciclo. Confirmação/criação do PR único `reviewAgents → main` já é feita
   deterministicamente pelo `run-cycle.ps1` (função `Confirmar-PRUnico`) antes deste ciclo — não
   reconferida aqui.
+- **2026-09-17 (ciclo seguinte):** mais um ciclo de rotina, sem trabalho novo. Legado vazio. Único
+  aviso em `pendentes/` (`20260917111432-migrar-video-para-relatorio-pdf`) segue bloqueado — dúvida
+  em `duvidas.md` com `Status: pendente`, sem resposta nova do Thiago; não reprocessado. `repo/` e
+  `C:\multiplica\cypress-e2e` confirmados ambos em `9f38a75`, working tree limpo em ambos, `.env`
+  idênticos (diff vazio) — nada para sincronizar. `repo/relatorios/` ainda não existe. **Achado
+  potencialmente relevante para desbloquear esta dúvida:** `status-resumo.md` (seção `## POC`) e
+  `../subagents/geral/docs/documentacao.md` registram, na mesma janela de tempo, um sintoma de
+  login **diferente** mas correlato — o Keycloak rejeitando ativamente a credencial `automacao`
+  ("usuário ou senha inválidos", não timeout/redirect) no módulo `POC`, com suspeita de senha
+  rotacionada/expirada. O sintoma desta dúvida (redirect do Keycloak nunca completou, sem mensagem
+  de rejeição) não é idêntico, mas ambos ocorrem no mesmo `cy.loginComoPerfil`/Keycloak
+  compartilhado entre módulos — vale considerar como a mesma causa raiz (credencial ou
+  intermitência do Keycloak em HML) ao decidir como proceder, em vez de tratar como dois problemas
+  isolados.
