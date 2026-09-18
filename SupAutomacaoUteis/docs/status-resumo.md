@@ -20,8 +20,14 @@ nesta máquina (binário não instala, problema de ambiente, não de código). B
 do repo atualizados. Detalhes em `subagents/cedente/docs/documentacao.md`.
 
 ## agent-master
-Sem aviso pendente em `fila-merge/`. PR único `reviewAgents → master` mantido aberto; o item legado
-`keycloakUser/clonar-usuario-prod-hml` já foi mergeado e está em `fila-merge/concluidos/`.
+Sem aviso pendente em `fila-merge/`. Ciclo de 2026-09-17: merge direto (sem conflito, sem
+`.env.example` novo) da tarefa `20260915130215-clonar-cedente-completo-prod-hml` (módulo
+`cedente`) na `reviewAgents`, push feito (commit `f3542ec`), aviso movido para
+`fila-merge/concluidos/`. Pasta manual `C:\multiplica\cypress-uteis` sincronizada (fast-forward,
+sem `npm install` necessário) e `.env` copiado por cima. PR único `reviewAgents → master` não
+reconferido neste ciclo (regra 3.4 do `CLAUDE.md`: só reconferido em ciclo que processa algo —
+este processou, mas nada indica que o PR tenha sido fechado; seguirá aberto). Item legado
+`keycloakUser/clonar-usuario-prod-hml` segue em `fila-merge/concluidos/`.
 
 _Bootstrap inicial gerado pela Gerente em 2026-09-17 a partir do levantamento manual do "status" —
 a partir de agora, cada seção é mantida pelo próprio subAgent/Agent Master._
