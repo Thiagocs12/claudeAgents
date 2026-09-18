@@ -10,14 +10,14 @@
 Sem tarefa ativa (as 6 tarefas do módulo já estão em `concluidas/`).
 
 ## cedente
-Sem tarefa ativa — `20260915130215-clonar-cedente-completo-prod-hml` **concluída** no Ciclo 21
+Sem tarefa ativa — `20260915130215-clonar-cedente-completo-prod-hml` **concluída e já integrada**
 (2026-09-17): clonagem completa PROD→HML (prospect→POC→comitê→cedente) implementada fim a fim,
 incluindo o DELETE apaga-e-refaz (Ciclo 20) e a execução da dependência `cascata` (cedente
 vinculado, Ciclo 21). `npm run lint`/`test:safety` (126/126) passam; `npx cypress run` não roda
 nesta máquina (binário não instala, problema de ambiente, não de código). Branch
-`cedente/clonar-cedente-completo-prod-hml` pushada (commit `86eda12`), aviso em
-`agent-master/fila-merge/pendentes/`, aguardando o Agent Master processar. `README.md`/`CLAUDE.md`
-do repo atualizados. Detalhes em `subagents/cedente/docs/documentacao.md`.
+`cedente/clonar-cedente-completo-prod-hml` pushada (commit `86eda12`) e já mergeada pelo Agent
+Master na `reviewAgents` (commit `f3542ec`); aviso em `fila-merge/concluidos/`. `README.md`/
+`CLAUDE.md` do repo atualizados. Detalhes em `subagents/cedente/docs/documentacao.md`.
 
 ## agent-master
 Sem aviso pendente em `fila-merge/`. Ciclo de 2026-09-17: merge direto (sem conflito, sem
