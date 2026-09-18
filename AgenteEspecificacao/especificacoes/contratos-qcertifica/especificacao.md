@@ -14,9 +14,13 @@ e, na sequência, no envio do contrato mãe para assinatura. Documento de origem
 ## Gatilho / fluxo
 Roteiro (Beyond Banking, tela do cedente → Contratos > aba QCERTIFICA):
 
-1. **Cadastro do cedente**: usar dados de um cedente criado em produção nos últimos dias — garante
-   informalmente que ainda não existe em HML. Cedente precisa ter cadastro completo: nome
-   fantasia, razão social, endereço. Query de apoio (produção) pra achar candidato PJ:
+1. **Cadastro do cedente**: o CNPJ retornado pela query abaixo **não é necessariamente um cedente
+   já existente** — é só uma empresa matriz qualquer recém-cadastrada em produção, usada como CNPJ
+   "limpo" (sem cadastro/conflito prévio em HML). O subAgent cadastra esse CNPJ como cedente **do
+   zero, diretamente na UI do Beyond em HML** (não depende do módulo `cedente` do
+   `SupAutomacaoUteis`, que faz sincronização PROD→HML para outro propósito). Cedente precisa ter
+   cadastro completo: nome fantasia, razão social, endereço. Query de apoio (produção) pra achar
+   candidato PJ:
    ```sql
    select cnpjCpf from MC_CAD_PESSOA
    where tipoPessoa = 'j' and tipoEmpresa = 'MATRIZ' and dataCadastro >= getDate() - 5
@@ -91,10 +95,9 @@ Roteiro (Beyond Banking, tela do cedente → Contratos > aba QCERTIFICA):
   limitar a documentar as variações/cenários testados (o que foi enviado, com quais dados, qual
   resultado apareceu no Beyond), e o Thiago confere manualmente do lado da QCertifica como esses
   cadastros foram recebidos.
-- Há queries SQL de apoio para localizar candidatos (cedentes/pessoas recém-criados em produção) e
-  para conferir dados já propagados — ver seção "Gatilho / fluxo". **Em aberto**: se o subAgent
-  (execução via Cypress/browser) tem acesso direto ao SQL Server para rodar essas queries, ou se
-  isso é sempre fornecido pelo Thiago/Supervisor antes da tarefa — ver `duvidas.md`.
+- Há queries SQL de apoio para localizar candidatos (CNPJs/pessoas recém-criados em produção) e
+  para conferir dados já propagados — ver seção "Gatilho / fluxo". **O subAgent já tem acesso
+  direto ao SQL Server** e pode rodar essas queries sozinho (confirmado pelo Thiago, 2026-09-18).
 
 ## Ambiente
 - HML (Beyond Banking). Perfil de login: "master".

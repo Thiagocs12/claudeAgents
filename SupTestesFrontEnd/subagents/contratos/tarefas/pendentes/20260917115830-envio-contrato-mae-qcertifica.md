@@ -12,11 +12,16 @@ Validar a integração de envio do contrato mãe do sistema para o Qcertifica (B
 Roteiro passo a passo (o subAgent pode explorar detalhes de tela não descritos aqui, mas não deve
 pular etapas):
 
-1. **Cadastro do cedente**: usar um cedente com cadastro criado em produção nos últimos dias — isso
-   é uma garantia informal de que ele ainda não existe em homologação/HML. Cedente precisa ter
-   nome fantasia, razão social e endereço completos. **Em aberto**: como obter/confirmar esse
-   cedente em HML antes de começar (ver `duvidas.md` deste módulo — pode depender do módulo
-   `cedente` do `SupAutomacaoUteis`, que sincroniza PROD→HML).
+1. **Cadastro do cedente**: usar SQL (subAgent já tem acesso ao SQL Server) para achar um CNPJ
+   "limpo" — **não precisa já ser um cedente**, é só uma empresa matriz qualquer recém-cadastrada
+   em produção (garante que ainda não tem cadastro/conflito em HML):
+   ```sql
+   select cnpjCpf from MC_CAD_PESSOA
+   where tipoPessoa = 'j' and tipoEmpresa = 'MATRIZ' and dataCadastro >= getDate() - 5
+   order by 1 DESC;
+   ```
+   Cadastrar esse CNPJ como cedente **do zero, na UI do Beyond em HML** (não depende do módulo
+   `cedente` do `SupAutomacaoUteis`), com nome fantasia, razão social e endereço completos.
 2. **Aprovação do cadastro de cedente**: aprovar o cedente novo com os dados básicos (razão
    social, nome fantasia, endereço com número, etc.).
 3. **Cadastro das pessoas ligadas** ao cedente. Tipos possíveis: FIADOR, DEVEDOR SOLIDÁRIO, FIEL
@@ -92,6 +97,5 @@ fora do ar desde 2026-09-16) — não tentar executar até a flag ser removida.
 ## Material de apoio
 - `../../../../AgenteEspecificacao/especificacoes/contratos-qcertifica/especificacao.md` —
   especificação completa (roteiro, queries SQL de apoio, casos de erro, regras de assinantes).
-  Ainda há 2 dúvidas em aberto no `duvidas.md` do mesmo tema (acesso a SQL Server, e se o cedente
-  precisa ser sincronizado PROD→HML pelo módulo `cedente` do `SupAutomacaoUteis` antes) — o
-  subAgent deve registrar dúvida própria em vez de assumir, se travar exatamente nesses pontos.
+  Sem dúvidas em aberto no momento — tarefa pronta para execução assim que `PAUSA-HML.flag` for
+  removida.
