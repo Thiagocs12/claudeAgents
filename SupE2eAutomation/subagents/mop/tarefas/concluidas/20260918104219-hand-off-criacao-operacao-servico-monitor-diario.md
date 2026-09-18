@@ -75,3 +75,7 @@ Fluxo a automatizar, de ponta a ponta:
   `SupTestesFrontEnd/subagents/mop/cypress/e2e/criacao-operacao-servico.cy.js`
 - `docs/documentacao.md` do `SupTestesFrontEnd/subagents/mop` — seletores do Monitor Diário e da
   tela de criação de operação, todos confirmados ao vivo.
+
+## Resultado
+
+**ABANDONADA por decisão do Thiago (2026-09-18).** Bloqueada num problema técnico real de cy.origin()/login em duas origens diferentes na mesma sessão (primeira tarefa deste módulo a precisar disso). Progresso do 1º bloqueio (achado da listagem Operações) preservado na branch eature/mop-criacao-operacao-servico-monitor-diario, commit 9689008 — não finalizado, sem aviso de merge gerado. Retomar só se o Thiago pedir explicitamente.

@@ -113,4 +113,7 @@ comando fundamental usado por todos os módulos, não só o `mop`; (b) não conf
 (hipótese do handler de exceção vs. algo mais); (c) a última tentativa de investigação travou de
 forma anômala e cara (25 min) sem me dar mais informação. Branch com o progresso do 1º bloqueio já
 commitada e íntegra (`9689008`, sem a tentativa de fix revertida).
-Resposta:
+Resposta: Thiago decidiu abandonar esta tarefa por enquanto. Não continue investigando o
+`cy.origin()`/login em duas origens. Deixe o branch como está (progresso do 1º bloqueio preservado
+no commit `9689008`, sem a tentativa de fix revertida no `commands.js` compartilhado) — não
+finalize, não abra aviso de merge.
