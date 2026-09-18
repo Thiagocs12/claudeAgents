@@ -91,12 +91,74 @@ instabilidade de login em `../geral/docs/documentacao.md`); causa raiz não conf
 instável vs. algo estrutural), mas neste ciclo (2026-09-14) o login funcionou normalmente de ponta
 a ponta, permitindo concluir a investigação e a implementação.
 
-## Tarefa 20260918104219-hand-off-criacao-operacao-servico-monitor-diario (BLOQUEADA em 2026-09-18)
+## Tarefa 20260918104219-hand-off-criacao-operacao-servico-monitor-diario (BLOQUEADA de novo em 2026-09-18, por motivo NOVO)
 
 Hand-off de uma investigação exploratória do `SupTestesFrontEnd` — virar teste automatizado
 permanente do fluxo "criar operação de serviço no Beyond Banking → verificar Etapa 'Middle' no
-Monitor Diário do Beyond BackOffice". Branch `feature/mop-criacao-operacao-servico-monitor-diario`,
-progresso commitado (`d9843bc`), **ainda não pushado** (tarefa bloqueada, não concluída).
+Monitor Diário do Beyond BackOffice". Branch `feature/mop-criacao-operacao-servico-monitor-diario`.
+
+### Resolução do 1º bloqueio (dúvida `20260918104219-...`, respondida pelo Thiago)
+
+O bloqueio anterior (operação recém-criada não aparece na listagem "Operações" do Beyond Banking,
+então nunca há linha pra clicar "Avançar") foi resolvido por decisão do Thiago: não é mais
+necessário avançar a operação recém-criada via UI. Critério de aceite ajustado (duas verificações
+independentes em `EtapaVerificarOperacaoMonitorDiario`):
+
+1. A operação recém-criada aparece no Monitor Diário, em qualquer etapa (`MonitorDiarioPage.
+   aguardarOperacaoAparecer()`, renomeado/simplificado de `aguardarOperacaoAlemDeInclusaoOpe` —
+   não exige mais que a etapa seja diferente de "Inclusão OPE").
+2. Existe alguma operação já em "Middle" no Monitor Diário (`MonitorDiarioPage.
+   aguardarQualquerOperacaoNaEtapa('Middle')`, novo — só lê a listagem, não clica em nada),
+   desacoplada da operação recém-criada — valida que o Monitor Diário/Page detectam a etapa
+   corretamente, sem depender do bug de produto acima.
+- `OperacaoInternoPage.criarOperacaoServicoBoleto()` não tenta mais clicar "Avançar" (bloco
+  removido) — não era mais necessário dado o critério ajustado.
+- `.feature`/step definitions atualizados para as duas asserções (`a operação recém-criada deve
+  aparecer no Monitor Diário` + `deve existir alguma operação na etapa "Middle" no Monitor
+  Diário`).
+
+### 2º bloqueio, NOVO (autoteste, 2026-09-18): exceção não tratada ("null") ao logar no segundo app (Beyond BackOffice) na mesma spec
+
+Depois do fix acima, o autoteste (`npx cypress run`) chega a completar toda a Etapa de criação no
+Beyond Banking (login, wizard, "Operação criada com sucesso") mas falha ao criar a sessão do
+SEGUNDO app (`cy.loginComoPerfil('master')`, app default `backoffice`, dentro de
+`EtapaVerificarOperacaoMonitorDiario.logar()`): `cy.session('backoffice:master', ...)` falha
+durante `cy.visit(appBaseUrl)` com `(uncaught exception) Error: null` — "This error was thrown by
+a cross origin page. If you wish to suppress this error you will have to use the cy.origin
+command...". Reproduzido de forma **idêntica e consistente em 2 tentativas seguidas** (mesmo texto
+exato, mesmo ponto exato). Curl manual confirma `beyond-hml`/`beyondbanking-hml`/`keycloak-new-2`
+respondendo normal (200/200/302, <0.5s) no momento — não é ambiente fora do ar.
+
+Isso é NOVO: nunca tinha acontecido em tarefas anteriores porque nenhuma spec anterior deste
+módulo logava em **dois apps/origens diferentes dentro do mesmo teste** (só esta tarefa introduziu
+isso, via `cy.loginComoPerfil(perfil, { app })`). Hipótese (não confirmada): o handler global de
+`Cypress.on('uncaught:exception', ...)` em `cypress/support/e2e.js` só é aplicado à origem
+"primária" do teste (a primeira visitada) — ao trocar de app/origem no meio do teste, o Cypress
+trata a exceção como vinda de uma "cross origin page" e exige um handler registrado via
+`cy.origin(essaOrigem, () => cy.on('uncaught:exception', ...))` especificamente para ela (é
+literalmente o que a própria mensagem de erro do Cypress sugere).
+
+**Tentativa de fix, revertida**: registrar esse handler (mesmo padrão já usado para o bug do
+`mc-menu.js`/ResizeObserver) escopado à origem do app, dentro do setup do `cy.session` em
+`commands.js`, antes do `cy.visit(appBaseUrl)`. Resultado: `cy.origin()` rejeitou a chamada
+("`cy.origin()` requires the first argument to be a different origin than top") já na criação da
+PRIMEIRA sessão do teste (`beyondBanking:master`) — ou seja, no momento em que esse `cy.origin()`
+roda, o Cypress já considera "top" como sendo a própria origem do primeiro app, antes mesmo de
+qualquer `cy.visit` ter rodado no teste (comportamento interno do Cypress não totalmente
+entendido). Ajustei para só registrar o handler quando a URL atual (`cy.url()`) já é diferente da
+origem do app a visitar (evitando o registro na primeira visita) — com esse ajuste, a segunda
+tentativa **travou por >25 minutos sem nenhum progresso** (nenhuma linha nova de log, processo
+Electron/Cypress sem terminar) e precisou ser abortada manualmente; não confirmei se a causa foi o
+meu ajuste ou uma instabilidade pontual do ambiente/rede naquele momento específico (curl re-testado
+depois do abort respondeu normal). **Por segurança, revertido**: `cypress/support/commands.js`
+está de volta ao estado original (sem esse handler extra) — não quis deixar uma mudança não
+validada no comando de login compartilhado (`cy.loginComoPerfil`), usado por todos os módulos, só
+pra corrigir um problema específico desta tarefa.
+
+Dúvida bloqueante registrada em `duvidas.md` (mesmo id da tarefa,
+`20260918104219-hand-off-criacao-operacao-servico-monitor-diario`, nova pergunta). Tarefa movida
+de volta para `tarefas/aguardando-resposta/`. Progresso (fix do 1º bloqueio + reversão do
+commands.js) commitado na branch antes de bloquear.
 
 ### Implementação (passos 1-9 do roteiro funcionam de ponta a ponta)
 
@@ -118,8 +180,10 @@ progresso commitado (`d9843bc`), **ainda não pushado** (tarefa bloqueada, não 
   dentro de `cy.then()`, nunca direto).
 - `cypress/e2e/features/mop/mop-criacao-operacao-servico.feature` +
   `step_definitions/mop/mopCriacaoOperacaoServico.js` — camada fina Cucumber.
-- `MonitorDiarioPage.localizarOperacaoPorNumero()` + `aguardarOperacaoAlemDeInclusaoOpe()` (polling
-  com até 6 tentativas, amplia janela pra 29 dias se a operação nem aparecer em "Inclusão OPE").
+- `MonitorDiarioPage.localizarOperacaoPorNumero()` + `aguardarOperacaoAparecer()` (polling com até
+  6 tentativas, amplia janela pra 29 dias se a operação ainda não aparecer) + (novo, ver seção
+  "Resolução do 1º bloqueio" acima) `localizarQualquerOperacaoNaEtapa()` /
+  `aguardarQualquerOperacaoNaEtapa()`.
 - Login multi-app: `cy.loginComoPerfil(perfil, { app })` (`commands.js`) + `getApp()`
   (`environments.js`) + variáveis novas `HML_BEYOND_BANKING_URL`/`HML_BEYOND_BANKING_OPERACAO_URL`
   (`.env.example`) — permite logar em Beyond Banking e Beyond BackOffice (hosts/realms diferentes
@@ -130,24 +194,8 @@ progresso commitado (`d9843bc`), **ainda não pushado** (tarefa bloqueada, não 
   async and sync code`). Corrigido encadeando tudo na mesma promise (`cy.wrap(...).then(() =>
   ...).then(() => numeroOperacao)`).
 
-### BLOQUEIO (achado reproduzido ao vivo, 2026-09-18): operação nova não aparece na listagem "Operações" do Beyond Banking
+### BLOQUEIO original (operação nova não aparece na listagem "Operações") — RESOLVIDO, ver seção acima
 
-Depois de "Operação criada com sucesso", o passo seguinte do roteiro (clicar "Avançar" na linha da
-operação recém-criada — necessário pra ela deixar de ser pré-operação e progredir além de "Inclusão
-OPE" no Monitor Diário) não consegue achar a linha: a tabela "Operações" continuou mostrando só as
-mesmas 7 linhas antigas de 16/09/2026 (sobras da investigação exploratória anterior, `88677-88683`),
-mesmo depois de `cy.wait(10000)` + `cy.reload()`. O código pegava a primeira linha (assumindo "mais
-recente primeiro"), que na prática é uma operação antiga já "Em Análise" com o botão "Avançar" já
-desabilitado — `cy.click() failed because this element is disabled`.
-
-Isso é a reprodução ao vivo, hoje, de um achado já documentado pelo `SupTestesFrontEnd`
-(`SupTestesFrontEnd/subagents/mop/docs/documentacao.md`, "Armadilha/achado: operação recém-criada
-não aparece na listagem 'Operações' do Beyond Banking, apesar de existir no banco e aparecendo
-normalmente no Monitor Diário"). Lá esse achado foi tratado como "não bloqueia" porque a validação
-final usou uma operação antiga já convertida em banco (`88683`) em vez de recriar uma nova — mas um
-teste automatizado permanente (Documento aleatório a cada execução, por design) não tem esse atalho:
-precisa de uma operação nova a cada run, e não consegue avançá-la se ela não aparece na listagem.
-
-Dúvida registrada em `duvidas.md` (`20260918104219-...`), tarefa movida para
-`tarefas/aguardando-resposta/`. Não commitei nenhum workaround pro bug em si (banco, API direta
-etc.) — só o fix legítimo do bug de async/sync acima, que é independente deste bloqueio.
+Texto original movido para `docs/documentacao-historico.md` (arquivado — regra 11 do `AGENTE.md`).
+Resumo: resolvido pela decisão do Thiago descrita em "Resolução do 1º bloqueio" acima (não é mais
+necessário avançar a operação recém-criada via UI).
