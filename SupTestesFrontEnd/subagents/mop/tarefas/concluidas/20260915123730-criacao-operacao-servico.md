@@ -291,6 +291,10 @@ pula direto de "Inclusão OPE" para "Middle" — **a confirmação de que "Inclu
 justamente a operação aparecer na etapa "Middle"**. Não existe (nem deveria existir) uma tela de
 histórico/linha do tempo separada para checar isso. Critério satisfeito como está.
 
+**Aprovação e hand-off (2026-09-18)**: Thiago aprovou o resultado e pediu hand-off pro
+`SupE2eAutomation` para virar teste automatizado permanente. Tarefa gerada:
+`SupE2eAutomation/subagents/mop/tarefas/pendentes/20260918104219-hand-off-criacao-operacao-servico-monitor-diario.md`.
+
 - **Achado 2 (login do Beyond BackOffice, realm `multiplicacapital`): CONFIRMADO RESOLVIDO** pela
   correção do Thiago. O login submeteu e redirecionou para `beyond-hml.grupomultiplica.com.br` já
   autenticado como "Automacao" (confirmado por screenshot), sem a mensagem "Usuário ou senha
