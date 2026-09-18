@@ -449,6 +449,23 @@ se eu ainda estiver trabalhando fora desse horário, eu peço pra você rodar so
 - Aplicado nas mesmas 8 Scheduled Tasks reais. Conferido via `Export-ScheduledTask` (XML) em pelo
   menos 2 tasks (um subAgent, um Agent Master) que o `CalendarTrigger`/`Repetition`/`DaysOfWeek`
   ficaram corretos após a mudança.
+- **Bug real cometido na implementação original (mesmo dia, ~2h depois) e já corrigido**: o
+  `StartBoundary` usado em todas as 8 tasks foi hardcoded pra uma data **futura**
+  (`2026-09-21T09:00:00`, a próxima segunda-feira) — a intenção era só fixar o horário "09:00", mas
+  o Windows Task Scheduler trata `StartBoundary` também como "a partir de quando o gatilho passa a
+  valer": com uma data futura, `NextRunTime` de todas as 8 ficou preso em 21/09, e **nenhuma rodou
+  naturalmente durante toda a tarde de 18/09** (quinta-feira, dentro da janela 9h-19h) — só o que
+  foi disparado manualmente via `Start-ScheduledTask` (que ignora `StartBoundary`/gatilho, por isso
+  o problema não foi percebido na hora). Descoberto ao conferir `Get-ScheduledTaskInfo` de uma task
+  específica e ver `NextRunTime` muito distante do esperado. **Correção**: `StartBoundary` deve
+  usar uma data **já passada** (não precisa ser segunda-feira — só o `DaysOfWeek` decide quais dias
+  disparam; a data do `StartBoundary` é só a "ativação" + âncora do horário), ex.
+  `2026-09-14T09:00:00-03:00`. Reaplicado nas 8 via COM (`$trig.StartBoundary = ...`, mesma técnica,
+  preservando `Repetition`/`DaysOfWeek`/`Enabled` de cada uma). **Lição para qualquer ajuste futuro
+  de trigger via COM/`RegisterTaskDefinition`**: sempre conferir `Get-ScheduledTaskInfo
+  -TaskName <nome> | Select NextRunTime` depois de qualquer mudança de trigger — é o jeito mais
+  rápido de detectar esse tipo de erro (a mudança "parece" ter funcionado no XML exportado, mas só o
+  `NextRunTime` revela se o agendamento vai disparar quando esperado).
 
 ## Limite semanal ("weekly limit") não vem como `rate_limit_event` — criado em 2026-09-18
 
