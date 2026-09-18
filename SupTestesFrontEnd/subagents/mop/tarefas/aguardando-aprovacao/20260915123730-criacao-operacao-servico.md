@@ -236,63 +236,19 @@ resultado (não dúvida, já é achado conhecido) e não insista tentando de nov
 - Tratado como RESULTADO (não dúvida): veredito cumprido parcialmente, passos 13-14 continuavam
   bloqueados. Ver `## 2ª Reabertura` acima para a decisão do Thiago sobre o Achado 1.
 
-## Execução — rodada 107-108 (2026-09-17, retomada após correção do Thiago no `idFranquia`)
+## Execução — resumo da rodada 107-108 (2026-09-17, histórico completo arquivado em 2026-09-18)
 
-- Ao iniciar o ciclo, encontrei a tarefa em `tarefas/pendentes/` (não em `executando/` como o
-  ciclo esperava — mesma classe de inconsistência de sincronização já registrada nas rodadas
-  98-103, desta vez a tarefa nem chegou a ser devolvida por dúvida, só não foi promovida de
-  `pendentes/` para `executando/` pela pré-sincronização). Corrigi manualmente: movi o arquivo
-  principal e o `.historico.md` companheiro (que também estava "preso" em
-  `tarefas/aguardando-aprovacao/`, mesmo sintoma da rodada 100-101) para `tarefas/executando/`
-  antes de retomar. Registrando como pendência pro Supervisor revisar o `run-cycle.ps1`.
-- Tentei rodar a spec completa (`npx cypress run`) pela primeira vez após a 2ª reabertura do
-  Thiago (correção do `idFranquia` no Keycloak) → **na primeira tentativa (síncrona) o comando
-  ultrapassou o timeout implícito do Bash (120s) e foi movido pra segundo plano sozinho** — a
-  mesma armadilha documentada na regra 5 do `AGENTE.md`, desta vez porque não passei o `timeout`
-  explícito de 300000ms na chamada. Corrigi: matei a task em segundo plano, confirmei (via
-  PowerShell `Get-Process`) que não sobrou nenhum processo `Cypress`/`node`/`Electron` órfão da
-  pasta, e rodei de novo de forma síncrona com `timeout: 300000` — dessa vez terminou normalmente
-  em ~2m28s (`cypress-run-107.log`).
-- **Achado 1 (Franquia): RESOLVIDO pela correção do Thiago.** Desta vez a Home do Beyond Banking
-  voltou a mostrar os 3 cards normais (confirmado pelo fluxo completo passar por "Beyond Operação
-  Interno" → wizard de produto → conta pré-selecionada → Digitação → Cad Pessoa → título → Salvar
-  → Gerar Operação → Confirmar, chegando até a screenshot `23-tabela-operacoes-viewport-largo`) —
-  não apareceu mais a tela "Nenhuma franquia disponível para o seu usuário". O preenchimento do
-  `idFranquia` no Keycloak resolveu de fato esse bloqueio.
-- **Achado NOVO (bloqueia o passo 12 desta vez): a operação recém-criada não aparece na tabela
-  "Operações" do Beyond Banking, apesar do toast "Operação criada com sucesso!" e de a operação
-  existir de verdade no banco.** A spec seguiu o padrão já validado (`cy.get('table tbody
-  tr').first()` pra pegar a operação "recém-criada"), mas a tabela continuou mostrando as mesmas 7
-  operações antigas de 16/09/2026 (88677-88683) como as únicas 7 linhas (`"1-7 de 7"` no rodapé de
-  paginação) — a operação criada nesta execução não está entre elas. Isso fez a spec clicar
-  "Avançar" na linha errada (88683, uma operação antiga já em situação "em análise", com o ícone
-  "Avançar" desabilitado — `Mui-disabled`) e falhar com `cy.click() failed because this element is
-  disabled`.
-  - **Confirmado em banco (não só suposição de timing/UI)**: consultei `MC_MOP_PRE_OPERACAO`
-    (`SELECT TOP N ... ORDER BY id DESC`) logo após cada execução. A operação **88684**
-    (`dataCadastro: 2026-09-17T18:56:09`, batendo com o horário da rodada 107) e a operação
-    **88685** (`dataCadastro: 2026-09-17T19:01:08`, batendo com a rodada 108) **existem de fato no
-    banco**, com `situacao=VALIDADO` e `indVirouOperacao=false` — ou seja, a pré-operação foi
-    criada com sucesso no backend (o toast não mentiu), mas **nunca apareceu na listagem da tela
-    "Operações"** em nenhuma das duas tentativas.
-  - **Reproduzido de forma idêntica em 2/2 tentativas** (`cypress-run-107.log`,
-    `cypress-run-108.log`, screenshot `23-tabela-operacoes-viewport-largo.png` idêntica nas duas
-    rodadas, sempre com 88683 como primeira linha).
-  - Não sei ainda se é (a) uma consequência colateral do `idFranquia` recém-configurado (ex.: a
-    listagem de operações agora filtra por franquia e a operação nova ficou associada a uma
-    franquia que a lista de "Operações" não está consultando), (b) um atraso de propagação maior
-    que os ~5s de espera já usados (mas que sempre bastaram nas rodadas 74-93, antes do
-    `idFranquia` existir), ou (c) alguma outra mudança recente do app — registrando como achado
-    sem especular a causa raiz além do que os dados confirmam.
-- **Achado 2 (login do Beyond BackOffice, realm `multiplicacapital`): PERSISTE, reproduzido pela
-  4ª rodada seguida** (105, 106, 107, 108) desde a correção do `.env`, sempre com a mesma mensagem
-  real da tela "Usuário ou senha inválidos" (confirmada no texto bruto capturado do body dentro do
-  `cy.origin()`) e a URL travada em `/login-actions/authenticate`. Sem novidade em relação ao já
-  documentado — não é dúvida, é o mesmo achado conhecido se repetindo.
-- **Decisão**: tratando como **RESULTADO** (regra 6 do `AGENTE.md`) — o achado 1 (Franquia) foi
-  resolvido de fato pela correção do Thiago (progresso real), mas um problema novo (operação
-  criada não aparece na listagem) e o achado 2 (login Beyond BackOffice) já conhecido continuam
-  impedindo concluir os passos 12-14. Gerando o PDF e encerrando esta rodada.
+> Narrativa completa (rodada 107-108) arquivada, verbatim, em
+> `20260915123730-criacao-operacao-servico.historico.md` (mesma pasta).
+
+- Corrigida de novo a mesma inconsistência de sincronização das rodadas 98-103 (tarefa presa em
+  `pendentes/`), registrada como pendência recorrente pro Supervisor.
+- **Achado 1 (Franquia): RESOLVIDO** pela correção do Thiago (`idFranquia` preenchido no Keycloak)
+  — fluxo completo de criação (1-11) voltou a funcionar de ponta a ponta.
+- **Achado NOVO**: operação recém-criada (88684, 88685) não aparecia na listagem "Operações" do
+  Beyond Banking, apesar de confirmada em banco (`MC_MOP_PRE_OPERACAO`). Causa raiz não
+  investigada a fundo nesta rodada.
+- **Achado 2 (login `multiplicacapital`)**: persistia, 4ª rodada seguida.
 
 ### Resultado anterior (rodadas 105-106, superado)
 
@@ -313,48 +269,126 @@ visível). O achado da listagem "Operações" não mostrar a operação nova (po
 `idFranquia`) segue sem confirmação — se ainda bloquear o passo 12, registrar como achado
 persistente, não repetir investigação do zero.
 
-## Resultado (atualizado, rodadas 107-108, 2026-09-17)
+### Resultado anterior (rodadas 107-108, superado)
 
-**Veredito: cumprido parcialmente — progresso real (Achado 1 resolvido pela correção do Thiago),
-mas um achado novo e o Achado 2 (já conhecido) continuam bloqueando os passos 12-14.**
+Resumo: cumprido parcialmente — Achado 1 (Franquia) confirmado resolvido; Achado 2 (login
+`multiplicacapital`) persistia pela 4ª rodada seguida, bloqueando totalmente os passos 13-14 (nem
+chegaram a ser tentados); achado novo (operação recém-criada não aparecia na listagem "Operações"
+do Beyond Banking, apesar de existir em banco) registrado sem causa raiz confirmada. Detalhe
+completo arquivado em `20260915123730-criacao-operacao-servico.historico.md`. Achado 2 confirmado
+resolvido na rodada 109-112 (ver `## Resultado` abaixo); achado da listagem "Operações" **restrito**
+ao Beyond Banking — não afeta o Monitor Diário do Beyond BackOffice (ver achado extra abaixo).
 
-- **Achado 1 (Franquia): CONFIRMADO RESOLVIDO.** A correção do Thiago (preencher `idFranquia` do
-  usuário `automacao` no Keycloak) funcionou — a Home do Beyond Banking voltou a mostrar os cards
-  normais ("Beyond Comex", "Beyond Operação Interno", "Beyond Portal"), e o fluxo completo de
-  criação (login → seleção do cedente → wizard de produto → conta → Digitação → Cad Pessoa →
-  título → Salvar → Gerar Operação → Confirmar) voltou a funcionar de ponta a ponta, com toast de
-  sucesso, em 2/2 tentativas (rodadas 107 e 108).
-- **Achado NOVO (bloqueia o passo 12): operação recém-criada não aparece na listagem "Operações"
-  do Beyond Banking, apesar de existir de fato no banco.** Confirmado em 2/2 tentativas via consulta
-  direta a `MC_MOP_PRE_OPERACAO` (não só suposição): as pré-operações **88684** e **88685** foram
-  criadas com sucesso (`situacao=VALIDADO`, `dataCadastro` batendo com o horário de cada rodada),
-  mas a tabela "Operações" da UI continuou mostrando só as mesmas 7 operações antigas de 16/09
-  (88677-88683, "1-7 de 7" na paginação) nas duas execuções — a operação nova nunca apareceu como
-  primeira linha nem em nenhuma linha visível. Isso fez a spec (que opera sobre a primeira linha da
-  tabela, padrão validado nas rodadas 74-93) agir sobre uma operação antiga (88683, já "em análise"),
-  cujo ícone "Avançar" está desabilitado — daí a falha `cy.click() failed because this element is
-  disabled`. Causa raiz não investigada a fundo (pode ser relacionada à franquia recém-configurada
-  filtrando a listagem, atraso de propagação maior que antes, ou outra mudança do app) — registrando
-  só o sintoma confirmado, sem especular além disso.
-- **Achado 2 (login do Beyond BackOffice, realm `multiplicacapital`): PERSISTE**, reproduzido pela
-  4ª rodada consecutiva (105, 106, 107, 108) desde a correção do `.env`, sempre "Usuário ou senha
-  inválidos", isolado a esse realm (o realm `beyondbanking-hml` continua aceitando a mesma
-  credencial sem erro). Nenhuma novidade em relação ao já documentado.
-- **Passos 13-14 (Monitor Diário): NÃO CONCLUÍDOS** — nem chegaram a ser tentados nesta rodada,
-  bloqueados antes pelo Achado 2 (mesmo padrão das rodadas anteriores).
+## Resultado (atualizado, rodada 109-112, 2026-09-18, 3ª reabertura)
+
+**Veredito: cumprido (com uma ressalva sobre a redação literal do critério de aceite) — passos
+13-14 do roteiro concluídos usando uma operação já confirmada em banco (88683), evitando recriar
+uma operação nova (autorizado pelo Thiago na 3ª reabertura).**
+
+- **Achado 2 (login do Beyond BackOffice, realm `multiplicacapital`): CONFIRMADO RESOLVIDO** pela
+  correção do Thiago. O login submeteu e redirecionou para `beyond-hml.grupomultiplica.com.br` já
+  autenticado como "Automacao" (confirmado por screenshot), sem a mensagem "Usuário ou senha
+  inválidos" que persistia desde a rodada 105. A falha inicial desta rodada (`cypress-run-109.log`)
+  foi só uma corrida de spec (diagnóstico tentando rodar dentro do `cy.origin()` depois que o
+  browser já tinha navegado pra fora dele, porque o login ficou mais rápido) — corrigida removendo
+  o bloco de diagnóstico não essencial; ver `## Execução` acima para o detalhe.
+- **Passo 13 (localizar a operação no Monitor Diário): CONCLUÍDO.** Operação 88683 (uma das
+  confirmadas em banco nas rodadas 74-93, `indVirouOperacao=true`) localizada com sucesso após
+  ampliar a janela de busca para 29 dias (a janela padrão de "hoje" não cobre uma operação de
+  16/09) — `cypress-run-110.log`/`112.log`, screenshot `30-linha-da-operacao-no-monitor-diario`.
+- **Passo 14 (etapa "Inclusão OPE" concluída): CONCLUÍDO COM RESSALVA.** A operação 88683 mostra
+  Etapa atual **"Middle"** (detalhe via `title` do chip: "Middle - Middle OPE -  Analisar
+  Operação") — ou seja, ela já **avançou para além** da etapa "Inclusão OPE", o que é evidência
+  forte de que essa etapa foi concluída. **Ressalva**: não existe em lugar nenhum da UI do Monitor
+  Diário (linha da tabela, chip, tooltip) a palavra literal "concluída" nem um histórico de etapas
+  passadas com status — o Monitor Diário parece expor só a etapa CORRENTE + sub-etapa, não uma
+  linha do tempo. Achado de apoio: operações mais novas (88684, 88685, criadas 17/09) aparecem
+  nessa mesma tela com o chip **"Inclusão OPE"** como etapa corrente (confirma que essa é uma etapa
+  real, nomeada exatamente como o roteiro espera, e que 88683 já passou por ela). **Recomendação
+  para o Thiago**: confirmar se essa evidência indireta (etapa avançou além de "Inclusão OPE")
+  satisfaz o critério de aceite como está redigido, ou se existe uma tela de histórico/linha do
+  tempo por operação (não localizada nesta exploração) que deveria ser checada em vez disso.
+- **Achado extra (contraste com o achado das rodadas 107-108)**: o achado "operação recém-criada
+  não aparece na listagem Operações" é **restrito ao Beyond Banking** (app de criação) — as mesmas
+  operações 88684/88685 aparecem normalmente no Monitor Diário do Beyond BackOffice. Reduz a
+  hipótese de ser um problema de propagação/`idFranquia` afetando o sistema como um todo; aponta
+  mais para algo específico da query/filtro da listagem "Operações" do Beyond Banking.
 - **Relatório em PDF**: `relatorios/20260915123730-criacao-operacao-servico.pdf` (screenshots desta
-  rodada mostram o fluxo completo de criação funcionando até a tela "Operações" com a operação nova
-  ausente da lista, e a tela de login do Beyond BackOffice com "Usuário ou senha inválidos").
+  rodada mostram o login bem-sucedido no Beyond BackOffice, a navegação até o Monitor Diário, a
+  busca ampliada, e a linha da operação 88683 com etapa "Middle").
 - **Achados que precisam de ação fora do escopo deste subAgent**:
-  1. Confirmar com quem administra o Keycloak se o usuário `automacao` está bloqueado
-     especificamente no realm `multiplicacapital` (proteção de força bruta) — mesma pendência já
-     levantada nas rodadas 105-106, ainda sem confirmação/correção.
-  2. Investigar por que a operação recém-criada não aparece na listagem "Operações" do Beyond
-     Banking mesmo existindo no banco (`MC_MOP_PRE_OPERACAO`) — possivelmente relacionado à
-     configuração de `idFranquia` recém-adicionada ao usuário `automacao`, mas precisa de alguém
-     com acesso ao backend/config da aplicação para confirmar.
-- **Próximo passo recomendado**: assim que o Achado 2 (login) for resolvido, os passos 13-14 podem
-  ser tentados usando qualquer operação já confirmada em banco (88681-88683, indVirouOperacao=true).
-  Separadamente, o achado novo (operação não aparece na listagem) merece confirmação de alguém com
-  acesso a banco/backend antes de decidir se bloqueia definitivamente o passo 12 daqui pra frente ou
-  foi uma instabilidade pontual das rodadas 107-108.
+  1. Investigar por que a operação recém-criada não aparece na listagem "Operações" do Beyond
+     Banking mesmo existindo no banco e aparecendo normalmente no Monitor Diário — pendência
+     mantida das rodadas 107-108, agora com escopo mais restrito (só a listagem do Beyond Banking).
+  2. Confirmar se existe uma tela de histórico/linha do tempo por operação que mostre "Inclusão
+     OPE" com um status explícito de "concluída" — não localizada nesta exploração (o Monitor
+     Diário só mostra a etapa corrente).
+- **Próximo passo recomendado**: apresentar este resultado ao Thiago para decidir se o critério do
+  passo 14 está satisfeito como está (evidência indireta pela progressão de etapa) ou se precisa de
+  uma exploração adicional específica de uma tela de histórico.
+
+## Execução — rodada 109-110 (2026-09-18, 3ª reabertura: correção do Achado 2 pelo Thiago)
+
+- Ao iniciar o ciclo, encontrei de novo a mesma classe de inconsistência de sincronização já
+  registrada nas rodadas 98-108: a tarefa estava em `tarefas/pendentes/` (reaberta pelo Supervisor)
+  e o `.historico.md` companheiro preso em `tarefas/aguardando-aprovacao/`, em vez de ambos em
+  `tarefas/executando/`. Corrigi manualmente movendo os dois antes de retomar (mesma pendência já
+  registrada pro Supervisor revisar o `run-cycle.ps1`, ver `docs/documentacao.md`).
+- Tentei validar em banco quais operações confirmadas (88681-88683) ainda estão com
+  `indVirouOperacao=true` antes de escolher qual usar para os passos 13-14 (evitar recriar uma
+  operação nova, conforme autorizado pelo Thiago na 3ª reabertura) → `validar-operacao-db.cjs`
+  confirmou 88681/88682/88683 com `indVirouOperacao=true` e linha em `MC_MOP_OPERACAO`; 88684/88685
+  (criadas nas rodadas 107-108) continuam com `indVirouOperacao=false`, consistente com o achado já
+  registrado (não aparecem na listagem "Operações" pra serem avançadas). `cypress/ultima-operacao.json`
+  já apontava para `88683` (deixado da rodada 108) — mantive esse valor.
+- Tentei rodar só o teste 2 (Monitor Diário), usando `it.only` temporário na spec pra não recriar
+  operação nova (o teste 1 recriaria e esbarraria de novo no achado não resolvido da listagem, que é
+  irrelevante pros passos 13-14 quando já se tem uma operação confirmada em banco) → rodou em ~26s
+  (`cypress-run-109.log`) e **falhou**, mas de um jeito NOVO e bom sinal: `CypressError: ... expected
+  to run against origin keycloak-new-2 but the application is at origin beyond-hml` — ou seja, o
+  login **funcionou** (fez o POST de submit e o app já tinha redirecionado pra `beyond-hml` de
+  verdade) e só quebrou porque um bloco de diagnóstico (`cy.wait(3000)` + `cy.get('body')` pra dump
+  de texto, ainda dentro do callback do `cy.origin(keycloak-new-2...)`) rodou tarde demais, depois
+  que o browser já tinha saído da origem do Keycloak. Confirmei visualmente pela screenshot de falha
+  automática do Cypress: a tela mostrava a Home do Beyond (`beyond-hml.grupomultiplica.com.br`) já
+  carregada, logada como "Automacao" — **Achado 2 (login "Usuário ou senha inválidos" no realm
+  `multiplicacapital`) está CONFIRMADO RESOLVIDO** pela correção do Thiago.
+- Corrigi a spec: removido o bloco de diagnóstico (`cy.wait(3000)` + dump de texto) de dentro do
+  callback do `cy.origin()` pós-submit de login (não era essencial, só diagnóstico; screenshots e
+  checagens de URL feitas fora do `cy.origin()`, mais adiante na spec, já cobrem o resultado do
+  login) — evita a corrida entre o redirect (agora mais rápido, login funcionando de primeira) e o
+  comando de diagnóstico.
+- Rodei de novo (`cypress-run-110.log`, `it.only` temporário mantido) → **PASSOU** (55s). A operação
+  88683 foi localizada no Monitor Diário (precisou ampliar a janela pra 29 dias — a janela padrão de
+  hoje não a cobre, esperado pra uma operação de 16/09), com Etapa "Middle". **Passo 13 do roteiro
+  CONCLUÍDO.**
+- Tentei confirmar explicitamente o texto "Inclusão OPE" como "concluída" (redação literal do
+  critério de aceite) → cliquei no chip da Etapa pra ver se abria um histórico/detalhe
+  (`cypress-run-111.log`) → **falhou**: `cy.click() can only be called on a single element (2
+  elements)` — a linha tem DOIS elementos `.mop-MuiChip-label` (um na célula "Etapa", outro na
+  célula "Tempo" logo em seguida, ambas usam a mesma classe de chip). Aproveitei o `outerHTML`
+  completo da linha (já dumpado antes do clique falhar) pra investigar sem clicar às cegas de novo.
+- **Achado**: o chip da Etapa tem um atributo `title` mais detalhado que o texto visível — formato
+  `"<Etapa> - <Sub-etapa> - <Descrição>"` (ex., pra 88683: `"Middle - Middle OPE -  Analisar
+  Operação"`). Não existe a palavra literal "concluída" em lugar nenhum da linha/tabela — o Monitor
+  Diário parece expor só a etapa CORRENTE (com sub-etapa/descrição), não um histórico de etapas
+  passadas marcadas como concluídas. **Dado indireto forte**: a captura da tela (screenshot 30)
+  mostra que operações mais novas (88684, 88685, criadas 17/09) aparecem com o chip "Inclusão OPE"
+  (cinza, com ícone de "atualizar" ao lado) como etapa CORRENTE — confirma que "Inclusão OPE" é uma
+  etapa real e nomeada exatamente como o roteiro espera. A 88683 (mais antiga, 16/09) já não mostra
+  mais esse chip, mostra "Middle" — consistente com "Inclusão OPE" já ter sido concluída e a
+  operação ter avançado além dela, mas sem uma confirmação textual explícita de "concluída" em
+  lugar nenhum da UI encontrado até agora.
+- Corrigi a spec pra ler a Etapa (e o `title` detalhado) da célula certa (índice 12 das `<td>`, não
+  `.mop-MuiChip-label` solto na linha inteira) e rodei de novo pra confirmar
+  (`cypress-run-112.log`) → **PASSOU** (55s), texto capturado: `Etapa: Middle | Detalhe (title):
+  Middle - Middle OPE -  Analisar Operação`.
+- **Achado extra relevante (contraste com o achado das rodadas 107-108)**: as operações 88684/88685
+  (que não apareciam na listagem "Operações" do **Beyond Banking**, achado ainda não resolvido) **SIM
+  aparecem normalmente no Monitor Diário do Beyond BackOffice** (visíveis na screenshot 30, chip
+  "Inclusão OPE"). Isso restringe o achado anterior: o problema de visibilidade é específico da
+  listagem "Operações" do app de criação (Beyond Banking), não um problema de propagação pro sistema
+  de acompanhamento (Beyond BackOffice/Monitor Diário) — reduz a hipótese de ser algo relacionado ao
+  `idFranquia` bloqueando a operação de "existir" no sistema como um todo.
+- Reverti o `it.only` temporário (voltou a `it(...)` normal) — spec fica pronta pra rodar os dois
+  testes numa retomada futura que precise recriar uma operação nova.

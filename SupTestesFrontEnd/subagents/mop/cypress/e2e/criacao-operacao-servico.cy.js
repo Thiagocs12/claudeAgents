@@ -624,10 +624,14 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
               // screenshot manual diagnostico e que derrubava o teste. Removido; o texto bruto
               // abaixo (sem risco) e as screenshots mais adiante (apos <main> estabilizar) ja
               // documentam esse trecho o suficiente.
-              cy.wait(3000)
-              cy.get('body').then(($body) => {
-                cy.writeFile('cypress/debug-output.txt', '\nTEXTO BRUTO APOS SUBMETER LOGIN (Beyond BackOffice, dentro do cy.origin):\n' + $body.text().replace(/\s+/g, ' '), { flag: 'a+' })
-              })
+              // CORRIGIDO (retomada 2026-09-18, achado 2 do login ja resolvido pelo Thiago): com o
+              // login agora funcionando de primeira, o redirect pra beyond-hml acontece mais rapido
+              // que os 3s de espera fixa - o cy.wait(3000)/cy.get('body') que rodava AINDA dentro
+              // deste callback (origem keycloak-new-2) passava a executar depois que o browser ja
+              // tinha navegado pra beyond-hml, quebrando com "expected to run against origin
+              // keycloak-new-2 but the application is at origin beyond-hml". Removido o dump de
+              // texto bruto pos-submit (nao critico, so diagnostico) - o texto bruto e screenshots
+              // de fora do cy.origin(), mais adiante, ja cobrem o resultado do login.
             }
           )
         }
@@ -752,8 +756,16 @@ describe('Exploracao: criacao de operacao de servico no Beyond Banking', () => {
           cy.writeFile('cypress/debug-output.txt', '\nOPERACAO ' + numeroOperacao + ' NAO ENCONTRADA NEM NA JANELA DE 29 DIAS. Numeros vistos na tabela: ' + JSON.stringify(numerosVistos), { flag: 'a+' })
           throw new Error('Operacao ' + numeroOperacao + ' nao encontrada no Monitor Diario (janela de 29 dias)')
         }
-        const etapa = linha.querySelector('.mop-MuiChip-label')?.textContent.trim()
-        cy.writeFile('cypress/debug-output.txt', '\nOPERACAO ' + numeroOperacao + ' ENCONTRADA NO MONITOR DIARIO. Etapa: ' + etapa, { flag: 'a+' })
+        // ACHADO (retomada 2026-09-18): a celula "Etapa" (indice 12 das <td>, nao confundir com a
+        // celula "Tempo" logo em seguida, que TAMBEM usa `.mop-MuiChip-label` - selecionar
+        // `.mop-MuiChip-label` na linha inteira sem escopo bate nas duas e quebra qualquer `.click()`
+        // com "subject contained 2 elements"). O chip tem um atributo `title` detalhado, formato
+        // "<Etapa> - <Sub-etapa> - <Descricao›" (ex.: "Middle - Middle OPE -  Analisar Operação"
+        // pra 88683) - mais informativo que so o texto visivel do chip.
+        const celulaEtapa = linha.querySelectorAll('td')[12]
+        const etapa = celulaEtapa?.querySelector('.mop-MuiChip-label')?.textContent.trim()
+        const etapaDetalhe = celulaEtapa?.querySelector('.mop-MuiChip-root')?.getAttribute('title')
+        cy.writeFile('cypress/debug-output.txt', '\nOPERACAO ' + numeroOperacao + ' ENCONTRADA NO MONITOR DIARIO. Etapa: ' + etapa + ' | Detalhe (title): ' + etapaDetalhe, { flag: 'a+' })
         cy.wrap(linha).scrollIntoView()
       })
       cy.screenshot('30-linha-da-operacao-no-monitor-diario', { capture: 'fullPage' })

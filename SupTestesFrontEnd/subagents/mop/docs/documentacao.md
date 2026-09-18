@@ -322,30 +322,41 @@ pré-operação não aparece na listagem, antes de confiar de novo no padrão "p
 tabela" pra identificar a operação recém-criada. Ver task `20260915123730-criacao-operacao-servico`,
 seção `## Resultado` mais recente, para o detalhe completo.
 
-## Armadilha: falha de login "Usuário ou senha inválidos" agora isolada ao realm `multiplicacapital` (2026-09-17)
+**Achado que restringe o escopo (2026-09-18, rodada 109-112):** as mesmas operações 88684/88685
+(ausentes da listagem "Operações" do Beyond Banking) **aparecem normalmente no Monitor Diário do
+Beyond BackOffice** (ver seção "Monitor Diário" abaixo). Ou seja, o problema é específico da
+tela/query "Operações" do Beyond Banking — não é a operação "sumindo" do sistema como um todo nem
+uma falha de propagação pro backend de acompanhamento. Reduz a hipótese de ser algo relacionado ao
+`idFranquia` bloqueando a operação de forma ampla.
+
+## Armadilha: falha de login "Usuário ou senha inválidos" agora isolada ao realm `multiplicacapital` (2026-09-17) — RESOLVIDO
 
 Atualização da armadilha anterior ("falha de login ... reproduzível nos dois realms"): depois da
 correção do Thiago (espaço em branco no `.env`, confirmada removida), o login voltou a falhar com
 "Usuário ou senha inválidos" — mas desta vez **só no realm `multiplicacapital`** (Beyond
 BackOffice); o realm `beyondbanking-hml` (Beyond Banking) aceitou a mesma credencial, na mesma
-execução, sem erro (rodadas 105-106, 2/2 reproduzido). Isso descarta de vez o `.env`/espaço em
-branco como explicação atual e torna mais provável um **bloqueio isolado ao realm
-`multiplicacapital`**, possivelmente por proteção de força bruta do Keycloak (as rodadas 96, 97 e
-104 da sessão anterior concentraram várias tentativas de login mal-sucedidas justamente contra esse
-realm). **Ação recomendada**: confirmar com quem administra o Keycloak se há bloqueio de conta
-específico nesse realm para o usuário `automacao`.
+execução, sem erro (rodadas 105-106, 2/2 reproduzido). Reproduzido por 4 rodadas seguidas
+(105-108).
 
-**Atualização (rodadas 107-108, 2026-09-17):** reproduzido pela 4ª rodada seguida (105, 106, 107,
-108), sempre isolado ao realm `multiplicacapital`, sem correção conhecida até agora — ainda não
-foi mencionado como resolvido pelo Thiago (diferente do achado da Franquia acima, que já foi
-corrigido).
+**RESOLVIDO (2026-09-18, rodada 109-110):** o Thiago corrigiu a causa raiz (não documentada em
+detalhe aqui — ver task `20260915123730-criacao-operacao-servico`, seção "3ª Reabertura"). Login no
+realm `multiplicacapital` voltou a funcionar de primeira, confirmado por screenshot (Home do Beyond
+já autenticada como "Automacao"). **Efeito colateral encontrado**: com o login funcionando de
+novo, o redirect pós-submit pra `beyond-hml` passou a ser mais rápido que antes — um bloco de
+diagnóstico (`cy.wait(3000)` + `cy.get('body')`) que antes rodava sem problema **dentro** do
+callback do `cy.origin(keycloak-new-2...)` passou a falhar com "expected to run against origin
+keycloak-new-2 but the application is at origin beyond-hml", porque o browser já tinha navegado pra
+fora da origem do Keycloak antes do diagnóstico rodar. Se algum comando não-essencial (log/dump)
+for colocado logo após um `.click()` de submit dentro de um `cy.origin()`, considerar que o
+redirect pode ser rápido e a origem já ter mudado — preferir mover esse tipo de diagnóstico pra
+fora do `cy.origin()` (como já era feito no teste 1 desta spec).
 
-## Monitor Diário do Beyond BackOffice — seletores mapeados (2026-09-17, spec estendida mas ainda não validada ao vivo)
+## Monitor Diário do Beyond BackOffice — seletores mapeados e CONFIRMADOS AO VIVO (2026-09-17/18)
 
 Reaproveitados do `SupE2eAutomation` (`repo/cypress/support/pages/mop/MonitorDiarioPage.js` e
-`docs/documentacao.md` daquele Supervisor) e incorporados à spec deste módulo — **ainda não
-confirmados ao vivo por este subAgent** (a spec chega até aqui mas o login do Beyond BackOffice tem
-travado antes, ver armadilha acima):
+`docs/documentacao.md` daquele Supervisor) e incorporados à spec deste módulo — **confirmados ao
+vivo na rodada 109-112 (2026-09-18)**, depois que o login do Beyond BackOffice (realm
+`multiplicacapital`) voltou a funcionar (ver armadilha de login acima, RESOLVIDA):
 
 - Clicar em "Monitor Diário": `cy.contains('.menu-MuiDrawer-paper *', 'Monitor Diário')` (o `*` é
   essencial — sem ele o `contains` casa com o container do drawer, que não tem `onClick`).
@@ -354,12 +365,41 @@ travado antes, ver armadilha acima):
   Fundo, Cedente, Banco Cedente, Agente, Qtd Tít., Valor Bruto, Valor Líq., PMP D+, Taxa Final,
   Produto, **Etapa**, Tempo, MC, REM, Chat, Ações. A 1ª coluna ("Op.") tem o número da operação
   (mesmo número mostrado no Beyond Banking); "Etapa" é o chip `.mop-MuiChip-label` com o status
-  atual (valores já observados pelo `SupE2eAutomation`: "Inclusão OPE", "Middle", entre outros).
+  atual (valores já observados: "Inclusão OPE", "Middle", entre outros).
 - Se a operação não aparecer na busca com a janela de data padrão, ampliar para 29 dias: pegar
   `input[type="date"]` (o primeiro, data inicial), setar via o setter nativo do protótipo de
   `HTMLInputElement` (mesma técnica documentada pelo `SupE2eAutomation` — `.val()` do jQuery não
   dispara o `onChange` de um input controlado por React) para `data final - 28 dias`, disparar
   `input`/`change`, e clicar "Buscar" de novo.
+
+**Armadilha confirmada (rodada 109-112): a linha da tabela tem DOIS elementos `.mop-MuiChip-label`**
+— um na célula "Etapa" (índice 12 das `<td>`), outro na célula "Tempo" logo em seguida (ex.:
+"01d07h"). Um seletor solto `linha.querySelector('.mop-MuiChip-label')` sem escopar pela célula
+certa pega o primeiro que aparecer (pode não ser o da Etapa) e qualquer `.click()` sobre
+`.mop-MuiChip-label` na linha inteira falha com "subject contained 2 elements". Sempre escopar
+pela célula da Etapa antes: `linha.querySelectorAll('td')[12]`.
+
+**Achado: o chip da Etapa tem um `title` mais detalhado que o texto visível**, formato
+`"<Etapa> - <Sub-etapa> - <Descrição>"` (ex.: `"Middle - Middle OPE -  Analisar Operação"`) —
+`celulaEtapa.querySelector('.mop-MuiChip-root').getAttribute('title')`. Útil pra saber a sub-etapa
+sem precisar abrir a operação.
+
+**Achado/limitação: não há histórico visível de etapas passadas nesta tela.** A tabela do Monitor
+Diário mostra só a etapa CORRENTE (+ sub-etapa/descrição via `title`) — não uma linha do tempo com
+cada etapa marcada como concluída. Para confirmar que uma etapa específica anterior (ex. "Inclusão
+OPE") foi "concluída", a evidência disponível é indireta: a operação ter avançado para uma etapa
+posterior (ex. "Middle") já implica que a etapa anterior foi superada. Não foi localizada (nem
+tentada a fundo — ver achado abaixo sobre o ícone de "Ações") uma tela de detalhe/histórico por
+operação que mostre isso de forma explícita. Se uma tarefa futura precisar confirmar isso de forma
+mais direta, o próximo lugar a investigar é o ícone de "mais opções" (3 pontos verticais) na coluna
+"Ações" da linha — não clicado ainda nesta exploração.
+
+**Achado importante: operações que não aparecem na listagem "Operações" do Beyond Banking (ver
+achado abaixo) aparecem normalmente aqui no Monitor Diário do Beyond BackOffice.** Confirmado com
+as operações 88684/88685 (rodada 109-112) — elas nunca apareceram na tabela "Operações" do app de
+criação, mas aparecem com o chip "Inclusão OPE" no Monitor Diário. Isso restringe o achado da
+listagem: é um problema específico daquela tela/query do Beyond Banking, não um problema de
+propagação da operação para o sistema como um todo.
 
 ## Validação em banco de dados (mapeado em 2026-09-16, pedido do Thiago)
 
