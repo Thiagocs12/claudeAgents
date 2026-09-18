@@ -92,6 +92,13 @@
   expirada no Keycloak) segue sem decisão, nenhuma ação foi tomada: `repo/` não foi tocado (branch
   `feature/poc-criar-prospect-cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida
   não respondida por mim (regra 9 do `AGENTE.md`). Ciclo encerrado sem alteração de estado.
+- **Retomada seguinte (mesmo dia, mais um ciclo sem ação):** de novo o prompt de disparo presumia
+  tarefa em `tarefas/executando/`, mas a checagem manual confirmou o mesmo estado das duas
+  retomadas anteriores: `executando/`/`pendentes/` vazias, tarefa corretamente em
+  `tarefas/aguardando-resposta/`, 13ª pergunta ainda `Status: pendente`/`Resposta:` vazia em
+  `duvidas.md` (sem resposta nova do Thiago). Nada tocado em `repo/` (branch
+  `feature/poc-criar-prospect-cedente-cnpj` segue limpa em `9054e8b`), nenhum Cypress rodado, dúvida
+  não respondida por mim. Ciclo encerrado sem alteração de estado.
 
 ## Bug conhecido na sincronização mecânica da fila (`Test-DuvidaRespondida`)
 
