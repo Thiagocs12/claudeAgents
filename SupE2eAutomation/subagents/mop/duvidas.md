@@ -71,3 +71,46 @@ Resposta: Se a operação está aparecendo no Monitor Diário do Beyond BackOffi
 Monitor Diário e a nova não avançar por causa desse bug, siga o mesmo caminho que a investigação
 original usou: valide com uma operação já confirmada em banco em vez de depender só da recém-criada
 avançar via UI.
+
+## 20260918104219-hand-off-criacao-operacao-servico-monitor-diario
+Status: pendente
+Pergunta: Implementei a decisão acima (branch `feature/mop-criacao-operacao-servico-monitor-diario`,
+commit `9689008`): não tento mais clicar "Avançar" na operação recém-criada; `EtapaVerificarOperacao
+MonitorDiario` agora valida duas coisas independentes no Monitor Diário — (1) a operação
+recém-criada aparece na listagem, em qualquer etapa, e (2) existe alguma operação já em "Middle"
+(sem depender da recém-criada chegar lá). Isso resolveu o 1º bloqueio. Mas apareceu um bloqueio
+NOVO e diferente ao rodar o autoteste (`npx cypress run`) completo: depois do login/criação no
+Beyond Banking funcionar de ponta a ponta, o teste tenta logar no Beyond BackOffice (2º app/origem
+dentro da MESMA execução — `cy.loginComoPerfil('master')`, app default `backoffice`, chamado por
+`EtapaVerificarOperacaoMonitorDiario.logar()`) e `cy.session('backoffice:master', ...)` falha
+consistentemente (reproduzido de forma idêntica em 2 tentativas seguidas) com:
+`(uncaught exception) Error: null. This error was thrown by a cross origin page. If you wish to
+suppress this error you will have to use the cy.origin command...`, disparado logo no
+`cy.visit(appBaseUrl)` de dentro do `cy.session`. Confirmei por `curl` (fora do Cypress) que
+`beyond-hml`, `beyondbanking-hml` e `keycloak-new-2` respondem normal (200/200/302, <0.5s) no
+momento — não é o ambiente fora do ar. Isso nunca tinha acontecido em tarefas anteriores porque
+nenhuma spec anterior deste módulo logava em dois apps/origens diferentes dentro do MESMO teste —
+só esta tarefa usa esse recurso (`cy.loginComoPerfil(perfil, { app })`, criado por ela mesma).
+Suspeito (não confirmado) que o handler global de `uncaught:exception` em
+`cypress/support/e2e.js` só é aplicado à origem "primária" do teste (a primeira visitada) — ao
+trocar de app/origem no meio do teste, o Cypress trataria a excação como vinda de uma origem
+cruzada e exigiria um handler escopado via `cy.origin(essaOrigem, () => cy.on('uncaught:exception',
+...))`, exatamente como a própria mensagem de erro do Cypress sugere. Tentei implementar esse fix
+em `cypress/support/commands.js` (dentro do `cy.session` de `cy.loginComoPerfil`, escopado só
+quando a origem a visitar for diferente da atual) — mas `cy.origin()` rejeitou a chamada
+(`cy.origin() requires the first argument to be a different origin than top`) já na criação da
+PRIMEIRA sessão do teste (`beyondBanking:master`), antes de qualquer visita ter ocorrido (não
+entendi por que o Cypress já considerava "top" como sendo essa origem nesse ponto). Ajustei a
+lógica para só registrar esse handler quando a URL atual já é diferente da origem do app — com
+esse ajuste, a tentativa seguinte travou por mais de 25 minutos sem nenhum progresso (nenhuma
+linha nova de log, processo Electron/Cypress sem terminar) e precisei abortar manualmente; não sei
+se foi o meu ajuste ou uma instabilidade pontual do ambiente/rede especificamente naquele momento
+(o `curl` refeito depois do abort respondeu normal). Por segurança, revertido: `commands.js` está
+de volta ao estado original, sem esse handler extra — não quis deixar uma mudança não validada no
+comando de login compartilhado por todos os módulos (`cy.loginComoPerfil`) só pra resolver um
+problema específico desta tarefa. Como devo proceder? Não decido sozinho porque: (a) envolve um
+comando fundamental usado por todos os módulos, não só o `mop`; (b) não confirmei a causa raiz
+(hipótese do handler de exceção vs. algo mais); (c) a última tentativa de investigação travou de
+forma anômala e cara (25 min) sem me dar mais informação. Branch com o progresso do 1º bloqueio já
+commitada e íntegra (`9689008`, sem a tentativa de fix revertida).
+Resposta:
